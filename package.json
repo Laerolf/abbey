@@ -1,0 +1,37 @@
+{
+  "name": "ui",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "dev": "nuxt dev",
+    "test": "vitest",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "nuxt": "^3.10.3",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint-config": "^0.2.0",
+    "@nuxt/test-utils": "^3.11.0",
+    "@nuxtjs/i18n": "^8.1.1",
+    "@vue/test-utils": "^2.4.4",
+    "eslint": "^8.57.0",
+    "h3": "^1.11.1",
+    "happy-dom": "^13.7.3",
+    "rollup": "^4.12.1",
+    "sass": "^1.71.1",
+    "the-new-css-reset": "^1.11.2",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.5",
+    "vitest": "^1.3.1",
+    "vue-tsc": "^1"
+  }
+}
