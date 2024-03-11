@@ -2,6 +2,7 @@
   "name": "ui",
   "private": true,
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "lint": "eslint .",
