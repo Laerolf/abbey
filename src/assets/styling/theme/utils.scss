@@ -1,0 +1,9 @@
+.no-margin {
+  margin: 0;
+}
+
+.active {
+  &-exact {
+    font-weight: bold;
+  }
+}

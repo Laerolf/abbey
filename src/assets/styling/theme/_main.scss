@@ -2,3 +2,9 @@
 @import "variables";
 
 @import "typography";
+
+@import "utils";
+
+body {
+  user-select: none;
+}

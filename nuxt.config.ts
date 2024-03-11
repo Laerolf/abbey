@@ -24,6 +24,13 @@ export default defineNuxtConfig({
         }
     ],
 
+    router: {
+        options: {
+            linkActiveClass: "active",
+            linkExactActiveClass: "active-exact"
+        }
+    },
+
     css: ["@/assets/styling/_main.scss"],
 
     typescript: {

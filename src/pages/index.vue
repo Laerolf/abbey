@@ -1,4 +1,8 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+definePageMeta({
+    $secured: true
+})
+</script>
 
 <template>
   <a-page title="Index">
