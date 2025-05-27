@@ -37,16 +37,14 @@ impl Task {
         }
     }
 
-    /// Gets the end time of this task based on its start time, duration and the elapsed time since this task was started.
-    pub fn ends_at(&self) -> Option<OffsetDateTime> {
-        match &self.started_at {
-            Some(started_at) => started_at
+    /// Gets the end time of this task based on its start time, duration, the elapsed time since this task was started and the current stime.
+    pub fn ends_at(&self, now: OffsetDateTime) -> Option<OffsetDateTime> {
+        match (self.status, self.started_at) {
+            (Status::InProgress, Some(started_at)) => started_at
                 .checked_add(self.duration)
-                .expect(
-                    "The end time of this task is unknown after adding the duration of the task.",
-                )
-                .checked_sub(self.elapsed),
-            None => None,
+                .and_then(|ends_at| ends_at.checked_sub(self.elapsed)),
+            (Status::Paused, _) => Some(now + (self.duration - self.elapsed)),
+            _ => None,
         }
     }
 
@@ -186,7 +184,7 @@ mod task_tests {
             let task = Task::new(Duration::minutes(1));
 
             // Then
-            assert_eq!(None, task.ends_at());
+            assert_eq!(None, task.ends_at(OffsetDateTime::now_utc()));
         }
 
         #[test]
@@ -278,8 +276,11 @@ mod task_tests {
             task.start(OffsetDateTime::now_utc());
 
             // Then
-            assert!(setup_time.checked_add(duration) < task.ends_at());
-            assert!(OffsetDateTime::now_utc().checked_add(duration) > task.ends_at());
+            assert!(setup_time.checked_add(duration) < task.ends_at(OffsetDateTime::now_utc()));
+            assert!(
+                OffsetDateTime::now_utc().checked_add(duration)
+                    > task.ends_at(OffsetDateTime::now_utc())
+            );
         }
 
         #[test]
@@ -394,6 +395,29 @@ mod task_tests {
             // Then
             assert!(task.progress(thirty_seconds_later) > 0.4);
             assert!(task.progress(thirty_seconds_later) < 0.6);
+        }
+
+        #[test]
+        fn a_paused_task_has_an_end_time() {
+            // Given
+            let now = OffsetDateTime::now_utc();
+            let thirty_seconds_later: OffsetDateTime = now
+                .checked_add(Duration::seconds(30))
+                .expect("The timeout time is unknown.");
+
+            let task_duration = Duration::minutes(1);
+            let mut task = Task::new(task_duration);
+
+            task.start(now);
+
+            // When
+            task.pause(thirty_seconds_later);
+
+            // Then
+            assert!(
+                Some(OffsetDateTime::now_utc() + task_duration)
+                    > task.ends_at(OffsetDateTime::now_utc())
+            );
         }
 
         #[test]
