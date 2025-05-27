@@ -1,0 +1,6 @@
+# IDE
+/.vscode
+
+# Application
+/target
+/.env
