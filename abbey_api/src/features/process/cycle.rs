@@ -5,22 +5,22 @@ use super::{Process, Status};
 
 /// Represents a [`super::Process`] with cycles that have an interval.
 pub struct Cycle {
-    /// The ID of this process.
+    /// The ID of this cycle.
     pub id: Uuid,
 
-    /// The status of this process.
+    /// The status of this cycle.
     pub status: Status,
 
-    /// The time this process was started last.
+    /// The time this cycle was started last.
     pub started_at: Option<OffsetDateTime>,
 
-    /// The time this process was paused last.
+    /// The time this cycle was paused last.
     pub paused_at: Option<OffsetDateTime>,
 
-    /// The cycle interval of this process.
+    /// The cycle interval of this cycle.
     pub cycle_interval: Duration,
 
-    /// The time that has elapsed since the process was started.
+    /// The time that has elapsed since this cycle was started.
     pub elapsed: Duration,
 }
 
@@ -50,10 +50,22 @@ impl Cycle {
         (cycle_elapsed_duration.as_seconds_f32() / self.cycle_interval.as_seconds_f32()).floor()
             as u32
     }
+}
 
-    /// Stops this process.
-    pub fn pause(&mut self, now: OffsetDateTime) {
-        if self.status != Status::InProgress {
+impl Process for Cycle {
+    // Starts this cycle.
+    fn start(&mut self, now: OffsetDateTime) {
+        if !self.can_start() {
+            return;
+        }
+
+        self.status = Status::InProgress;
+        self.started_at = Some(now);
+    }
+
+    // Pauses this cycle.
+    fn pause(&mut self, now: OffsetDateTime) {
+        if !self.can_pause() {
             return;
         }
 
@@ -66,9 +78,9 @@ impl Cycle {
         }
     }
 
-    /// Resumes this process if it would be paused.
-    pub fn resume(&mut self, now: OffsetDateTime) {
-        if self.status != Status::Paused {
+    /// Resumes this cycle.
+    fn resume(&mut self, now: OffsetDateTime) {
+        if !self.can_resume() {
             return;
         }
 
@@ -76,17 +88,20 @@ impl Cycle {
         self.status = Status::InProgress;
         self.paused_at = None;
     }
-}
 
-impl Process for Cycle {
-    /// Starts this cycle process.
-    fn start(&mut self, now: OffsetDateTime) {
-        if self.status != Status::New {
-            return;
-        }
+    /// Can this cycle be started?
+    fn can_start(&self) -> bool {
+        self.status == Status::New
+    }
 
-        self.status = Status::InProgress;
-        self.started_at = Some(now);
+    /// Can this cycle be paused?
+    fn can_pause(&self) -> bool {
+        self.status == Status::InProgress
+    }
+
+    /// Can this cycle be resumed?
+    fn can_resume(&self) -> bool {
+        self.status == Status::Paused
     }
 }
 
@@ -96,7 +111,7 @@ mod cycle_tests {
     mod new_cycle {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{Cycle, Status};
+        use crate::features::process::{Cycle, Process, Status};
 
         #[test]
         fn a_cycle_has_an_id() {

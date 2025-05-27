@@ -9,6 +9,21 @@ use time::OffsetDateTime;
 pub trait Process {    
     /// Starts this process.
     fn start(&mut self, now: OffsetDateTime);
+
+    /// Pauses this process.
+    fn pause(&mut self, now: OffsetDateTime);
+
+    /// Resumes this process.
+    fn resume(&mut self, now: OffsetDateTime);
+
+    /// Can this process be started?
+    fn can_start(&self) -> bool;
+
+    /// Can this process be paused?
+    fn can_pause(&self) -> bool;
+
+    /// Can this process be resumed?
+    fn can_resume(&self) -> bool;
 }
 
 /// Represents the status of a [`Process`].
