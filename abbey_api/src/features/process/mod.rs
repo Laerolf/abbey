@@ -24,6 +24,9 @@ pub trait Process {
 
     /// Can this process be resumed?
     fn can_resume(&self) -> bool;
+
+    /// Can this process be completed?
+    fn can_complete(&self) -> bool;
 }
 
 /// Represents the status of a [`Process`].

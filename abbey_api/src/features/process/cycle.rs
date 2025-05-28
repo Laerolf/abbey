@@ -103,6 +103,11 @@ impl Process for Cycle {
     fn can_resume(&self) -> bool {
         self.status == Status::Paused
     }
+
+    /// Can this cycle be completed?
+    fn can_complete(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
@@ -208,6 +213,15 @@ mod cycle_tests {
 
             // Then
             assert_eq!(Status::New, cycle.status);
+        }
+
+        #[test]
+        fn a_cycle_can_not_be_completed() {
+            // Given
+            let cycle = Cycle::new(Duration::minutes(1));
+
+            // When + then
+            assert!(!cycle.can_complete())
         }
     }
 

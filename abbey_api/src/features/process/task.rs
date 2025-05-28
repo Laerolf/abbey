@@ -4,6 +4,7 @@ use uuid::Uuid;
 use super::{Process, Status};
 
 /// Represents a [`super::Process`] that starts at a certain time and ends after a [`time::Duration`] has passed.
+#[derive(PartialEq, Debug)]
 pub struct Task {
     /// The ID of this task.
     pub id: Uuid,
@@ -58,6 +59,24 @@ impl Task {
 
         (task_elapsed_duration.as_seconds_f32() / self.duration.as_seconds_f32()).clamp(0.00, 1.00)
     }
+
+    /// Completes this task if possible.
+    pub fn complete(&mut self, now: OffsetDateTime) -> Result<&Self, TaskError> {
+        if !self.can_complete() {
+            return Err(TaskError::InvalidState(
+                "Cannot complete task from the current status.".into(),
+            ));
+        }
+
+        if self.progress(now) >= 1.0 {
+            self.status = Status::Completed;
+            self.started_at = None;
+            self.paused_at = None;
+            Ok(self)
+        } else {
+            Err(TaskError::NotCompleteYet)
+        }
+    }
 }
 
 impl Process for Task {
@@ -111,6 +130,18 @@ impl Process for Task {
     fn can_resume(&self) -> bool {
         self.status == Status::Paused
     }
+
+    /// Can this task be completed?
+    fn can_complete(&self) -> bool {
+        self.status != Status::New
+    }
+}
+
+/// Represents a task error.
+#[derive(Debug, PartialEq)]
+pub enum TaskError {
+    InvalidState(String),
+    NotCompleteYet,
 }
 
 #[cfg(test)]
@@ -119,7 +150,7 @@ mod task_tests {
     mod new_task {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{Process, Status, Task};
+        use crate::features::process::{task::TaskError, Process, Status, Task};
 
         #[test]
         fn a_task_has_an_id() {
@@ -219,13 +250,25 @@ mod task_tests {
             // Then
             assert_eq!(Status::New, task.status);
         }
+
+        #[test]
+        fn a_new_task_can_not_be_completed() {
+            // Given
+            let mut task = Task::new(Duration::minutes(1));
+
+            // When
+            let result = task.complete(OffsetDateTime::now_utc());
+
+            // Then
+            assert_eq!(result, Err(TaskError::InvalidState("Cannot complete task from the current status.".into())));
+        }
     }
 
     mod started_task {
 
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{Process, Status, Task};
+        use crate::features::process::{task::TaskError, Process, Status, Task};
 
         #[test]
         fn a_started_task_is_in_progress() {
@@ -349,6 +392,49 @@ mod task_tests {
 
             // Then
             assert_eq!(Status::InProgress, task.status);
+        }
+
+        #[test]
+        fn a_started_task_with_progress_less_than_1_can_not_be_completed() {
+            // Given
+            let now = OffsetDateTime::now_utc();
+            let one_minute = Duration::minutes(1);
+            let one_minute_later = now
+                .checked_add(one_minute)
+                .expect("One minute later is unknown.");
+
+            let mut task = Task::new(Duration::minutes(5));
+
+            task.start(now);
+
+            // When
+            let result = task.complete(one_minute_later);
+
+            // Then
+            assert_eq!(result, Err(TaskError::NotCompleteYet));
+        }
+
+        #[test]
+        fn a_started_task_with_progress_1_can_be_completed() {
+            // Given
+            let now = OffsetDateTime::now_utc();
+            let one_minute = Duration::minutes(1);
+            let one_minute_later = now
+                .checked_add(one_minute)
+                .expect("One minute later is unknown.");
+
+            let mut task = Task::new(one_minute);
+
+            task.start(now);
+
+            // When
+            let result = task.complete(one_minute_later);
+
+            // Then
+            assert!(result.is_ok());
+            assert_eq!(Status::Completed, task.status);
+            assert_eq!(None, task.started_at);
+            assert_eq!(None, task.paused_at);
         }
     }
 
