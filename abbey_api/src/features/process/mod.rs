@@ -1,12 +1,12 @@
 mod task;
 pub use task::Task;
 
-mod cycle;
-pub use cycle::Cycle;
+mod cyclic_process;
+pub use cyclic_process::CyclicProcess;
 use time::OffsetDateTime;
 
 /// Represents a process.
-pub trait Process {    
+pub trait Process {
     /// Starts this process.
     fn start(&mut self, now: OffsetDateTime);
 
@@ -39,5 +39,5 @@ pub enum Status {
     /// The process has been paused.
     Paused,
     /// The process has been completed.
-    Completed
+    Completed,
 }
