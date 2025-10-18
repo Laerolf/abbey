@@ -45,7 +45,7 @@ impl Resource {
 mod resource_tests {
 
     mod new_test {
-        use crate::features::resource::{Category, Resource};
+        use crate::features::output::domain::resource::{Category, Resource};
 
         #[test]
         fn a_new_resource_has_an_id() {

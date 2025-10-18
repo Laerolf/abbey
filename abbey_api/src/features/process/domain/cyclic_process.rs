@@ -1,5 +1,12 @@
+use std::{cell::RefCell, rc::Rc};
+
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
+
+use crate::{
+    features::{actor::domain::person::Person, process::error::ProcessError},
+    shared::error::DomainError,
+};
 
 use super::{Process, Status};
 
@@ -22,6 +29,9 @@ pub struct CyclicProcess {
 
     /// The time that has elapsed since this cyclic process was started.
     pub elapsed: Duration,
+
+    /// The people assigned to this cycle process.
+    pub assigned_people: Vec<Rc<RefCell<dyn Person>>>,
 }
 
 impl CyclicProcess {
@@ -34,6 +44,7 @@ impl CyclicProcess {
             paused_at: None,
             cycle_interval,
             elapsed: Duration::ZERO,
+            assigned_people: Vec::new(),
         }
     }
 
@@ -53,20 +64,38 @@ impl CyclicProcess {
 }
 
 impl Process for CyclicProcess {
+    /// Assigns a person to this cycle process.
+    fn assign_person(&mut self, person: Rc<RefCell<dyn Person>>) {
+        self.assigned_people.push(person);
+    }
+
+    /// Unassigns a person to this cycle process.
+    fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>) {
+        self.assigned_people.retain(|p| !Rc::ptr_eq(p, person));
+    }
+
+    /// Gets the status of this cyclic process.
+    fn status(&self) -> Status {
+        self.status
+    }
+
     // Starts this cyclic process.
-    fn start(&mut self, now: OffsetDateTime) {
-        if !self.can_start() {
-            return;
+    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        if self.status != Status::New {
+            return Err(Box::new(ProcessError::NotNew));
+        } else if self.assigned_people.is_empty() {
+            return Err(Box::new(ProcessError::NoAssignedPeople));
         }
 
         self.status = Status::InProgress;
         self.started_at = Some(now);
+        Ok(())
     }
 
     // Pauses this cyclic process.
-    fn pause(&mut self, now: OffsetDateTime) {
-        if !self.can_pause() {
-            return;
+    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        if self.status != Status::InProgress {
+            return Err(Box::new(ProcessError::NotInProgress));
         }
 
         if let Some(started_at) = self.started_at {
@@ -76,37 +105,22 @@ impl Process for CyclicProcess {
             self.status = Status::Paused;
             self.started_at = None;
         }
+
+        Ok(())
     }
 
     /// Resumes this cyclic process.
-    fn resume(&mut self, now: OffsetDateTime) {
-        if !self.can_resume() {
-            return;
+    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        if self.status != Status::Paused {
+            return Err(Box::new(ProcessError::NotPaused));
+        } else if self.assigned_people.is_empty() {
+            return Err(Box::new(ProcessError::NoAssignedPeople));
         }
 
         self.started_at = Some(now);
         self.status = Status::InProgress;
         self.paused_at = None;
-    }
-
-    /// Can this cyclic process be started?
-    fn can_start(&self) -> bool {
-        self.status == Status::New
-    }
-
-    /// Can this cyclic process be paused?
-    fn can_pause(&self) -> bool {
-        self.status == Status::InProgress
-    }
-
-    /// Can this cyclic process be resumed?
-    fn can_resume(&self) -> bool {
-        self.status == Status::Paused
-    }
-
-    /// Can this cyclic process be completed?
-    fn can_complete(&self) -> bool {
-        false
+        Ok(())
     }
 }
 
@@ -116,7 +130,7 @@ mod cyclic_process_tests {
     mod new_cyclic_process {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{CyclicProcess, Process, Status};
+        use crate::features::process::domain::{CyclicProcess, Process, Status};
 
         #[test]
         fn a_cyclic_process_has_an_id() {
@@ -195,7 +209,7 @@ mod cyclic_process_tests {
             let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
 
             // When
-            cyclic_process.pause(OffsetDateTime::now_utc());
+            let _ = cyclic_process.pause(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::New, cyclic_process.status);
@@ -206,29 +220,20 @@ mod cyclic_process_tests {
             // Given
             let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
 
-            cyclic_process.pause(OffsetDateTime::now_utc());
+            let _ = cyclic_process.pause(OffsetDateTime::now_utc());
 
             // When
-            cyclic_process.resume(OffsetDateTime::now_utc());
+            let _ = cyclic_process.resume(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::New, cyclic_process.status);
-        }
-
-        #[test]
-        fn a_cyclic_process_can_not_be_completed() {
-            // Given
-            let cyclic_process = CyclicProcess::new(Duration::minutes(1));
-
-            // When + then
-            assert!(!cyclic_process.can_complete())
         }
     }
 
     mod started_cyclic_process {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{CyclicProcess, Process, Status};
+        use crate::features::process::domain::{CyclicProcess, Process, Status};
 
         #[test]
         fn a_started_cyclic_process_is_in_progress() {
@@ -236,7 +241,7 @@ mod cyclic_process_tests {
             let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
 
             // When
-            cyclic_process.start(OffsetDateTime::now_utc());
+            let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::InProgress, cyclic_process.status);
@@ -249,7 +254,7 @@ mod cyclic_process_tests {
             let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
 
             // When
-            cyclic_process.start(OffsetDateTime::now_utc());
+            let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
             // Then
             let started_before = OffsetDateTime::now_utc();
@@ -279,7 +284,7 @@ mod cyclic_process_tests {
             let mut cyclic_process = CyclicProcess::new(cycle_duration);
 
             // When
-            cyclic_process.start(OffsetDateTime::now_utc());
+            let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(
@@ -300,10 +305,10 @@ mod cyclic_process_tests {
             let cycle_duration = Duration::minutes(1);
             let mut cyclic_process = CyclicProcess::new(cycle_duration);
 
-            cyclic_process.start(now);
+            let _ = cyclic_process.start(now);
 
             // When
-            cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
+            let _ = cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
 
             // Then
             assert_eq!(Status::Paused, cyclic_process.status);
@@ -322,11 +327,11 @@ mod cyclic_process_tests {
             let cycle_duration = Duration::minutes(1);
             let mut cyclic_process = CyclicProcess::new(cycle_duration);
 
-            cyclic_process.start(now);
+            let _ = cyclic_process.start(now);
             cyclic_process.started_at = None;
 
             // When
-            cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
+            let _ = cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
 
             // Then
             assert_eq!(Status::InProgress, cyclic_process.status);
@@ -336,17 +341,17 @@ mod cyclic_process_tests {
     mod paused_cyclic_process {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{CyclicProcess, Process, Status};
+        use crate::features::process::domain::{CyclicProcess, Process, Status};
 
         #[test]
         fn a_paused_cyclic_process_is_paused() {
             // Given
             let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
 
-            cyclic_process.start(OffsetDateTime::now_utc());
+            let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
             // When
-            cyclic_process.pause(OffsetDateTime::now_utc());
+            let _ = cyclic_process.pause(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::Paused, cyclic_process.status);
@@ -357,11 +362,11 @@ mod cyclic_process_tests {
             // Given
             let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
 
-            cyclic_process.start(OffsetDateTime::now_utc());
-            cyclic_process.pause(OffsetDateTime::now_utc());
+            let _ = cyclic_process.start(OffsetDateTime::now_utc());
+            let _ = cyclic_process.pause(OffsetDateTime::now_utc());
 
             // When
-            cyclic_process.start(OffsetDateTime::now_utc());
+            let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::Paused, cyclic_process.status);
@@ -372,10 +377,10 @@ mod cyclic_process_tests {
             // Given
             let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
 
-            cyclic_process.start(OffsetDateTime::now_utc());
+            let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
             // When
-            cyclic_process.pause(OffsetDateTime::now_utc());
+            let _ = cyclic_process.pause(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(None, cyclic_process.started_at);
@@ -396,11 +401,11 @@ mod cyclic_process_tests {
 
             let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
 
-            cyclic_process.start(now);
-            cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
+            let _ = cyclic_process.start(now);
+            let _ = cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
 
             // When
-            cyclic_process.resume(twenty_minutes_later);
+            let _ = cyclic_process.resume(twenty_minutes_later);
 
             // Then
             assert_eq!(Status::InProgress, cyclic_process.status);
@@ -419,10 +424,10 @@ mod cyclic_process_tests {
             let cycle_duration = Duration::minutes(1);
             let mut cyclic_process = CyclicProcess::new(cycle_duration);
 
-            cyclic_process.start(OffsetDateTime::now_utc());
+            let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
             // When
-            cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
+            let _ = cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
 
             // Then
             assert_eq!(

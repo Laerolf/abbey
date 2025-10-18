@@ -1,10 +1,16 @@
+use std::{cell::RefCell, rc::Rc};
+
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
+
+use crate::{
+    features::{actor::domain::person::Person, process::error::ProcessError},
+    shared::error::DomainError,
+};
 
 use super::{Process, Status};
 
 /// Represents a [`super::Process`] that starts at a certain time and ends after a [`time::Duration`] has passed.
-#[derive(PartialEq, Debug)]
 pub struct Task {
     /// The ID of this task.
     pub id: Uuid,
@@ -23,6 +29,9 @@ pub struct Task {
 
     /// The time that has elapsed since the task was started.
     pub elapsed: Duration,
+
+    /// The people assigned to this task.
+    pub assigned_people: Vec<Rc<RefCell<dyn Person>>>,
 }
 
 impl Task {
@@ -35,6 +44,7 @@ impl Task {
             paused_at: None,
             duration,
             elapsed: Duration::ZERO,
+            assigned_people: Vec::new(),
         }
     }
 
@@ -59,41 +69,41 @@ impl Task {
 
         (task_elapsed_duration.as_seconds_f32() / self.duration.as_seconds_f32()).clamp(0.00, 1.00)
     }
-
-    /// Completes this task if possible.
-    pub fn complete(&mut self, now: OffsetDateTime) -> Result<&Self, TaskError> {
-        if !self.can_complete() {
-            return Err(TaskError::InvalidState(
-                "Cannot complete task from the current status.".into(),
-            ));
-        }
-
-        if self.progress(now) >= 1.0 {
-            self.status = Status::Completed;
-            self.started_at = None;
-            self.paused_at = None;
-            Ok(self)
-        } else {
-            Err(TaskError::NotCompleteYet)
-        }
-    }
 }
 
 impl Process for Task {
+    /// Assigns a person to this task.
+    fn assign_person(&mut self, person: Rc<RefCell<dyn Person>>) {
+        self.assigned_people.push(person);
+    }
+
+    /// Unassigns a person to this task.
+    fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>) {
+        self.assigned_people.retain(|p| !Rc::ptr_eq(p, person));
+    }
+
+    /// Gets the status of this task.
+    fn status(&self) -> Status {
+        self.status
+    }
+
     /// Starts this task.
-    fn start(&mut self, now: OffsetDateTime) {
-        if !self.can_start() {
-            return;
+    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        if self.status != Status::New {
+            return Err(Box::new(ProcessError::NotNew));
+        } else if self.assigned_people.is_empty() {
+            return Err(Box::new(ProcessError::NoAssignedPeople));
         }
 
         self.status = Status::InProgress;
         self.started_at = Some(now);
+        Ok(())
     }
 
     /// Pauses this task.
-    fn pause(&mut self, now: OffsetDateTime) {
-        if !self.can_pause() {
-            return;
+    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        if self.status != Status::InProgress {
+            return Err(Box::new(ProcessError::NotInProgress));
         }
 
         if let Some(started_at) = self.started_at {
@@ -103,45 +113,41 @@ impl Process for Task {
             self.status = Status::Paused;
             self.started_at = None;
         }
+
+        Ok(())
     }
 
     /// Resumes this task.
-    fn resume(&mut self, now: OffsetDateTime) {
-        if !self.can_resume() {
-            return;
+    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        if self.status != Status::Paused {
+            return Err(Box::new(ProcessError::NotPaused));
+        } else if self.assigned_people.is_empty() {
+            return Err(Box::new(ProcessError::NoAssignedPeople));
         }
 
         self.started_at = Some(now);
         self.status = Status::InProgress;
         self.paused_at = None;
+        Ok(())
     }
 
-    /// Can this task be started?
-    fn can_start(&self) -> bool {
-        self.status == Status::New
-    }
+    /// Completes this task if possible.
+    fn complete(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        if self.status != Status::New {
+            return Err(Box::new(ProcessError::NotNew));
+        } else if self.assigned_people.is_empty() {
+            return Err(Box::new(ProcessError::NoAssignedPeople));
+        }
 
-    /// Can this task be paused?
-    fn can_pause(&self) -> bool {
-        self.status == Status::InProgress
+        if self.progress(now) >= 1.0 {
+            self.status = Status::Completed;
+            self.started_at = None;
+            self.paused_at = None;
+            Ok(())
+        } else {
+            Err(Box::new(ProcessError::NotComplete))
+        }
     }
-
-    /// Can this task be resumed?
-    fn can_resume(&self) -> bool {
-        self.status == Status::Paused
-    }
-
-    /// Can this task be completed?
-    fn can_complete(&self) -> bool {
-        self.status != Status::New
-    }
-}
-
-/// Represents a task error.
-#[derive(Debug, PartialEq)]
-pub enum TaskError {
-    InvalidState(String),
-    NotCompleteYet,
 }
 
 #[cfg(test)]
@@ -150,7 +156,7 @@ mod task_tests {
     mod new_task {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{task::TaskError, Process, Status, Task};
+        use crate::features::process::domain::{Process, Status, Task};
 
         #[test]
         fn a_task_has_an_id() {
@@ -233,7 +239,7 @@ mod task_tests {
             let mut task = Task::new(Duration::minutes(1));
 
             // When
-            task.pause(OffsetDateTime::now_utc());
+            let _ = task.pause(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::New, task.status);
@@ -245,22 +251,10 @@ mod task_tests {
             let mut task = Task::new(Duration::minutes(1));
 
             // When
-            task.resume(OffsetDateTime::now_utc());
+            let _ = task.resume(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::New, task.status);
-        }
-
-        #[test]
-        fn a_new_task_can_not_be_completed() {
-            // Given
-            let mut task = Task::new(Duration::minutes(1));
-
-            // When
-            let result = task.complete(OffsetDateTime::now_utc());
-
-            // Then
-            assert_eq!(result, Err(TaskError::InvalidState("Cannot complete task from the current status.".into())));
         }
     }
 
@@ -268,7 +262,7 @@ mod task_tests {
 
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{task::TaskError, Process, Status, Task};
+        use crate::features::process::domain::{Process, Status, Task};
 
         #[test]
         fn a_started_task_is_in_progress() {
@@ -276,7 +270,7 @@ mod task_tests {
             let mut task = Task::new(Duration::minutes(1));
 
             // When
-            task.start(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::InProgress, task.status);
@@ -289,7 +283,7 @@ mod task_tests {
             let mut task = Task::new(Duration::minutes(1));
 
             // When
-            task.start(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
 
             // Then
             let started_before = OffsetDateTime::now_utc();
@@ -316,7 +310,7 @@ mod task_tests {
             let mut task = Task::new(duration);
 
             // When
-            task.start(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
 
             // Then
             assert!(setup_time.checked_add(duration) < task.ends_at(OffsetDateTime::now_utc()));
@@ -337,7 +331,7 @@ mod task_tests {
             let mut task = Task::new(Duration::minutes(1));
 
             // When
-            task.start(now);
+            let _ = task.start(now);
 
             // Then
             let task_progress = task.progress(timeout);
@@ -356,7 +350,7 @@ mod task_tests {
 
             let mut task = Task::new(Duration::minutes(1));
 
-            task.start(now);
+            let _ = task.start(now);
 
             // When
             task.started_at = None;
@@ -370,10 +364,10 @@ mod task_tests {
             // Given
             let mut task = Task::new(Duration::minutes(1));
 
-            task.start(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
 
             // When
-            task.pause(OffsetDateTime::now_utc());
+            let _ = task.pause(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::Paused, task.status);
@@ -384,34 +378,14 @@ mod task_tests {
             // Given
             let mut task = Task::new(Duration::minutes(1));
 
-            task.start(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
             task.started_at = None;
 
             // When
-            task.pause(OffsetDateTime::now_utc());
+            let _ = task.pause(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::InProgress, task.status);
-        }
-
-        #[test]
-        fn a_started_task_with_progress_less_than_1_can_not_be_completed() {
-            // Given
-            let now = OffsetDateTime::now_utc();
-            let one_minute = Duration::minutes(1);
-            let one_minute_later = now
-                .checked_add(one_minute)
-                .expect("One minute later is unknown.");
-
-            let mut task = Task::new(Duration::minutes(5));
-
-            task.start(now);
-
-            // When
-            let result = task.complete(one_minute_later);
-
-            // Then
-            assert_eq!(result, Err(TaskError::NotCompleteYet));
         }
 
         #[test]
@@ -425,7 +399,7 @@ mod task_tests {
 
             let mut task = Task::new(one_minute);
 
-            task.start(now);
+            let _ = task.start(now);
 
             // When
             let result = task.complete(one_minute_later);
@@ -441,7 +415,7 @@ mod task_tests {
     mod paused_task {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::{Process, Status, Task};
+        use crate::features::process::domain::{Process, Status, Task};
 
         #[test]
         fn a_paused_task_has_elapsed_time() {
@@ -454,10 +428,10 @@ mod task_tests {
 
             let mut task = Task::new(Duration::minutes(1));
 
-            task.start(now);
+            let _ = task.start(now);
 
             // When
-            task.pause(thirty_seconds_later);
+            let _ = task.pause(thirty_seconds_later);
 
             // Then
             assert_eq!(thirty_seconds, task.elapsed);
@@ -473,10 +447,10 @@ mod task_tests {
 
             let mut task = Task::new(Duration::minutes(1));
 
-            task.start(now);
+            let _ = task.start(now);
 
             // When
-            task.pause(thirty_seconds_later);
+            let _ = task.pause(thirty_seconds_later);
 
             // Then
             assert!(task.progress(thirty_seconds_later) > 0.4);
@@ -494,10 +468,10 @@ mod task_tests {
             let task_duration = Duration::minutes(1);
             let mut task = Task::new(task_duration);
 
-            task.start(now);
+            let _ = task.start(now);
 
             // When
-            task.pause(thirty_seconds_later);
+            let _ = task.pause(thirty_seconds_later);
 
             // Then
             assert!(
@@ -511,10 +485,10 @@ mod task_tests {
             // Given
             let mut task = Task::new(Duration::minutes(1));
 
-            task.start(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
 
             // When
-            task.pause(OffsetDateTime::now_utc());
+            let _ = task.pause(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(None, task.started_at);
@@ -525,11 +499,11 @@ mod task_tests {
             // Given
             let mut task = Task::new(Duration::minutes(1));
 
-            task.start(OffsetDateTime::now_utc());
-            task.pause(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
+            let _ = task.pause(OffsetDateTime::now_utc());
 
             // When
-            task.start(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::Paused, task.status);
@@ -540,11 +514,11 @@ mod task_tests {
             // Given
             let mut task = Task::new(Duration::minutes(1));
 
-            task.start(OffsetDateTime::now_utc());
-            task.pause(OffsetDateTime::now_utc());
+            let _ = task.start(OffsetDateTime::now_utc());
+            let _ = task.pause(OffsetDateTime::now_utc());
 
             // When
-            task.resume(OffsetDateTime::now_utc());
+            let _ = task.resume(OffsetDateTime::now_utc());
 
             // Then
             assert_eq!(Status::InProgress, task.status);

@@ -1,5 +1,6 @@
+pub mod actor;
+pub mod assignment;
+pub mod output;
 pub mod process;
-
-mod output;
-pub use output::resource;
-pub use output::Output;
+pub mod skill;
+pub mod source;
