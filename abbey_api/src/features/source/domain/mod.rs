@@ -1,12 +1,15 @@
 use std::{cell::RefCell, rc::Rc};
 
-use rand::seq::SliceRandom;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
-use crate::features::{
-    output::domain::{resource::Resource, Output},
-    process::domain::{CyclicProcess, Process},
+use crate::{
+    features::{
+        output::domain::{resource::Resource, Output},
+        process::domain::{CyclicProcess, Process},
+        source::error::SourceError,
+    },
+    shared::error::DomainError,
 };
 
 /// Represents a source.
@@ -17,14 +20,8 @@ pub struct Source {
     /// The process of this source.
     process: Rc<RefCell<CyclicProcess>>,
 
-    /// The possible resources outputted by this source.
-    possible_resources: Vec<Resource>,
-
     /// The last time a claim was made for the output of the completed cycles of this source.
     last_claim_at: Option<OffsetDateTime>,
-
-    /// The base out per person at the end of a process cycle.
-    base_output_per_person: i32,
 }
 
 impl Source {
@@ -32,52 +29,33 @@ impl Source {
     pub fn new(
         possible_resources: Vec<Resource>,
         cycle_duration: Duration,
-        base_output_per_person: i32,
-    ) -> Self {
+    ) -> Result<Self, Box<dyn DomainError>> {
         if possible_resources.is_empty() {
-            panic!("A source needs possible resources.");
+            return Err(Box::new(SourceError::NoPossibleResources));
         }
 
-        let process = CyclicProcess::new(cycle_duration);
+        let process = CyclicProcess::new(cycle_duration, possible_resources);
 
-        Self {
+        Ok(Self {
             id: Uuid::new_v4(),
             process: Rc::new(RefCell::new(process)),
-            possible_resources,
             last_claim_at: None,
-            base_output_per_person,
-        }
+        })
     }
 
     /// Starts the process of this source.
-    pub fn start_fetching(&mut self, now: OffsetDateTime) {
-        self.process.borrow_mut().start(now);
+    pub fn start_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        return self.process.borrow_mut().start(now);
     }
 
     /// Pauses the process of this source.
-    pub fn pause_fetching(&mut self, now: OffsetDateTime) {
-        self.process.borrow_mut().pause(now);
+    pub fn pause_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        return self.process.borrow_mut().pause(now);
     }
 
     /// Resumes the process of this source.
-    pub fn resume_fetching(&mut self, now: OffsetDateTime) {
-        self.process.borrow_mut().resume(now);
-    }
-
-    /// Determines output.
-    fn determine_output(&self) -> Option<Output> {
-        let mut random_number_generator = rand::thread_rng();
-        // TODO: Use weights
-        let resource_range: Vec<usize> = (0..(self.possible_resources.len())).collect();
-
-        match resource_range.choose(&mut random_number_generator) {
-            None => None,
-            Some(selected_resource_index) => self
-                .possible_resources
-                .get(*selected_resource_index)
-                // TODO: Use dynamic amounts
-                .map(|selected_resource| Output::new(selected_resource.clone(), 10)),
-        }
+    pub fn resume_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+        return self.process.borrow_mut().resume(now);
     }
 
     /// Claims the output of this source's completed process cycles.
@@ -94,7 +72,7 @@ impl Source {
         }
 
         (0..completed_cycles_since_last_claim)
-            .map(|_| self.determine_output())
+            .map(|_| self.process.borrow_mut().get_yield())
             .collect()
     }
 }
@@ -105,9 +83,12 @@ mod source_tests {
     mod new_source {
         use time::Duration;
 
-        use crate::features::{
-            output::domain::resource::{Category, Resource},
-            source::domain::Source,
+        use crate::{
+            features::{
+                output::domain::resource::{Category, Resource},
+                source::{domain::Source, error::SourceError},
+            },
+            shared::error::DomainError,
         };
 
         #[test]
@@ -117,7 +98,7 @@ mod source_tests {
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let source = Source::new(source_resources, cycle_duration, 1);
+            let source = Source::new(source_resources, cycle_duration).unwrap();
 
             // Then
             assert!(!source.id.to_string().is_empty());
@@ -130,23 +111,10 @@ mod source_tests {
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let source = Source::new(source_resources, cycle_duration, 1);
+            let source = Source::new(source_resources, cycle_duration).unwrap();
 
             // Then
             assert!(!source.process.borrow().id.to_string().is_empty());
-        }
-
-        #[test]
-        fn a_new_source_has_possible_resources() {
-            // Given
-            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
-            let cycle_duration = Duration::minutes(1);
-
-            // When
-            let source = Source::new(source_resources, cycle_duration, 1);
-
-            // Then
-            assert!(!source.possible_resources.is_empty());
         }
 
         #[test]
@@ -156,12 +124,14 @@ mod source_tests {
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let source = std::panic::catch_unwind(|| {
-                Source::new(source_resources, cycle_duration, 1);
-            });
+            let creation_attempt = Source::new(source_resources, cycle_duration);
 
             // Then
-            assert!(source.is_err());
+            assert!(creation_attempt.is_err());
+            assert_eq!(
+                SourceError::NoPossibleResources.code(),
+                creation_attempt.err().unwrap().code()
+            )
         }
 
         #[test]
@@ -171,7 +141,7 @@ mod source_tests {
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let source = Source::new(source_resources, cycle_duration, 1);
+            let source = Source::new(source_resources, cycle_duration).unwrap();
 
             // Then
             assert_eq!(None, source.last_claim_at);
@@ -183,12 +153,18 @@ mod source_tests {
 
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::{
-            actor::domain::{monk::Monk, person::Person},
-            assignment::domain::ProcessAssignmentFactory,
-            output::domain::resource::{Category, Resource},
-            process::domain::{Process, Status},
-            source::domain::Source,
+        use crate::{
+            features::{
+                actor::domain::{monk::Monk, person::Person},
+                assignment::domain::ProcessAssignmentFactory,
+                output::domain::resource::{Category, Resource},
+                process::{
+                    domain::{Process, Status},
+                    error::ProcessError,
+                },
+                source::domain::Source,
+            },
+            shared::error::DomainError,
         };
 
         #[test]
@@ -198,23 +174,26 @@ mod source_tests {
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let attempt = std::panic::catch_unwind(|| {
-                let mut source = Source::new(source_resources, cycle_duration, 1);
-                source.start_fetching(OffsetDateTime::now_utc());
-            });
+            let mut source = Source::new(source_resources, cycle_duration).unwrap();
+
+            let attempt = source.start_fetching(OffsetDateTime::now_utc());
 
             // Then
             assert!(attempt.is_err());
+            assert_eq!(
+                ProcessError::NoAssignedPeople.code(),
+                attempt.err().unwrap().code()
+            )
         }
 
         #[test]
-        fn a_fetching_source_has_a_progress_in_progress() {
+        fn a_fetching_source_has_a_process_in_progress() {
             // Given
             let source_resources = vec![Resource::new("wood".into(), Category::Material)];
             let cycle_duration = Duration::minutes(1);
             let monk = Monk::new();
 
-            let mut source = Source::new(source_resources, cycle_duration, 1);
+            let mut source = Source::new(source_resources, cycle_duration).unwrap();
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(monk));
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
@@ -225,9 +204,10 @@ mod source_tests {
             );
 
             // When
-            source.start_fetching(OffsetDateTime::now_utc());
+            let attempt = source.start_fetching(OffsetDateTime::now_utc());
 
             // Then
+            assert!(attempt.is_ok());
             assert_eq!(Status::InProgress, process_rc.borrow().status());
         }
 
@@ -239,7 +219,7 @@ mod source_tests {
             let wood = Resource::new("wood".into(), Category::Material);
             let source_resources = vec![wood];
 
-            let mut source = Source::new(source_resources, Duration::minutes(1), 1);
+            let mut source = Source::new(source_resources, Duration::minutes(1)).unwrap();
 
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
             let process_rc: Rc<RefCell<dyn Process>> =
@@ -250,12 +230,13 @@ mod source_tests {
                 Rc::clone(&process_rc),
             );
 
-            source.start_fetching(now);
+            let attempt = source.start_fetching(now);
 
             // When
             let claimed_resources = source.claim(now);
 
             // Then
+            assert!(attempt.is_ok());
             assert!(claimed_resources.is_empty());
         }
 
@@ -266,42 +247,7 @@ mod source_tests {
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let attempt = std::panic::catch_unwind(|| {
-                let mut source = Source::new(source_resources, cycle_duration, 1);
-
-                let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
-                let process_rc: Rc<RefCell<dyn Process>> =
-                    Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
-
-                ProcessAssignmentFactory::assign_process_to_person(
-                    Rc::clone(&monk_rc),
-                    Rc::clone(&process_rc),
-                );
-
-                source.start_fetching(OffsetDateTime::now_utc());
-                source.pause_fetching(OffsetDateTime::now_utc());
-
-                ProcessAssignmentFactory::unassign_process_from_person(
-                    Rc::clone(&monk_rc),
-                    Rc::clone(&process_rc),
-                );
-
-                source.resume_fetching(OffsetDateTime::now_utc());
-            });
-
-            // Then
-            assert!(attempt.is_err());
-        }
-
-        #[test]
-        fn a_fetching_source_gives_resources_after_at_least_one_completed_cycle() {
-            // Given
-            let cycle_duration = Duration::minutes(1);
-
-            let wood = Resource::new("wood".into(), Category::Material);
-            let source_resources = vec![wood];
-
-            let mut source = Source::new(source_resources, cycle_duration, 1);
+            let mut source = Source::new(source_resources, cycle_duration).unwrap();
 
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
             let process_rc: Rc<RefCell<dyn Process>> =
@@ -312,7 +258,47 @@ mod source_tests {
                 Rc::clone(&process_rc),
             );
 
-            source.start_fetching(OffsetDateTime::now_utc());
+            let start_attempt = source.start_fetching(OffsetDateTime::now_utc());
+            assert!(start_attempt.is_ok());
+
+            let pause_attempt = source.pause_fetching(OffsetDateTime::now_utc());
+            assert!(pause_attempt.is_ok());
+
+            ProcessAssignmentFactory::unassign_process_from_person(
+                Rc::clone(&monk_rc),
+                Rc::clone(&process_rc),
+            );
+
+            let attempt = source.resume_fetching(OffsetDateTime::now_utc());
+
+            // Then
+            assert!(attempt.is_err());
+            assert_eq!(
+                ProcessError::NoAssignedPeople.code(),
+                attempt.err().unwrap().code()
+            )
+        }
+
+        #[test]
+        fn a_fetching_source_gives_resources_after_at_least_one_completed_cycle() {
+            // Given
+            let cycle_duration = Duration::minutes(1);
+
+            let wood = Resource::new("wood".into(), Category::Material);
+            let source_resources = vec![wood];
+
+            let mut source = Source::new(source_resources, cycle_duration).unwrap();
+
+            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
+            let process_rc: Rc<RefCell<dyn Process>> =
+                Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
+
+            ProcessAssignmentFactory::assign_process_to_person(
+                Rc::clone(&monk_rc),
+                Rc::clone(&process_rc),
+            );
+
+            let attempt = source.start_fetching(OffsetDateTime::now_utc());
 
             // When
             let claimed_resources = source.claim(
@@ -322,14 +308,12 @@ mod source_tests {
             );
 
             // Then
+            assert!(attempt.is_ok());
             assert_eq!(1, claimed_resources.len());
 
-            match claimed_resources.first().unwrap() {
-                None => panic!("There should be at least one output."),
-                Some(output) => {
-                    assert_eq!("wood", output.resource.name);
-                    assert_eq!(10, output.quantity);
-                }
+            if let Some(first_claim) = claimed_resources.first() {
+                assert_eq!("wood", first_claim.as_ref().unwrap().resource.name);
+                assert_eq!(10, first_claim.as_ref().unwrap().quantity);
             }
         }
     }

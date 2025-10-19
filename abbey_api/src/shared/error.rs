@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-pub trait DomainError {
+pub trait DomainError: std::error::Error + std::fmt::Debug {
     fn code(&self) -> &'static str;
     fn message(&self) -> &'static str;
 }
@@ -9,6 +9,8 @@ pub trait DomainError {
 pub enum SharedError {
     NotAvailable,
 }
+
+impl std::error::Error for SharedError {}
 
 impl DomainError for SharedError {
     fn code(&self) -> &'static str {

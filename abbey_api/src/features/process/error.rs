@@ -11,6 +11,8 @@ pub enum ProcessError {
     NoAssignedPeople,
 }
 
+impl std::error::Error for ProcessError {}
+
 impl DomainError for ProcessError {
     fn code(&self) -> &'static str {
         match self {

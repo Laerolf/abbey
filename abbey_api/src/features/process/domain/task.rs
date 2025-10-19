@@ -4,7 +4,9 @@ use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 use crate::{
-    features::{actor::domain::person::Person, process::error::ProcessError},
+    features::{
+        actor::domain::person::Person, output::domain::Output, process::error::ProcessError,
+    },
     shared::error::DomainError,
 };
 
@@ -147,6 +149,11 @@ impl Process for Task {
         } else {
             Err(Box::new(ProcessError::NotComplete))
         }
+    }
+
+    /// Gets the output of this task.
+    fn get_yield(&self) -> Option<Output> {
+        None
     }
 }
 

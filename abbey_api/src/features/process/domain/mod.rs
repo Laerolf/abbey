@@ -8,7 +8,7 @@ pub use cyclic_process::CyclicProcess;
 use time::OffsetDateTime;
 
 use crate::{
-    features::actor::domain::person::Person,
+    features::{actor::domain::person::Person, output::domain::Output},
     shared::error::{DomainError, SharedError},
 };
 
@@ -31,6 +31,9 @@ pub trait Process {
 
     /// Resumes this process.
     fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>>;
+
+    /// Gets the yield of this process.
+    fn get_yield(&self) -> Option<Output>;
 
     /// Completes this process.
     fn complete(&mut self, _now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {

@@ -1,10 +1,15 @@
 use std::{cell::RefCell, rc::Rc};
 
+use rand::seq::SliceRandom;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 use crate::{
-    features::{actor::domain::person::Person, process::error::ProcessError},
+    features::{
+        actor::domain::person::Person,
+        output::domain::{resource::Resource, Output},
+        process::error::ProcessError,
+    },
     shared::error::DomainError,
 };
 
@@ -17,6 +22,9 @@ pub struct CyclicProcess {
 
     /// The status of this cyclic process.
     pub status: Status,
+
+    /// The possible resources outputted by this cyclic process.
+    output_resources: Vec<Resource>,
 
     /// The time this cyclic process was started last.
     pub started_at: Option<OffsetDateTime>,
@@ -36,10 +44,11 @@ pub struct CyclicProcess {
 
 impl CyclicProcess {
     /// Creates a new `CycleProcess` based on the provided cycle [`time::Duration`].
-    pub fn new(cycle_interval: Duration) -> Self {
+    pub fn new(cycle_interval: Duration, output_resources: Vec<Resource>) -> Self {
         Self {
             id: Uuid::new_v4(),
             status: Status::New,
+            output_resources,
             started_at: None,
             paused_at: None,
             cycle_interval,
@@ -122,6 +131,22 @@ impl Process for CyclicProcess {
         self.paused_at = None;
         Ok(())
     }
+
+    /// Gets the output of a cycle of this cyclic process.
+    fn get_yield(&self) -> Option<Output> {
+        let mut random_number_generator = rand::thread_rng();
+        // TODO: Use weights
+        let resource_range: Vec<usize> = (0..(self.output_resources.len())).collect();
+
+        match resource_range.choose(&mut random_number_generator) {
+            None => None,
+            Some(selected_resource_index) => self
+                .output_resources
+                .get(*selected_resource_index)
+                // TODO: Use dynamic amounts
+                .map(|selected_resource| Output::new(selected_resource.clone(), 10)),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -130,12 +155,18 @@ mod cyclic_process_tests {
     mod new_cyclic_process {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::domain::{CyclicProcess, Process, Status};
+        use crate::features::{
+            output::domain::resource::{Category, Resource},
+            process::domain::{CyclicProcess, Process, Status},
+        };
 
         #[test]
         fn a_cyclic_process_has_an_id() {
+            // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+
             // When
-            let cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // Then
             assert!(!cyclic_process.id.to_string().is_empty());
@@ -143,8 +174,11 @@ mod cyclic_process_tests {
 
         #[test]
         fn a_new_cyclic_process_is_new() {
+            // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+
             // When
-            let cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // Then
             assert_eq!(Status::New, cyclic_process.status);
@@ -154,9 +188,10 @@ mod cyclic_process_tests {
         fn a_cyclic_process_has_an_duration() {
             // Given
             let cycle_duration = Duration::minutes(1);
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
 
             // When
-            let cyclic_process = CyclicProcess::new(cycle_duration);
+            let cyclic_process = CyclicProcess::new(cycle_duration, resources);
 
             // Then
             assert_eq!(cycle_duration, cyclic_process.cycle_interval);
@@ -164,8 +199,11 @@ mod cyclic_process_tests {
 
         #[test]
         fn a_cyclic_process_has_no_initial_start_time() {
+            // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+
             // When
-            let cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // Then
             assert_eq!(None, cyclic_process.started_at);
@@ -174,12 +212,13 @@ mod cyclic_process_tests {
         #[test]
         fn a_cyclic_process_has_no_initial_completed_cycles() {
             // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
             let ten_minutes_later = OffsetDateTime::now_utc()
                 .checked_add(Duration::minutes(10))
                 .expect("10 minutes later is unknown.");
 
             // When
-            let cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // Then
             assert_eq!(0, cyclic_process.completed_cycles(ten_minutes_later));
@@ -187,8 +226,11 @@ mod cyclic_process_tests {
 
         #[test]
         fn a_cyclic_process_has_no_initial_elapsed_duration() {
+            // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+
             // When
-            let cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // Then
             assert_eq!(Duration::ZERO, cyclic_process.elapsed);
@@ -196,8 +238,11 @@ mod cyclic_process_tests {
 
         #[test]
         fn a_cyclic_process_has_no_paused_time() {
+            // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+
             // When
-            let cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // Then
             assert_eq!(None, cyclic_process.paused_at);
@@ -206,7 +251,8 @@ mod cyclic_process_tests {
         #[test]
         fn a_new_cyclic_process_can_not_be_paused() {
             // Given
-            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // When
             let _ = cyclic_process.pause(OffsetDateTime::now_utc());
@@ -218,7 +264,8 @@ mod cyclic_process_tests {
         #[test]
         fn a_new_cyclic_process_can_not_be_resumed() {
             // Given
-            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             let _ = cyclic_process.pause(OffsetDateTime::now_utc());
 
@@ -233,12 +280,16 @@ mod cyclic_process_tests {
     mod started_cyclic_process {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::domain::{CyclicProcess, Process, Status};
+        use crate::features::{
+            output::domain::resource::{Category, Resource},
+            process::domain::{CyclicProcess, Process, Status},
+        };
 
         #[test]
         fn a_started_cyclic_process_is_in_progress() {
             // Given
-            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // When
             let _ = cyclic_process.start(OffsetDateTime::now_utc());
@@ -250,8 +301,9 @@ mod cyclic_process_tests {
         #[test]
         fn a_started_cyclic_process_has_a_start_time() {
             // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
             let started_after = OffsetDateTime::now_utc();
-            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             // When
             let _ = cyclic_process.start(OffsetDateTime::now_utc());
@@ -276,12 +328,13 @@ mod cyclic_process_tests {
         #[test]
         fn a_started_cyclic_process_has_completed_cycles_after_10_minutes() {
             // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
             let ten_minutes_and_thirty_seconds_later = OffsetDateTime::now_utc()
                 .checked_add(Duration::seconds((10 * 60) + 30))
                 .expect("10 minutes and 30 seconds later is unknown.");
 
             let cycle_duration = Duration::minutes(1);
-            let mut cyclic_process = CyclicProcess::new(cycle_duration);
+            let mut cyclic_process = CyclicProcess::new(cycle_duration, resources);
 
             // When
             let _ = cyclic_process.start(OffsetDateTime::now_utc());
@@ -296,6 +349,7 @@ mod cyclic_process_tests {
         #[test]
         fn a_started_cyclic_process_can_be_paused() {
             // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
             let ten_minutes_and_thirty_seconds = Duration::seconds((10 * 60) + 30);
             let now = OffsetDateTime::now_utc();
             let ten_minutes_and_thirty_seconds_later = now
@@ -303,7 +357,7 @@ mod cyclic_process_tests {
                 .expect("10 minutes and 30 seconds later is unknown.");
 
             let cycle_duration = Duration::minutes(1);
-            let mut cyclic_process = CyclicProcess::new(cycle_duration);
+            let mut cyclic_process = CyclicProcess::new(cycle_duration, resources);
 
             let _ = cyclic_process.start(now);
 
@@ -318,6 +372,7 @@ mod cyclic_process_tests {
         #[test]
         fn a_started_cyclic_process_without_a_start_time_can_not_be_paused() {
             // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
             let ten_minutes_and_thirty_seconds = Duration::seconds((10 * 60) + 30);
             let now = OffsetDateTime::now_utc();
             let ten_minutes_and_thirty_seconds_later = now
@@ -325,7 +380,7 @@ mod cyclic_process_tests {
                 .expect("10 minutes and 30 seconds later is unknown.");
 
             let cycle_duration = Duration::minutes(1);
-            let mut cyclic_process = CyclicProcess::new(cycle_duration);
+            let mut cyclic_process = CyclicProcess::new(cycle_duration, resources);
 
             let _ = cyclic_process.start(now);
             cyclic_process.started_at = None;
@@ -341,12 +396,16 @@ mod cyclic_process_tests {
     mod paused_cyclic_process {
         use time::{Duration, OffsetDateTime};
 
-        use crate::features::process::domain::{CyclicProcess, Process, Status};
+        use crate::features::{
+            output::domain::resource::{Category, Resource},
+            process::domain::{CyclicProcess, Process, Status},
+        };
 
         #[test]
         fn a_paused_cyclic_process_is_paused() {
             // Given
-            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
@@ -360,7 +419,8 @@ mod cyclic_process_tests {
         #[test]
         fn a_paused_cyclic_process_can_not_be_started() {
             // Given
-            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             let _ = cyclic_process.start(OffsetDateTime::now_utc());
             let _ = cyclic_process.pause(OffsetDateTime::now_utc());
@@ -375,7 +435,8 @@ mod cyclic_process_tests {
         #[test]
         fn a_paused_cyclic_process_has_no_start_time() {
             // Given
-            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
+            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
@@ -389,6 +450,7 @@ mod cyclic_process_tests {
         #[test]
         fn a_paused_cyclic_process_can_be_resumed() {
             // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
             let ten_minutes_and_thirty_seconds = Duration::seconds((10 * 60) + 30);
             let now = OffsetDateTime::now_utc();
 
@@ -399,7 +461,7 @@ mod cyclic_process_tests {
                 .checked_add(Duration::minutes(20))
                 .expect("10 minutes and 30 seconds later is unknown.");
 
-            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1));
+            let mut cyclic_process = CyclicProcess::new(Duration::minutes(1), resources);
 
             let _ = cyclic_process.start(now);
             let _ = cyclic_process.pause(ten_minutes_and_thirty_seconds_later);
@@ -417,12 +479,13 @@ mod cyclic_process_tests {
         #[test]
         fn a_paused_cyclic_process_keeps_completed_cycles_after_10_minutes() {
             // Given
+            let resources = vec![Resource::new("wood".into(), Category::Material)];
             let ten_minutes_and_thirty_seconds_later = OffsetDateTime::now_utc()
                 .checked_add(Duration::seconds((10 * 60) + 30))
                 .expect("10 minutes and 30 seconds later is unknown.");
 
             let cycle_duration = Duration::minutes(1);
-            let mut cyclic_process = CyclicProcess::new(cycle_duration);
+            let mut cyclic_process = CyclicProcess::new(cycle_duration, resources);
 
             let _ = cyclic_process.start(OffsetDateTime::now_utc());
 
