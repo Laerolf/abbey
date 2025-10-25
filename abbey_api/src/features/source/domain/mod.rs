@@ -118,7 +118,7 @@ mod source_tests {
         }
 
         #[test]
-        fn a_new_source_with_no_possible_resources_panics() {
+        fn a_source_with_needs_possible_resources() {
             // Given
             let source_resources: Vec<Resource> = vec![];
             let cycle_duration = Duration::minutes(1);
@@ -156,7 +156,7 @@ mod source_tests {
         use crate::{
             features::{
                 actor::domain::{monk::Monk, person::Person},
-                assignment::domain::ProcessAssignmentFactory,
+                assignment::{domain::ProcessAssignmentFactory, error::AssignmentError},
                 output::domain::resource::{Category, Resource},
                 process::{
                     domain::{Process, Status},
@@ -187,6 +187,44 @@ mod source_tests {
         }
 
         #[test]
+        fn a_fetching_source_needs_available_people_before_it_can_start() {
+            // Given
+            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let cycle_duration = Duration::minutes(1);
+
+            let another_source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let another_source = Source::new(another_source_resources, cycle_duration).unwrap();
+
+            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
+            let another_source_process_rc: Rc<RefCell<dyn Process>> =
+                Rc::clone(&another_source.process) as Rc<RefCell<dyn Process>>;
+
+            ProcessAssignmentFactory::assign_process_to_person(
+                Rc::clone(&monk_rc),
+                Rc::clone(&another_source_process_rc),
+            )
+            .expect("The monk should be assigned to the other source's process.");
+
+            let source = Source::new(source_resources, cycle_duration).unwrap();
+
+            let source_process_rc: Rc<RefCell<dyn Process>> =
+                Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
+
+            // When
+            let assignment_attempt = ProcessAssignmentFactory::assign_process_to_person(
+                Rc::clone(&monk_rc),
+                Rc::clone(&source_process_rc),
+            );
+
+            // Then
+            assert!(assignment_attempt.is_err());
+            assert_eq!(
+                AssignmentError::ActorAssigned.code(),
+                assignment_attempt.err().unwrap().code()
+            )
+        }
+
+        #[test]
         fn a_fetching_source_has_a_process_in_progress() {
             // Given
             let source_resources = vec![Resource::new("wood".into(), Category::Material)];
@@ -198,7 +236,7 @@ mod source_tests {
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
 
-            ProcessAssignmentFactory::assign_process_to_person(
+            let assignment_attempt = ProcessAssignmentFactory::assign_process_to_person(
                 Rc::clone(&monk_rc),
                 Rc::clone(&process_rc),
             );
@@ -207,6 +245,7 @@ mod source_tests {
             let attempt = source.start_fetching(OffsetDateTime::now_utc());
 
             // Then
+            assert!(assignment_attempt.is_ok());
             assert!(attempt.is_ok());
             assert_eq!(Status::InProgress, process_rc.borrow().status());
         }
@@ -225,7 +264,7 @@ mod source_tests {
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
 
-            ProcessAssignmentFactory::assign_process_to_person(
+            let assignment_attempt = ProcessAssignmentFactory::assign_process_to_person(
                 Rc::clone(&monk_rc),
                 Rc::clone(&process_rc),
             );
@@ -236,6 +275,7 @@ mod source_tests {
             let claimed_resources = source.claim(now);
 
             // Then
+            assert!(assignment_attempt.is_ok());
             assert!(attempt.is_ok());
             assert!(claimed_resources.is_empty());
         }
@@ -253,7 +293,7 @@ mod source_tests {
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
 
-            ProcessAssignmentFactory::assign_process_to_person(
+            let assignment_attempt = ProcessAssignmentFactory::assign_process_to_person(
                 Rc::clone(&monk_rc),
                 Rc::clone(&process_rc),
             );
@@ -272,6 +312,7 @@ mod source_tests {
             let attempt = source.resume_fetching(OffsetDateTime::now_utc());
 
             // Then
+            assert!(assignment_attempt.is_ok());
             assert!(attempt.is_err());
             assert_eq!(
                 ProcessError::NoAssignedPeople.code(),
@@ -293,7 +334,7 @@ mod source_tests {
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
 
-            ProcessAssignmentFactory::assign_process_to_person(
+            let assignment_attempt = ProcessAssignmentFactory::assign_process_to_person(
                 Rc::clone(&monk_rc),
                 Rc::clone(&process_rc),
             );
@@ -308,12 +349,13 @@ mod source_tests {
             );
 
             // Then
+            assert!(assignment_attempt.is_ok());
             assert!(attempt.is_ok());
             assert_eq!(1, claimed_resources.len());
 
             if let Some(first_claim) = claimed_resources.first() {
                 assert_eq!("wood", first_claim.as_ref().unwrap().resource.name);
-                assert_eq!(10, first_claim.as_ref().unwrap().quantity);
+                assert_eq!(1, first_claim.as_ref().unwrap().quantity);
             }
         }
     }

@@ -3,10 +3,16 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use crate::features::{
-    actor::domain::{person::Person, Actor},
-    process::domain::Process,
-    skill::domain::Skill,
+use crate::{
+    features::{
+        actor::{
+            domain::{actor_status::ActorStatus, person::Person, Actor},
+            error::ActorError,
+        },
+        process::domain::Process,
+        skill::domain::Skill,
+    },
+    shared::error::DomainError,
 };
 
 /// Represents a monk.
@@ -36,9 +42,27 @@ impl Person for Monk {
 }
 
 impl Actor for Monk {
+    /// Gets the status of this monk.
+    fn status(&self) -> ActorStatus {
+        if self.assigned_process.is_some() {
+            return ActorStatus::Assigned;
+        }
+
+        ActorStatus::Available
+    }
+
     /// Assigns a [`crate::features::process::Process`] to this monk.
-    fn assign_process(&mut self, process: Rc<RefCell<dyn Process>>) {
+    fn assign_process(
+        &mut self,
+        process: Rc<RefCell<dyn Process>>,
+    ) -> Result<(), Box<dyn DomainError>> {
+        if self.status() == ActorStatus::Assigned {
+            return Err(Box::new(ActorError::Assigned));
+        }
+
         self.assigned_process = Some(Rc::downgrade(&process));
+
+        Ok(())
     }
 
     /// Unassigns a [`crate::features::process::Process`] from this monk.
