@@ -201,7 +201,7 @@ mod source_tests {
             let another_source =
                 Source::new("Forest", another_source_resources, cycle_duration).unwrap();
 
-            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
+            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new("Maurits")));
             let another_source_process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&another_source.process) as Rc<RefCell<dyn Process>>;
 
@@ -235,7 +235,7 @@ mod source_tests {
             // Given
             let source_resources = vec![Resource::new("wood", Category::Material)];
             let cycle_duration = Duration::minutes(1);
-            let monk = Monk::new();
+            let monk = Monk::new("Maurits");
 
             let mut source = Source::new("Forest", source_resources, cycle_duration).unwrap();
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(monk));
@@ -266,7 +266,7 @@ mod source_tests {
 
             let mut source = Source::new("Forest", source_resources, Duration::minutes(1)).unwrap();
 
-            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
+            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new("Maurits")));
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
 
@@ -295,7 +295,7 @@ mod source_tests {
             // When
             let mut source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
-            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
+            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new("Maurits")));
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
 
@@ -336,7 +336,7 @@ mod source_tests {
 
             let mut source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
-            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
+            let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new("Maurits")));
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
 

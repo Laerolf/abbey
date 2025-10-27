@@ -3,6 +3,8 @@ use std::{
     rc::{Rc, Weak},
 };
 
+use uuid::Uuid;
+
 use crate::{
     features::{
         actor::{
@@ -17,7 +19,13 @@ use crate::{
 
 /// Represents a monk.
 pub struct Monk {
-    /// The skills of this monk.
+    /// The ID of this Monk.
+    pub id: Uuid,
+
+    /// The name of this Monk.
+    pub name: String,
+
+    /// The skills of this Monk.
     skills: Vec<Skill>,
 
     /// The assigned task of this monk.
@@ -26,8 +34,10 @@ pub struct Monk {
 
 impl Monk {
     /// Creates a new [`monk::Monk`]
-    pub fn new() -> Self {
+    pub fn new(name: impl Into<String>) -> Self {
         Self {
+            id: Uuid::new_v4(),
+            name: name.into(),
             skills: Vec::new(),
             assigned_process: None,
         }
