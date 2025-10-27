@@ -31,7 +31,7 @@ mod output_tests {
         #[test]
         fn a_new_output_has_a_resource() {
             // Given
-            let resource = Resource::new("wood".into(), Category::Material);
+            let resource = Resource::new("wood", Category::Material);
 
             // When
             let output = Output::new(resource.clone(), 10);
@@ -43,7 +43,7 @@ mod output_tests {
         #[test]
         fn a_new_output_has_a_quantity() {
             // Given
-            let resource = Resource::new("wood".into(), Category::Material);
+            let resource = Resource::new("wood", Category::Material);
 
             // When
             let output = Output::new(resource, 10);

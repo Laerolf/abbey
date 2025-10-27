@@ -32,10 +32,10 @@ pub struct Resource {
 
 impl Resource {
     /// Creates a new resource based on the provided parameters.
-    pub fn new(name: String, category: Category) -> Self {
+    pub fn new(name: impl Into<String>, category: Category) -> Self {
         Self {
             id: Uuid::new_v4(),
-            name,
+            name: name.into(),
             category,
         }
     }
@@ -50,7 +50,7 @@ mod resource_tests {
         #[test]
         fn a_new_resource_has_an_id() {
             // When
-            let resource = Resource::new("Wood".into(), Category::Material);
+            let resource = Resource::new("Wood", Category::Material);
 
             // Then
             assert!(!resource.id.to_string().is_empty());
@@ -59,7 +59,7 @@ mod resource_tests {
         #[test]
         fn a_new_resource_has_a_name() {
             // When
-            let resource = Resource::new("Wood".into(), Category::Material);
+            let resource = Resource::new("Wood", Category::Material);
 
             // Then
             assert!(!resource.name.is_empty());
@@ -68,7 +68,7 @@ mod resource_tests {
         #[test]
         fn a_new_resource_has_a_category() {
             // When
-            let resource = Resource::new("Wood".into(), Category::Material);
+            let resource = Resource::new("Wood", Category::Material);
 
             // Then
             assert_eq!("material", resource.category.to_string());

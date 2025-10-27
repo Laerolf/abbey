@@ -17,6 +17,9 @@ pub struct Source {
     /// The ID of this source.
     pub id: Uuid,
 
+    /// The name of this source.
+    pub name: String,
+
     /// The process of this source.
     process: Rc<RefCell<CyclicProcess>>,
 
@@ -27,6 +30,7 @@ pub struct Source {
 impl Source {
     /// Creates a new source based on the provided parameters.
     pub fn new(
+        name: impl Into<String>,
         possible_resources: Vec<Resource>,
         cycle_duration: Duration,
     ) -> Result<Self, Box<dyn DomainError>> {
@@ -38,6 +42,7 @@ impl Source {
 
         Ok(Self {
             id: Uuid::new_v4(),
+            name: name.into(),
             process: Rc::new(RefCell::new(process)),
             last_claim_at: None,
         })
@@ -94,11 +99,11 @@ mod source_tests {
         #[test]
         fn a_new_source_has_an_id() {
             // Given
-            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let source_resources = vec![Resource::new("wood", Category::Material)];
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let source = Source::new(source_resources, cycle_duration).unwrap();
+            let source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
             // Then
             assert!(!source.id.to_string().is_empty());
@@ -107,11 +112,11 @@ mod source_tests {
         #[test]
         fn a_new_source_has_a_process() {
             // Given
-            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let source_resources = vec![Resource::new("wood", Category::Material)];
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let source = Source::new(source_resources, cycle_duration).unwrap();
+            let source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
             // Then
             assert!(!source.process.borrow().id.to_string().is_empty());
@@ -124,7 +129,7 @@ mod source_tests {
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let creation_attempt = Source::new(source_resources, cycle_duration);
+            let creation_attempt = Source::new("Forest", source_resources, cycle_duration);
 
             // Then
             assert!(creation_attempt.is_err());
@@ -137,11 +142,11 @@ mod source_tests {
         #[test]
         fn a_new_source_has_no_last_claim_time() {
             // Given
-            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let source_resources = vec![Resource::new("wood", Category::Material)];
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let source = Source::new(source_resources, cycle_duration).unwrap();
+            let source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
             // Then
             assert_eq!(None, source.last_claim_at);
@@ -170,11 +175,11 @@ mod source_tests {
         #[test]
         fn a_fetching_source_needs_assigned_people_before_it_can_start() {
             // Given
-            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let source_resources = vec![Resource::new("wood", Category::Material)];
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let mut source = Source::new(source_resources, cycle_duration).unwrap();
+            let mut source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
             let attempt = source.start_fetching(OffsetDateTime::now_utc());
 
@@ -189,11 +194,12 @@ mod source_tests {
         #[test]
         fn a_fetching_source_needs_available_people_before_it_can_start() {
             // Given
-            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let source_resources = vec![Resource::new("wood", Category::Material)];
             let cycle_duration = Duration::minutes(1);
 
-            let another_source_resources = vec![Resource::new("wood".into(), Category::Material)];
-            let another_source = Source::new(another_source_resources, cycle_duration).unwrap();
+            let another_source_resources = vec![Resource::new("wood", Category::Material)];
+            let another_source =
+                Source::new("Forest", another_source_resources, cycle_duration).unwrap();
 
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
             let another_source_process_rc: Rc<RefCell<dyn Process>> =
@@ -205,7 +211,7 @@ mod source_tests {
             )
             .expect("The monk should be assigned to the other source's process.");
 
-            let source = Source::new(source_resources, cycle_duration).unwrap();
+            let source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
             let source_process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
@@ -227,11 +233,11 @@ mod source_tests {
         #[test]
         fn a_fetching_source_has_a_process_in_progress() {
             // Given
-            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let source_resources = vec![Resource::new("wood", Category::Material)];
             let cycle_duration = Duration::minutes(1);
             let monk = Monk::new();
 
-            let mut source = Source::new(source_resources, cycle_duration).unwrap();
+            let mut source = Source::new("Forest", source_resources, cycle_duration).unwrap();
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(monk));
             let process_rc: Rc<RefCell<dyn Process>> =
                 Rc::clone(&source.process) as Rc<RefCell<dyn Process>>;
@@ -255,10 +261,10 @@ mod source_tests {
             // Given
             let now = OffsetDateTime::now_utc();
 
-            let wood = Resource::new("wood".into(), Category::Material);
+            let wood = Resource::new("wood", Category::Material);
             let source_resources = vec![wood];
 
-            let mut source = Source::new(source_resources, Duration::minutes(1)).unwrap();
+            let mut source = Source::new("Forest", source_resources, Duration::minutes(1)).unwrap();
 
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
             let process_rc: Rc<RefCell<dyn Process>> =
@@ -283,11 +289,11 @@ mod source_tests {
         #[test]
         fn a_paused_source_needs_assigned_people_before_it_can_resume() {
             // Given
-            let source_resources = vec![Resource::new("wood".into(), Category::Material)];
+            let source_resources = vec![Resource::new("wood", Category::Material)];
             let cycle_duration = Duration::minutes(1);
 
             // When
-            let mut source = Source::new(source_resources, cycle_duration).unwrap();
+            let mut source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
             let process_rc: Rc<RefCell<dyn Process>> =
@@ -325,10 +331,10 @@ mod source_tests {
             // Given
             let cycle_duration = Duration::minutes(1);
 
-            let wood = Resource::new("wood".into(), Category::Material);
+            let wood = Resource::new("wood", Category::Material);
             let source_resources = vec![wood];
 
-            let mut source = Source::new(source_resources, cycle_duration).unwrap();
+            let mut source = Source::new("Forest", source_resources, cycle_duration).unwrap();
 
             let monk_rc: Rc<RefCell<dyn Person>> = Rc::new(RefCell::new(Monk::new()));
             let process_rc: Rc<RefCell<dyn Process>> =
