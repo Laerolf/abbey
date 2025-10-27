@@ -3,6 +3,7 @@ pub mod assignment;
 pub mod game;
 pub mod monastery;
 pub mod output;
+pub mod player;
 pub mod process;
 pub mod skill;
 pub mod source;
