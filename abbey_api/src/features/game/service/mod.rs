@@ -3,6 +3,7 @@ use crate::{
     shared::{error::DomainError, DomainFactory},
 };
 
+/// Represents a service handling the [Game][`crate::features::game::domain::Game`] topic.
 #[derive(Default)]
 pub struct GameService {}
 

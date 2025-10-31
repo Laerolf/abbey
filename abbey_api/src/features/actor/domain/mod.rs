@@ -9,7 +9,7 @@ pub mod actor_status;
 pub mod monk;
 pub mod person;
 
-/// Represents an Actor.
+/// Represents an actor in the domain of the project.
 pub trait Actor {
     /// Gets the [status][`crate::features::actor::domain::ActorStatus`] of an [`Actor`].
     fn status(&self) -> ActorStatus;
