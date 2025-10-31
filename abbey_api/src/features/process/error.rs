@@ -4,16 +4,22 @@ use crate::shared::error::DomainError;
 
 #[derive(Debug)]
 pub enum ProcessError {
+    /// The [Process][`super::domain::Process`] is not new.
     NotNew,
+    /// The [Process][`super::domain::Process`] is not in progress.
     NotInProgress,
+    /// The [Process][`super::domain::Process`] is not paused.
     NotPaused,
+    /// The [Process][`super::domain::Process`] is not complete.
     NotComplete,
+    /// The [Process][`super::domain::Process`] has no assigned [People][`crate::features::actor::domain::person`].
     NoAssignedPeople,
 }
 
 impl std::error::Error for ProcessError {}
 
 impl DomainError for ProcessError {
+    /// Gets the locale code of the [`ProcessError`].
     fn code(&self) -> &'static str {
         match self {
             Self::NotNew => "error.process.not_new",
@@ -24,6 +30,7 @@ impl DomainError for ProcessError {
         }
     }
 
+    /// Gets the message of the [`ProcessError`].
     fn message(&self) -> &'static str {
         match self {
             Self::NotNew => "The process is not new.",

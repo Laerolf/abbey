@@ -17,33 +17,33 @@ use super::{Process, Status};
 
 /// Represents a [`super::Process`] with cycles that have an interval.
 pub struct CyclicProcess {
-    /// The ID of this cyclic process.
+    /// The ID of this [`CyclicProcess`].
     pub id: Uuid,
 
-    /// The status of this cyclic process.
+    /// The [Status][`super::Status`] of this [`CyclicProcess`].
     pub status: Status,
 
-    /// The possible resources outputted by this cyclic process.
+    /// The possible [Resources][`crate::features::output::domain::resource`] outputted by this [`CyclicProcess`].
     output_resources: Vec<Resource>,
 
-    /// The time this cyclic process was started last.
+    /// The time this [`CyclicProcess`] was started last.
     pub started_at: Option<OffsetDateTime>,
 
-    /// The time this cyclic process was paused last.
+    /// The time this [`CyclicProcess`] was paused last.
     pub paused_at: Option<OffsetDateTime>,
 
-    /// The cycle interval of this cyclic process.
+    /// The cycle interval of this [`CyclicProcess`].
     pub cycle_interval: Duration,
 
-    /// The time that has elapsed since this cyclic process was started.
+    /// The time that has elapsed since this [`CyclicProcess`] was started.
     pub elapsed: Duration,
 
-    /// The people assigned to this cycle process.
+    /// The [People][`crate::features::actor::domain::person`] assigned to this [`CyclicProcess`].
     pub assigned_people: Vec<Rc<RefCell<dyn Person>>>,
 }
 
 impl CyclicProcess {
-    /// Creates a new `CycleProcess` based on the provided cycle [`time::Duration`].
+    /// Creates a new [`CyclicProcess`] based on the provided cycle [`time::Duration`].
     pub fn new(cycle_interval: Duration, output_resources: Vec<Resource>) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -73,22 +73,22 @@ impl CyclicProcess {
 }
 
 impl Process for CyclicProcess {
-    /// Assigns a person to this cycle process.
+    /// Assigns a [Person][`crate::features::actor::domain::person`] to this [`CyclicProcess`].
     fn assign_person(&mut self, person: Rc<RefCell<dyn Person>>) {
         self.assigned_people.push(person);
     }
 
-    /// Unassigns a person to this cycle process.
+    /// Unassigns a [Person][`crate::features::actor::domain::person`] to this [`CyclicProcess`].
     fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>) {
         self.assigned_people.retain(|p| !Rc::ptr_eq(p, person));
     }
 
-    /// Gets the status of this cyclic process.
+    /// Gets the [Status][`super::Status`] of this [`CyclicProcess`].
     fn status(&self) -> Status {
         self.status
     }
 
-    // Starts this cyclic process.
+    // Starts this [`CyclicProcess`].
     fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         if self.status != Status::New {
             return Err(Box::new(ProcessError::NotNew));
@@ -101,7 +101,7 @@ impl Process for CyclicProcess {
         Ok(())
     }
 
-    // Pauses this cyclic process.
+    // Pauses this [`CyclicProcess`].
     fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         if self.status != Status::InProgress {
             return Err(Box::new(ProcessError::NotInProgress));
@@ -118,7 +118,7 @@ impl Process for CyclicProcess {
         Ok(())
     }
 
-    /// Resumes this cyclic process.
+    /// Resumes this [`CyclicProcess`].
     fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         if self.status != Status::Paused {
             return Err(Box::new(ProcessError::NotPaused));
@@ -132,7 +132,7 @@ impl Process for CyclicProcess {
         Ok(())
     }
 
-    /// Gets the output of a cycle of this cyclic process.
+    /// Gets the [Output][`crate::features::output::domain::Output`] of a cycle of this [`CyclicProcess`].
     fn get_yield(&self) -> Option<Output> {
         let mut random_number_generator = rand::thread_rng();
         // TODO: Use weights

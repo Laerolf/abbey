@@ -10,6 +10,7 @@ use crate::{
 pub struct ProcessAssignmentFactory {}
 
 impl ProcessAssignmentFactory {
+    /// Assigns a [Person][`crate::features::actor::domain::person`] to a [Process][`crate::features::process::domain::Process`].
     pub fn assign_process_to_person(
         person: Rc<RefCell<dyn Person>>,
         process: Rc<RefCell<dyn Process>>,
@@ -26,6 +27,7 @@ impl ProcessAssignmentFactory {
         Ok(())
     }
 
+    /// Unassigns a [Person][`crate::features::actor::domain::person`] from a [Process][`crate::features::process::domain::Process`].
     pub fn unassign_process_from_person(
         person: Rc<RefCell<dyn Person>>,
         process: Rc<RefCell<dyn Process>>,

@@ -7,7 +7,7 @@ use crate::{
 pub struct GameService {}
 
 impl GameService {
-    /// Creates a new game.
+    /// Creates a new [Game][`crate::features::game::domain::Game`].
     pub fn create_game(&self) -> Result<Game, Box<dyn DomainError>> {
         GameCreationFactory::default().run()
     }
@@ -17,7 +17,10 @@ impl GameService {
 mod game_service_tests {
 
     mod game_creation {
-        use crate::features::game::{domain::DEFAULT_AMOUNT_OF_MONKS, service::GameService};
+        use crate::features::{
+            actor::domain::{actor_status::ActorStatus, Actor},
+            game::{domain::DEFAULT_AMOUNT_OF_MONKS, service::GameService},
+        };
 
         #[test]
         fn a_new_game_has_surroundings_with_sources() {
@@ -44,10 +47,21 @@ mod game_service_tests {
                 .expect("It should be possible to create a game.");
 
             // Then
-            assert_eq!(
-                DEFAULT_AMOUNT_OF_MONKS,
-                game.monastery.monks.len().try_into().unwrap()
-            );
+            assert_eq!(DEFAULT_AMOUNT_OF_MONKS as usize, game.monastery.monks.len());
+        }
+
+        #[test]
+        fn a_new_game_has_an_available_player() {
+            // Given
+            let service: GameService = GameService::default();
+
+            // When
+            let game = service
+                .create_game()
+                .expect("It should be possible to create a game.");
+
+            // Then
+            assert_eq!(ActorStatus::Available, game.player.status());
         }
     }
 }

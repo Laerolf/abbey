@@ -14,42 +14,42 @@ use crate::{
 
 /// Represents a process.
 pub trait Process {
-    /// Asigns a person to this process.
+    /// Asigns a [Person][`crate::features::actor::domain::person`] to this [`Process`].
     fn assign_person(&mut self, person: Rc<RefCell<dyn Person>>);
 
-    /// Unassign a person from this process:
+    /// Unassign a [Person][`crate::features::actor::domain::person`] from this [`Process`]:
     fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>);
 
-    /// Gets the status of this process.
+    /// Gets the [`Status`] of this [`Process`].
     fn status(&self) -> Status;
 
-    /// Starts this process.
+    /// Starts this [`Process`].
     fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>>;
 
-    /// Pauses this process.
+    /// Pauses this [`Process`].
     fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>>;
 
-    /// Resumes this process.
+    /// Resumes this [`Process`].
     fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>>;
 
-    /// Gets the yield of this process.
+    /// Gets the [yield][`crate::features::output::domain::Output`] of this [`Process`].
     fn get_yield(&self) -> Option<Output>;
 
-    /// Completes this process.
+    /// Completes this [`Process`].
     fn complete(&mut self, _now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         Err(Box::new(SharedError::NotAvailable))
     }
 }
 
-/// Represents the status of a [`Process`].
+/// Represents the [`Status`] of a [`Process`].
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Status {
-    /// The process has been created.
+    /// The [`Process`] has been created.
     New,
-    /// The process has started and is in progress.
+    /// The [`Process`] has started and is in progress.
     InProgress,
-    /// The process has been paused.
+    /// The [`Process`] has been paused.
     Paused,
-    /// The process has been completed.
+    /// The [`Process`] has been completed.
     Completed,
 }

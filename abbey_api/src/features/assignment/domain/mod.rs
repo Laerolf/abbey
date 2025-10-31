@@ -1,2 +1,1 @@
-mod process_assignment_factory;
-pub use process_assignment_factory::ProcessAssignmentFactory;
+pub mod process_assignment_factory;

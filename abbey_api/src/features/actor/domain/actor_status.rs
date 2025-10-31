@@ -2,13 +2,16 @@ use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]
 pub enum ActorStatus {
+    /// The [Actor][`crate::features::actor::domain::Actor`] is available.
     Available,
+    /// The Actor is assigned to a [Process][`crate::features::process::domain::Process`].
     Assigned,
 }
 
 impl std::error::Error for ActorStatus {}
 
 impl ActorStatus {
+    /// Gets the locale code of the [`ActorStatus`].
     fn code(&self) -> &'static str {
         match self {
             Self::Available => "actor_status.available",

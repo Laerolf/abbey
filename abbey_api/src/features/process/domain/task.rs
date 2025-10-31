@@ -12,32 +12,32 @@ use crate::{
 
 use super::{Process, Status};
 
-/// Represents a [`super::Process`] that starts at a certain time and ends after a [`time::Duration`] has passed.
+/// Represents a [Process][`super::Process`] that starts at a certain time and ends after a [`time::Duration`] has passed.
 pub struct Task {
-    /// The ID of this task.
+    /// The ID of this [`Task`].
     pub id: Uuid,
 
-    /// The status of this task.
+    /// The [Status][`crate::features::process::domain::Status`] of this [`Task`].
     pub status: Status,
 
-    /// The time this task started.
+    /// The time this [`Task`] started.
     pub started_at: Option<OffsetDateTime>,
 
-    /// The time this task was paused.
+    /// The time this [`Task`] was paused.
     pub paused_at: Option<OffsetDateTime>,
 
-    /// The duration of this task.
+    /// The duration of this [`Task`].
     pub duration: Duration,
 
-    /// The time that has elapsed since the task was started.
+    /// The time that has elapsed since the [`Task`] was started.
     pub elapsed: Duration,
 
-    /// The people assigned to this task.
+    /// The [People][`crate::features::actor::domain::person`] assigned to this [`Task`].
     pub assigned_people: Vec<Rc<RefCell<dyn Person>>>,
 }
 
 impl Task {
-    /// Creates a new `Task` based on the provided [`time::Duration`].
+    /// Creates a new [`Task`] based on the provided [`time::Duration`].
     pub fn new(duration: Duration) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -50,7 +50,7 @@ impl Task {
         }
     }
 
-    /// Gets the end time of this task based on its start time, duration, the elapsed time since this task was started and the current stime.
+    /// Gets the end time of this [`Task`] based on its start time, duration, the elapsed time since this [`Task`] was started and the current stime.
     pub fn ends_at(&self, now: OffsetDateTime) -> Option<OffsetDateTime> {
         match (self.status, self.started_at) {
             (Status::InProgress, Some(started_at)) => started_at
@@ -61,7 +61,7 @@ impl Task {
         }
     }
 
-    /// Gets the progress of this task.
+    /// Gets the progress of this [`Task`].
     pub fn progress(&self, now: OffsetDateTime) -> f32 {
         let task_elapsed_duration: Duration = match (self.started_at, self.status) {
             (Some(started_at), Status::InProgress) => self.elapsed + (now - started_at),
@@ -74,22 +74,22 @@ impl Task {
 }
 
 impl Process for Task {
-    /// Assigns a person to this task.
+    /// Assigns a [Person][`crate::features::actor::domain::person`] to this [`Task`].
     fn assign_person(&mut self, person: Rc<RefCell<dyn Person>>) {
         self.assigned_people.push(person);
     }
 
-    /// Unassigns a person to this task.
+    /// Unassigns a [Person][`crate::features::actor::domain::person`] to this [`Task`].
     fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>) {
         self.assigned_people.retain(|p| !Rc::ptr_eq(p, person));
     }
 
-    /// Gets the status of this task.
+    /// Gets the [Status][`crate::features::process::domain::Status`] of this [`Task`].
     fn status(&self) -> Status {
         self.status
     }
 
-    /// Starts this task.
+    /// Starts this [`Task`].
     fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         if self.status != Status::New {
             return Err(Box::new(ProcessError::NotNew));
@@ -102,7 +102,7 @@ impl Process for Task {
         Ok(())
     }
 
-    /// Pauses this task.
+    /// Pauses this [`Task`].
     fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         if self.status != Status::InProgress {
             return Err(Box::new(ProcessError::NotInProgress));
@@ -119,7 +119,7 @@ impl Process for Task {
         Ok(())
     }
 
-    /// Resumes this task.
+    /// Resumes this [`Task`].
     fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         if self.status != Status::Paused {
             return Err(Box::new(ProcessError::NotPaused));
@@ -133,7 +133,7 @@ impl Process for Task {
         Ok(())
     }
 
-    /// Completes this task if possible.
+    /// Completes this [`Task`] if possible.
     fn complete(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         if self.status != Status::New {
             return Err(Box::new(ProcessError::NotNew));
@@ -151,7 +151,7 @@ impl Process for Task {
         }
     }
 
-    /// Gets the output of this task.
+    /// Gets the [Output][`crate::features::output::domain::Output`] of this [`Task`].
     fn get_yield(&self) -> Option<Output> {
         None
     }

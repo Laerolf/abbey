@@ -14,21 +14,21 @@ use crate::{
 
 /// Represents a source.
 pub struct Source {
-    /// The ID of this source.
+    /// The ID of this [`Source`].
     pub id: Uuid,
 
-    /// The name of this source.
+    /// The name of this [`Source`].
     pub name: String,
 
-    /// The process of this source.
+    /// The [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
     process: Rc<RefCell<CyclicProcess>>,
 
-    /// The last time a claim was made for the output of the completed cycles of this source.
+    /// The last time a claim was made for the output of the completed cycles of this [`Source`].
     last_claim_at: Option<OffsetDateTime>,
 }
 
 impl Source {
-    /// Creates a new source based on the provided parameters.
+    /// Creates a new [`Source`] based on the provided parameters.
     pub fn new(
         name: impl Into<String>,
         possible_resources: Vec<Resource>,
@@ -48,22 +48,22 @@ impl Source {
         })
     }
 
-    /// Starts the process of this source.
+    /// Starts the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
     pub fn start_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         return self.process.borrow_mut().start(now);
     }
 
-    /// Pauses the process of this source.
+    /// Pauses the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
     pub fn pause_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         return self.process.borrow_mut().pause(now);
     }
 
-    /// Resumes the process of this source.
+    /// Resumes the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
     pub fn resume_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
         return self.process.borrow_mut().resume(now);
     }
 
-    /// Claims the output of this source's completed process cycles.
+    /// Claims the output of this [`Source`]'s completed [Process][`crate::features::process::domain::CyclicProcess`] cycles.
     pub fn claim(&mut self, now: OffsetDateTime) -> Vec<Option<Output>> {
         let completed_cycles_since_last_claim = self
             .process
@@ -161,7 +161,10 @@ mod source_tests {
         use crate::{
             features::{
                 actor::domain::{monk::Monk, person::Person},
-                assignment::{domain::ProcessAssignmentFactory, error::AssignmentError},
+                assignment::{
+                    domain::process_assignment_factory::ProcessAssignmentFactory,
+                    error::AssignmentError,
+                },
                 output::domain::resource::{Category, Resource},
                 process::{
                     domain::{Process, Status},

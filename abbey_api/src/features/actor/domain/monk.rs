@@ -19,21 +19,21 @@ use crate::{
 
 /// Represents a monk.
 pub struct Monk {
-    /// The ID of this Monk.
+    /// The [ID][`uuid::Uuid`] of this [`Monk`].
     pub id: Uuid,
 
-    /// The name of this Monk.
+    /// The name of this [`Monk`].
     pub name: String,
 
-    /// The skills of this Monk.
+    /// The [skills][`crate::features::skill::domain::Skill`] of this [`Monk`].
     skills: Vec<Skill>,
 
-    /// The assigned task of this monk.
+    /// The assigned [process][`crate::features::process::domain::Process`] of this [`Monk`].
     assigned_process: Option<Weak<RefCell<dyn Process>>>,
 }
 
 impl Monk {
-    /// Creates a new [`monk::Monk`]
+    /// Creates a new [`Monk`]
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -45,14 +45,14 @@ impl Monk {
 }
 
 impl Person for Monk {
-    /// Returns the skill set of this monk.
+    /// Returns the [skill set][`crate::features::skill::domain::Skill`] of this [`Monk`].
     fn skills(&self) -> &Vec<Skill> {
         &self.skills
     }
 }
 
 impl Actor for Monk {
-    /// Gets the status of this monk.
+    /// Gets the [status][`crate::features::actor::domain::ActorStatus`] of this [`Monk`].
     fn status(&self) -> ActorStatus {
         if self.assigned_process.is_some() {
             return ActorStatus::Assigned;
@@ -61,7 +61,7 @@ impl Actor for Monk {
         ActorStatus::Available
     }
 
-    /// Assigns a [`crate::features::process::Process`] to this monk.
+    /// Assigns a [process][`crate::features::process::domain::Process`] to this [`Monk`].
     fn assign_process(
         &mut self,
         process: Rc<RefCell<dyn Process>>,
@@ -75,7 +75,7 @@ impl Actor for Monk {
         Ok(())
     }
 
-    /// Unassigns a [`crate::features::process::Process`] from this monk.
+    /// Unassigns a [process][`crate::features::process::domain::Process`] from this [`Monk`].
     fn unassign_process(&mut self) {
         self.assigned_process = None;
     }

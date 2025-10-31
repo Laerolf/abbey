@@ -17,20 +17,21 @@ use crate::{
 pub const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 
 pub struct Game {
-    /// The ID of this Game.
+    /// The ID of this [`Game`].
     pub id: Uuid,
 
-    /// The Player of this Game.
+    /// The [Player][`crate::features::player::domain::Player`] of this [`Game`].
     pub player: Player,
 
-    /// The Monastery of the this Game.
+    /// The [Monastery][`crate::features::monastery::domain::Monastery`] of the this [`Game`].
     pub monastery: Monastery,
 
-    /// The Surroundings of the Monastery in this Game.
+    /// The [Surroundings][`crate::features::surroundings::domain::Surroundings`] of the [Monastery][`crate::features::monastery::domain::Monastery`] in this [`Game`].
     pub surroundings: Surroundings,
 }
 
 impl Game {
+    /// Creates a new [`Game`].
     pub fn new(player: Player, monastery: Monastery, surroundings: Surroundings) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -45,7 +46,7 @@ impl Game {
 pub struct GameCreationFactory {}
 
 impl GameCreationFactory {
-    /// Creates the Monastery for a new game.
+    /// Creates the [Monastery][`crate::features::monastery::domain::Monastery`] for a new [`Game`].
     fn create_monastery(&self) -> Result<Monastery, Box<dyn DomainError>> {
         // TODO: Give a Monk a proper name
         let monks: Vec<Monk> = (0..DEFAULT_AMOUNT_OF_MONKS)
@@ -55,7 +56,7 @@ impl GameCreationFactory {
         Ok(Monastery::new(monks))
     }
 
-    /// Creates the surroundings for a new game.
+    /// Creates the [Surroundings][`crate::features::surroundings::domain::Surroundings`] for a new [`Game`].
     fn create_surroundings(&self) -> Result<Surroundings, Box<dyn DomainError>> {
         const ONE_MINUTE_CYCLE_DURATION: Duration = Duration::minutes(1);
 
@@ -70,7 +71,7 @@ impl GameCreationFactory {
 }
 
 impl DomainFactory<Game> for GameCreationFactory {
-    /// Creates a new game.
+    /// Creates a new [`Game`].
     fn run(&self) -> Result<Game, Box<dyn DomainError>> {
         let player: Player = Player::new();
         let monastery = self.create_monastery()?;
