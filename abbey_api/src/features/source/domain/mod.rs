@@ -133,10 +133,9 @@ mod source_tests {
 
             // Then
             assert!(creation_attempt.is_err());
-            assert_eq!(
-                SourceError::NoPossibleResources.code(),
-                creation_attempt.err().unwrap().code()
-            )
+
+            let error_code = creation_attempt.err().unwrap().code();
+            assert_eq!(SourceError::NoPossibleResources.code(), error_code)
         }
 
         #[test]
@@ -188,10 +187,9 @@ mod source_tests {
 
             // Then
             assert!(attempt.is_err());
-            assert_eq!(
-                ProcessError::NoAssignedPeople.code(),
-                attempt.err().unwrap().code()
-            )
+
+            let error_code = attempt.err().unwrap().code();
+            assert_eq!(ProcessError::NoAssignedPeople.code(), error_code)
         }
 
         #[test]
@@ -227,10 +225,9 @@ mod source_tests {
 
             // Then
             assert!(assignment_attempt.is_err());
-            assert_eq!(
-                AssignmentError::ActorAssigned.code(),
-                assignment_attempt.err().unwrap().code()
-            )
+
+            let error_code = assignment_attempt.err().unwrap().code();
+            assert_eq!(AssignmentError::ActorAssigned.code(), error_code)
         }
 
         #[test]
@@ -323,10 +320,9 @@ mod source_tests {
             // Then
             assert!(assignment_attempt.is_ok());
             assert!(attempt.is_err());
-            assert_eq!(
-                ProcessError::NoAssignedPeople.code(),
-                attempt.err().unwrap().code()
-            )
+
+            let error_code = attempt.err().unwrap().code();
+            assert_eq!(ProcessError::NoAssignedPeople.code(), error_code)
         }
 
         #[test]
