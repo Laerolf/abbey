@@ -4,3 +4,6 @@
 # Application
 /target
 /.env
+
+# Docker
+compose*.yaml
