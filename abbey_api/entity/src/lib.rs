@@ -7,5 +7,3 @@ pub mod game;
 pub mod monastery;
 pub mod player;
 pub mod surroundings;
-
-seaography::register_entity_modules!([cyclic_process, game, monastery, player, surroundings,]);

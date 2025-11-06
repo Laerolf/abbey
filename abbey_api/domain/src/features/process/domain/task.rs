@@ -1,7 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
 use time::{Duration, OffsetDateTime};
-use uuid::Uuid;
 
 use crate::{
     features::{
@@ -15,7 +14,7 @@ use super::{Process, Status};
 /// Represents a [Process][`super::Process`] that starts at a certain time and ends after a [`time::Duration`] has passed.
 pub struct Task {
     /// The ID of this [`Task`].
-    pub id: Uuid,
+    pub id: i32,
 
     /// The [Status][`crate::features::process::domain::Status`] of this [`Task`].
     pub status: Status,
@@ -38,9 +37,9 @@ pub struct Task {
 
 impl Task {
     /// Creates a new [`Task`] based on the provided [`time::Duration`].
-    pub fn new(duration: Duration) -> Self {
+    pub fn new(id: i32, duration: Duration) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             status: Status::New,
             started_at: None,
             paused_at: None,
@@ -82,6 +81,11 @@ impl Process for Task {
     /// Unassigns a [Person][`crate::features::actor::domain::person`] to this [`Task`].
     fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>) {
         self.assigned_people.retain(|p| !Rc::ptr_eq(p, person));
+    }
+
+    /// Gets the ID of this [`Task`].
+    fn id(&self) -> i32 {
+        self.id
     }
 
     /// Gets the [Status][`crate::features::process::domain::Status`] of this [`Task`].

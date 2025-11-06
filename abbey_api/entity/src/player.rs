@@ -37,11 +37,3 @@ impl Related<super::game::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
-pub enum RelatedEntity {
-    #[sea_orm(entity = "super::cyclic_process::Entity")]
-    CyclicProcess,
-    #[sea_orm(entity = "super::game::Entity")]
-    Game,
-}

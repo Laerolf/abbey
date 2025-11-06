@@ -5,4 +5,5 @@ edition = "2024"
 publish = false
 
 [dependencies]
+dotenv = "0.15"
 domain = { path = "../domain" }

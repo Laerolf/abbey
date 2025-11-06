@@ -2,7 +2,7 @@ use crate::features::actor::domain::monk::Monk;
 
 pub struct Monastery {
     /// The ID of this [`Monastery`].
-    pub id: Uuid,
+    pub id: i32,
 
     /// The [Monks][`crate::features::actor::domain::monk`] in a [`Monastery`].
     pub monks: Vec<Monk>,
@@ -10,10 +10,7 @@ pub struct Monastery {
 
 impl Monastery {
     /// Creates a new [`Monastery`].
-    pub fn new(monks: Vec<Monk>) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            monks,
-        }
+    pub fn new(id: i32, monks: Vec<Monk>) -> Self {
+        Self { id, monks }
     }
 }

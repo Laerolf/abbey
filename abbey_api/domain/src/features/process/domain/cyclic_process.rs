@@ -2,12 +2,11 @@ use std::{cell::RefCell, rc::Rc};
 
 use rand::seq::SliceRandom;
 use time::{Duration, OffsetDateTime};
-use uuid::Uuid;
 
 use crate::{
     features::{
         actor::domain::person::Person,
-        output::domain::{resource::Resource, Output},
+        output::domain::{Output, resource::Resource},
         process::error::ProcessError,
     },
     shared::error::DomainError,
@@ -18,7 +17,7 @@ use super::{Process, Status};
 /// Represents a [`super::Process`] with cycles that have an interval.
 pub struct CyclicProcess {
     /// The ID of this [`CyclicProcess`].
-    pub id: Uuid,
+    pub id: i32,
 
     /// The [Status][`super::Status`] of this [`CyclicProcess`].
     pub status: Status,
@@ -44,9 +43,9 @@ pub struct CyclicProcess {
 
 impl CyclicProcess {
     /// Creates a new [`CyclicProcess`] based on the provided cycle [`time::Duration`].
-    pub fn new(cycle_interval: Duration, output_resources: Vec<Resource>) -> Self {
+    pub fn new(id: i32, cycle_interval: Duration, output_resources: Vec<Resource>) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             status: Status::New,
             output_resources,
             started_at: None,
@@ -81,6 +80,11 @@ impl Process for CyclicProcess {
     /// Unassigns a [Person][`crate::features::actor::domain::person`] to this [`CyclicProcess`].
     fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>) {
         self.assigned_people.retain(|p| !Rc::ptr_eq(p, person));
+    }
+
+    /// Gets the ID of this [`CyclicProcess`].
+    fn id(&self) -> i32 {
+        self.id
     }
 
     /// Gets the [Status][`super::Status`] of this [`CyclicProcess`].

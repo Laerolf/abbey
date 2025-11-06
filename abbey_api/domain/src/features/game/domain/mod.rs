@@ -1,5 +1,4 @@
 use time::Duration;
-use uuid::Uuid;
 
 use crate::{
     features::{
@@ -10,7 +9,7 @@ use crate::{
         source::domain::Source,
         surroundings::domain::Surroundings,
     },
-    shared::{error::DomainError, DomainFactory},
+    shared::{DomainFactory, error::DomainError},
 };
 
 /// The default amount of Monks in a Monastery.
@@ -18,7 +17,7 @@ pub const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 
 pub struct Game {
     /// The ID of this [`Game`].
-    pub id: Uuid,
+    pub id: i32,
 
     /// The [Player][`crate::features::player::domain::Player`] of this [`Game`].
     pub player: Player,
@@ -32,9 +31,9 @@ pub struct Game {
 
 impl Game {
     /// Creates a new [`Game`].
-    pub fn new(player: Player, monastery: Monastery, surroundings: Surroundings) -> Self {
+    pub fn new(id: i32, player: Player, monastery: Monastery, surroundings: Surroundings) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             player,
             monastery,
             surroundings,
@@ -77,7 +76,7 @@ impl DomainFactory<Game> for GameCreationFactory {
         let monastery = self.create_monastery()?;
         let surroundings = self.create_surroundings()?;
 
-        let new_game = Game::new(player, monastery, surroundings);
+        let new_game = Game::new(1, player, monastery, surroundings);
 
         Ok(new_game)
     }

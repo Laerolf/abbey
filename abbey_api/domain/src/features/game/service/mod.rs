@@ -1,68 +1,44 @@
 use crate::{
-    features::game::domain::{Game, GameCreationFactory},
-    shared::{error::DomainError, DomainFactory},
+    features::{
+        game::{
+            domain::Game, error::GameError, forms::GameCreationForm, mapper::GameMapper,
+            repository::GameRepository,
+        },
+        monastery::{domain::Monastery, service::MonasteryService},
+        player::{domain::Player, service::PlayerService},
+        surroundings::{domain::Surroundings, service::SurroundingsService},
+    },
+    shared::error::DomainError,
 };
 
-/// Represents a service handling the [Game][`crate::features::game::domain::Game`] topic.
+/// Represents a service handling the [Game] topic.
 #[derive(Default)]
-pub struct GameService {}
-
-impl GameService {
-    /// Creates a new [Game][`crate::features::game::domain::Game`].
-    pub fn create_game(&self) -> Result<Game, Box<dyn DomainError>> {
-        GameCreationFactory::default().run()
-    }
+pub struct GameService {
+    repository: GameRepository,
+    monastery_service: MonasteryService,
+    player_service: PlayerService,
+    surroundings_service: SurroundingsService,
+    mapper: GameMapper,
 }
 
-#[cfg(test)]
-mod game_service_tests {
+impl GameService {
+    /// Creates a new [Game].
+    pub async fn create_game(&self) -> Result<Game, Box<dyn DomainError>> {
+        let monastery: Monastery = self.monastery_service.create_monastery().await?;
+        let player: Player = self.player_service.create_player().await?;
+        let surroundings: Surroundings = self.surroundings_service.create_surroundings().await?;
 
-    mod game_creation {
-        use crate::features::{
-            actor::domain::{actor_status::ActorStatus, Actor},
-            game::{domain::DEFAULT_AMOUNT_OF_MONKS, service::GameService},
-        };
+        let creation_form = GameCreationForm::new(1, monastery.id, 1);
 
-        #[test]
-        fn a_new_game_has_surroundings_with_sources() {
-            // Given
-            let service: GameService = GameService::default();
-
-            // When
-            let game = service
-                .create_game()
-                .expect("It should be possible to create a game.");
-
-            // Then
-            assert!(!game.surroundings.sources.is_empty());
-        }
-
-        #[test]
-        fn a_new_game_has_a_monastery_with_monks() {
-            // Given
-            let service: GameService = GameService::default();
-
-            // When
-            let game = service
-                .create_game()
-                .expect("It should be possible to create a game.");
-
-            // Then
-            assert_eq!(DEFAULT_AMOUNT_OF_MONKS as usize, game.monastery.monks.len());
-        }
-
-        #[test]
-        fn a_new_game_has_an_available_player() {
-            // Given
-            let service: GameService = GameService::default();
-
-            // When
-            let game = service
-                .create_game()
-                .expect("It should be possible to create a game.");
-
-            // Then
-            assert_eq!(ActorStatus::Available, game.player.status());
+        match self
+            .repository
+            .insert(self.mapper.to_new_active_model(creation_form))
+            .await
+        {
+            Ok(game) => Ok(self
+                .mapper
+                .to_domain_entity(game, player, monastery, surroundings)),
+            Err(_error) => Err(Box::new(GameError::Creation)),
         }
     }
 }

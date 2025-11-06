@@ -59,13 +59,3 @@ impl Related<super::surroundings::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
-pub enum RelatedEntity {
-    #[sea_orm(entity = "super::monastery::Entity")]
-    Monastery,
-    #[sea_orm(entity = "super::player::Entity")]
-    Player,
-    #[sea_orm(entity = "super::surroundings::Entity")]
-    Surroundings,
-}

@@ -23,6 +23,9 @@ pub trait Process {
     /// Gets the [`Status`] of this [`Process`].
     fn status(&self) -> Status;
 
+    /// Returns the ID of this [Process].
+    fn id(&self) -> i32;
+
     /// Starts this [`Process`].
     fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>>;
 

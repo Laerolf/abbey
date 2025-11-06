@@ -1,5 +1,6 @@
 use crate::shared::error::DomainError;
 
+pub mod db;
 pub mod error;
 
 /// Represents a factory related to a topic in the domain.

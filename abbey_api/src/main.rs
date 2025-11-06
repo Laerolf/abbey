@@ -1,3 +1,4 @@
-fn main() {
-    api::main()
+#[tokio::main]
+async fn main() {
+    api::main().await;
 }

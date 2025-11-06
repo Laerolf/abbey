@@ -3,12 +3,10 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use uuid::Uuid;
-
 use crate::{
     features::{
         actor::{
-            domain::{actor_status::ActorStatus, Actor},
+            domain::{Actor, actor_status::ActorStatus},
             error::ActorError,
         },
         process::domain::Process,
@@ -17,19 +15,19 @@ use crate::{
 };
 
 pub struct Player {
-    /// The ID of this Player.
-    pub id: Uuid,
+    /// The ID of this [`Player`].
+    pub id: i32,
 
-    /// The assigned Process of this Player.
-    assigned_process: Option<Weak<RefCell<dyn Process>>>,
+    /// The assigned Process of this [`Player`].
+    pub assigned_process: Option<Weak<RefCell<dyn Process>>>,
 }
 
 impl Player {
     /// Creates a new [`Player`].
-    pub fn new() -> Self {
+    pub fn new(id: i32, assigned_process: Option<Weak<RefCell<dyn Process>>>) -> Self {
         Self {
-            id: Uuid::new_v4(),
-            assigned_process: None,
+            id,
+            assigned_process,
         }
     }
 }
