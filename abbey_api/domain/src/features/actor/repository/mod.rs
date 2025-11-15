@@ -4,7 +4,7 @@ use sea_orm::{ActiveModelTrait, DbErr};
 use crate::shared::db::DatabasePool;
 
 /// Represents an element that handles all [`Monk`][`super::domain::monk`] database topics.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct MonkRepository {}
 
 impl MonkRepository {

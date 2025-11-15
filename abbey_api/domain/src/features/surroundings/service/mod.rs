@@ -17,7 +17,7 @@ use crate::{
 };
 
 /// Represents a service handling the [`Surroundings`] topic.
-#[derive(Default)]
+#[derive(Clone)]
 pub struct SurroundingsService {
     repository: SurroundingsRepository,
     source_service: SourceService,
@@ -26,6 +26,20 @@ pub struct SurroundingsService {
 }
 
 impl SurroundingsService {
+    /// Creates a new [`SurroundingsService`].
+    pub fn new(
+        source_service: SourceService,
+        cyclic_process_service: CyclicProcessService,
+        resource_service: ResourceService,
+    ) -> Self {
+        Self {
+            repository: SurroundingsRepository::default(),
+            source_service,
+            cyclic_process_service,
+            resource_service,
+        }
+    }
+
     /// Creates the [Sources][`Source`] for a new [`Surroundings`].
     async fn create_sources(&self) -> Result<Vec<Source>, Box<dyn DomainError>> {
         let beach_resources: Vec<Resource> = vec![

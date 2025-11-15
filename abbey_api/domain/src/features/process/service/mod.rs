@@ -21,13 +21,14 @@ use crate::{
 };
 
 /// Represents a service handling the [`CyclicProcess`] topic.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct CyclicProcessService {
     repository: CyclicProcessRepository,
     cyclic_process_resource_repository: CyclicProcessResourceRepository,
 }
 
 impl CyclicProcessService {
+    /// Adds a [Resource] to a [`CyclicProcess`].
     async fn add_resource_to_cyclic_process(
         &self,
         cyclic_process: &CyclicProcess,

@@ -4,7 +4,7 @@ use sea_orm::{ActiveModelTrait, DbErr};
 use crate::shared::db::DatabasePool;
 
 /// Represents an element that handles all [Player][`crate::features::player::domain::Player`] database topics.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct PlayerRepository {}
 
 impl PlayerRepository {

@@ -4,7 +4,7 @@ use sea_orm::{ActiveModelTrait, DbErr};
 use crate::shared::db::DatabasePool;
 
 /// Represents an element that handles all [CyclicProcess][`super::domain::CyclicProcess`] database topics.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct CyclicProcessRepository {}
 
 impl CyclicProcessRepository {
@@ -18,7 +18,7 @@ impl CyclicProcessRepository {
 }
 
 /// Represents an element that handles all [CyclicProcessResource][`cyclic_process_resources::Model`] database topics.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct CyclicProcessResourceRepository {}
 
 impl CyclicProcessResourceRepository {

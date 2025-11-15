@@ -20,7 +20,7 @@ use crate::{
 pub const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 
 /// Represents a service handling the [`Monastery`] topic.
-#[derive(Default)]
+#[derive(Clone)]
 pub struct MonasteryService {
     repository: MonasteryRepository,
     monastery_monks_repository: MonasteryMonksRepository,
@@ -28,6 +28,15 @@ pub struct MonasteryService {
 }
 
 impl MonasteryService {
+    /// Creates a new [`MonasteryService`].
+    pub fn new(monk_service: MonkService) -> Self {
+        Self {
+            repository: MonasteryRepository::default(),
+            monastery_monks_repository: MonasteryMonksRepository::default(),
+            monk_service,
+        }
+    }
+
     /// Adds a [Monk] to a [`Monastery`].
     async fn add_monk_to_monastery(
         &self,

@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// Represents a service handling the [`Skill`] topic.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct SkillService {
     repository: SkillRepository,
 }

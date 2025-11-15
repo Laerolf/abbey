@@ -4,7 +4,7 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter};
 use crate::shared::db::DatabasePool;
 
 /// Represents an element that handles all [Resource][`super::domain::resource::Resource`] database topics.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ResourceRepository {}
 
 impl ResourceRepository {

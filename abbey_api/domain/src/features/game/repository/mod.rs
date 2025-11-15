@@ -4,7 +4,7 @@ use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use crate::shared::db::DatabasePool;
 
 /// Represents an element that handles all [Game][`crate::features::game::domain::Game`] database topics.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct GameRepository;
 
 impl GameRepository {

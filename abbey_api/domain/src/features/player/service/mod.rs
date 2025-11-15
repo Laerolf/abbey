@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// Represents a service handling the [`Player`] topic.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct PlayerService {
     repository: PlayerRepository,
 }

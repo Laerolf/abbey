@@ -7,3 +7,7 @@ publish = false
 [dependencies]
 dotenv = "0.15"
 domain = { path = "../domain" }
+axum = "0.8.7"
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

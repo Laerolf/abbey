@@ -15,7 +15,7 @@ impl DatabasePool {
     }
 
     /// Initializes the [`DatabasePool`] by creating a [`DatabaseConnection`].
-    pub async fn init(db_url: impl Into<String>) -> Result<(), DatabaseConnection> {
+    pub async fn init(db_url: &String) -> Result<(), DatabaseConnection> {
         DB.set(Self::create_db_connection(db_url.into()).await)
     }
 

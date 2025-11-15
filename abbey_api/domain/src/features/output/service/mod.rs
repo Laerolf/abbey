@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// Represents a service handling the [`Resource`] topic.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ResourceService {
     repository: ResourceRepository,
 }

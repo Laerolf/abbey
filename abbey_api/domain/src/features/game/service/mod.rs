@@ -12,7 +12,7 @@ use crate::{
 };
 
 /// Represents a service handling the [Game] topic.
-#[derive(Default)]
+#[derive(Clone)]
 pub struct GameService {
     repository: GameRepository,
     monastery_service: MonasteryService,
@@ -21,6 +21,20 @@ pub struct GameService {
 }
 
 impl GameService {
+    /// Creates a new [`GameService`].
+    pub fn new(
+        monastery_service: MonasteryService,
+        player_service: PlayerService,
+        surroundings_service: SurroundingsService,
+    ) -> Self {
+        Self {
+            repository: GameRepository,
+            monastery_service,
+            player_service,
+            surroundings_service,
+        }
+    }
+
     /// Creates a new [Game].
     pub async fn create_game(&self) -> Result<Game, Box<dyn DomainError>> {
         let monastery: Monastery = self.monastery_service.create_monastery().await?;

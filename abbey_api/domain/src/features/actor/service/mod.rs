@@ -12,13 +12,21 @@ use crate::{
 };
 
 /// Represents a service handling the [`Monk`] topic.
-#[derive(Default)]
+#[derive(Clone)]
 pub struct MonkService {
     repository: MonkRepository,
     skill_service: SkillService,
 }
 
 impl MonkService {
+    /// Creates a new [`MonkService`].
+    pub fn new(skill_service: SkillService) -> Self {
+        Self {
+            repository: MonkRepository::default(),
+            skill_service,
+        }
+    }
+
     /// Creates a [Skill] set for a new [`Monk`].
     pub async fn create_skills(&self) -> Result<Vec<Skill>, Box<dyn DomainError>> {
         let skills = try_join_all(vec![

@@ -1,4 +1,4 @@
 #[tokio::main]
 async fn main() {
-    api::main().await;
+    api::Abbey::serve().await
 }
