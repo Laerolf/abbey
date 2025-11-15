@@ -1,4 +1,4 @@
-use entity::player;
+use entity::players;
 use sea_orm::{ActiveModelTrait, DbErr};
 
 use crate::shared::db::DatabasePool;
@@ -8,8 +8,8 @@ use crate::shared::db::DatabasePool;
 pub struct PlayerRepository {}
 
 impl PlayerRepository {
-    /// Inserts a [Player][`player::Model`].
-    pub async fn insert(&self, new_player: player::ActiveModel) -> Result<player::Model, DbErr> {
+    /// Inserts a [Player][`players::Model`].
+    pub async fn insert(&self, new_player: players::ActiveModel) -> Result<players::Model, DbErr> {
         new_player.insert(DatabasePool::instance()).await
     }
 }

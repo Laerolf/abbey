@@ -1,30 +1,41 @@
-use entity::monastery;
+use entity::{monasteries, monastery_monks};
 use sea_orm::ActiveValue::{NotSet, Set};
 
-use crate::features::monastery::{domain::Monastery, forms::MonasteryCreationForm};
+use crate::features::{
+    actor::domain::monk::Monk,
+    monastery::{domain::Monastery, forms::MonasteryCreationForm},
+};
 
 /// Represents an element that maps [`Monastery`] elements.
-#[derive(Default)]
 pub struct MonasteryMapper;
 
 impl MonasteryMapper {
-    /// Maps a [`MonasteryCreationForm`] to a [model][`monastery::ActiveModel`] to create.
-    pub fn to_new_active_model(
-        &self,
-        creation_form: MonasteryCreationForm,
-    ) -> monastery::ActiveModel {
-        monastery::ActiveModel { id: NotSet }
+    /// Maps a [`MonasteryCreationForm`] to a [model][`monasteries::ActiveModel`] to create.
+    pub fn to_new_active_model(creation_form: MonasteryCreationForm) -> monasteries::ActiveModel {
+        monasteries::ActiveModel { id: NotSet }
     }
 
-    /// Maps a [`Monastery`] to a [model][`monastery::ActiveModel`] to update.
-    pub fn to_update_active_model(&self, monastery: &Monastery) -> monastery::ActiveModel {
-        monastery::ActiveModel {
+    /// Maps a [`Monastery`] to a [model][`monasteries::ActiveModel`] to update.
+    pub fn to_update_active_model(monastery: &Monastery) -> monasteries::ActiveModel {
+        monasteries::ActiveModel {
             id: Set(monastery.id),
         }
     }
 
-    /// Maps a [model][`monastery::Model`] to a [`Monastery`].
-    pub fn to_domain_entity(&self, model: monastery::Model) -> Monastery {
-        Monastery::new(model.id, vec![])
+    /// Maps a [model][`monasteries::Model`] to a [`Monastery`].
+    pub fn to_domain_entity(model: monasteries::Model, monks: Vec<Monk>) -> Monastery {
+        Monastery::new(model.id, monks)
+    }
+
+    /// Maps a [`Monastery`] and a [`Monk`] to a [model][`monastery_monks::ActiveModel`] to update.
+    pub fn to_new_monastery_monk_active_model(
+        monastery: &Monastery,
+        monk: &Monk,
+    ) -> monastery_monks::ActiveModel {
+        monastery_monks::ActiveModel {
+            id: NotSet,
+            monastery_id: Set(monastery.id),
+            monk_id: Set(monk.id),
+        }
     }
 }

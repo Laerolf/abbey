@@ -3,7 +3,7 @@ use sea_orm::{ActiveModelTrait, DbErr};
 
 use crate::shared::db::DatabasePool;
 
-/// Represents an element that handles all [Surroundings][`crate::features::surroundings::domain::Surroundings`] database topics.
+/// Represents an element that handles all [Surroundings][`super::domain::Surroundings`] database topics.
 #[derive(Default)]
 pub struct SurroundingsRepository {}
 

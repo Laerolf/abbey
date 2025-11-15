@@ -10,7 +10,6 @@ use crate::{
 #[derive(Default)]
 pub struct PlayerService {
     repository: PlayerRepository,
-    mapper: PlayerMapper,
 }
 
 impl PlayerService {
@@ -20,10 +19,10 @@ impl PlayerService {
 
         match self
             .repository
-            .insert(self.mapper.to_new_active_model(creation_form))
+            .insert(PlayerMapper::to_new_active_model(creation_form))
             .await
         {
-            Ok(new_player) => Ok(self.mapper.to_domain_entity(new_player, None)),
+            Ok(new_player) => Ok(PlayerMapper::to_domain_entity(new_player, None)),
             Err(_error) => Err(Box::new(PlayerError::Creation)),
         }
     }

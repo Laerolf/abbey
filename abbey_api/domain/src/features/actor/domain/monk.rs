@@ -3,12 +3,10 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use uuid::Uuid;
-
 use crate::{
     features::{
         actor::{
-            domain::{actor_status::ActorStatus, person::Person, Actor},
+            domain::{Actor, actor_status::ActorStatus, person::Person},
             error::ActorError,
         },
         process::domain::Process,
@@ -18,28 +16,34 @@ use crate::{
 };
 
 /// Represents a monk.
+#[derive(Clone)]
 pub struct Monk {
-    /// The [ID][`uuid::Uuid`] of this [`Monk`].
-    pub id: Uuid,
+    /// The ID of this [`Monk`].
+    pub id: i32,
 
     /// The name of this [`Monk`].
     pub name: String,
 
     /// The [skills][`crate::features::skill::domain::Skill`] of this [`Monk`].
-    skills: Vec<Skill>,
+    pub skills: Vec<Skill>,
 
     /// The assigned [process][`crate::features::process::domain::Process`] of this [`Monk`].
-    assigned_process: Option<Weak<RefCell<dyn Process>>>,
+    pub assigned_process: Option<Weak<RefCell<dyn Process>>>,
 }
 
 impl Monk {
     /// Creates a new [`Monk`]
-    pub fn new(name: impl Into<String>) -> Self {
+    pub fn new(
+        id: i32,
+        name: impl Into<String>,
+        skills: Vec<Skill>,
+        assigned_process: Option<Weak<RefCell<dyn Process>>>,
+    ) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             name: name.into(),
-            skills: Vec::new(),
-            assigned_process: None,
+            skills,
+            assigned_process,
         }
     }
 }

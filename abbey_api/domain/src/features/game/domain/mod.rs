@@ -1,15 +1,5 @@
-use time::Duration;
-
-use crate::{
-    features::{
-        actor::domain::monk::Monk,
-        monastery::domain::Monastery,
-        output::domain::resource::{Category, Resource},
-        player::domain::Player,
-        source::domain::Source,
-        surroundings::domain::Surroundings,
-    },
-    shared::{DomainFactory, error::DomainError},
+use crate::features::{
+    monastery::domain::Monastery, player::domain::Player, surroundings::domain::Surroundings,
 };
 
 /// The default amount of Monks in a Monastery.
@@ -38,46 +28,5 @@ impl Game {
             monastery,
             surroundings,
         }
-    }
-}
-
-#[derive(Default)]
-pub struct GameCreationFactory {}
-
-impl GameCreationFactory {
-    /// Creates the [Monastery][`crate::features::monastery::domain::Monastery`] for a new [`Game`].
-    fn create_monastery(&self) -> Result<Monastery, Box<dyn DomainError>> {
-        // TODO: Give a Monk a proper name
-        let monks: Vec<Monk> = (0..DEFAULT_AMOUNT_OF_MONKS)
-            .map(|_index: i32| Monk::new("Maurits"))
-            .collect();
-
-        Ok(Monastery::new(monks))
-    }
-
-    /// Creates the [Surroundings][`crate::features::surroundings::domain::Surroundings`] for a new [`Game`].
-    fn create_surroundings(&self) -> Result<Surroundings, Box<dyn DomainError>> {
-        const ONE_MINUTE_CYCLE_DURATION: Duration = Duration::minutes(1);
-
-        let beach_resources = vec![Resource::new("sand", Category::Material)];
-
-        let the_beach: Source = Source::new("Beach", beach_resources, ONE_MINUTE_CYCLE_DURATION)?;
-
-        let sources: Vec<Source> = vec![the_beach];
-
-        Ok(Surroundings::new(sources))
-    }
-}
-
-impl DomainFactory<Game> for GameCreationFactory {
-    /// Creates a new [`Game`].
-    fn run(&self) -> Result<Game, Box<dyn DomainError>> {
-        let player: Player = Player::new();
-        let monastery = self.create_monastery()?;
-        let surroundings = self.create_surroundings()?;
-
-        let new_game = Game::new(1, player, monastery, surroundings);
-
-        Ok(new_game)
     }
 }

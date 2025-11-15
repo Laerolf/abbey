@@ -4,6 +4,8 @@ use crate::shared::error::DomainError;
 
 #[derive(Debug)]
 pub enum ProcessError {
+    /// Failed to create a new [Process][`super::domain::Process`].
+    Creation,
     /// The [Process][`super::domain::Process`] is not new.
     NotNew,
     /// The [Process][`super::domain::Process`] is not in progress.
@@ -22,6 +24,7 @@ impl DomainError for ProcessError {
     /// Gets the locale code of the [`ProcessError`].
     fn code(&self) -> &'static str {
         match self {
+            Self::Creation => "error.process.creation",
             Self::NotNew => "error.process.not_new",
             Self::NotInProgress => "error.process.not_in_progress",
             Self::NotPaused => "error.process.not_paused",
@@ -33,6 +36,7 @@ impl DomainError for ProcessError {
     /// Gets the message of the [`ProcessError`].
     fn message(&self) -> &'static str {
         match self {
+            Self::Creation => "Failed to create a new process.",
             Self::NotNew => "The process is not new.",
             Self::NotInProgress => "The process is not in progress.",
             Self::NotPaused => "The process is not paused.",

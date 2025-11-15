@@ -1,16 +1,16 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
-use crate::m20251103_095220_create_cyclic_processes_table::CyclicProcess;
-
-#[derive(DeriveMigrationName)]
-pub struct Migration;
+use crate::m20251103_095220_create_cyclic_processes_table::CyclicProcesses;
 
 #[derive(DeriveIden)]
-pub enum Player {
+pub enum Players {
     Table,
     Id,
     AssignedProcessId,
 }
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
@@ -18,15 +18,15 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Player::Table)
+                    .table(Players::Table)
                     .if_not_exists()
-                    .col(pk_auto(Player::Id))
-                    .col(integer_null(Player::AssignedProcessId))
+                    .col(pk_auto(Players::Id))
+                    .col(integer_null(Players::AssignedProcessId))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-player-cyclic-process")
-                            .from(Player::Table, Player::AssignedProcessId)
-                            .to(CyclicProcess::Table, CyclicProcess::Id)
+                            .from(Players::Table, Players::AssignedProcessId)
+                            .to(CyclicProcesses::Table, CyclicProcesses::Id)
                             .on_delete(ForeignKeyAction::SetNull)
                             .on_update(ForeignKeyAction::Cascade),
                     )
@@ -37,7 +37,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Player::Table).to_owned())
+            .drop_table(Table::drop().table(Players::Table).to_owned())
             .await
     }
 }

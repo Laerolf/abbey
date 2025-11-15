@@ -18,7 +18,6 @@ pub struct GameService {
     monastery_service: MonasteryService,
     player_service: PlayerService,
     surroundings_service: SurroundingsService,
-    mapper: GameMapper,
 }
 
 impl GameService {
@@ -32,12 +31,15 @@ impl GameService {
 
         match self
             .repository
-            .insert(self.mapper.to_new_active_model(creation_form))
+            .insert(GameMapper::to_new_active_model(creation_form))
             .await
         {
-            Ok(game) => Ok(self
-                .mapper
-                .to_domain_entity(game, player, monastery, surroundings)),
+            Ok(game) => Ok(GameMapper::to_domain_entity(
+                game,
+                player,
+                monastery,
+                surroundings,
+            )),
             Err(_error) => Err(Box::new(GameError::Creation)),
         }
     }

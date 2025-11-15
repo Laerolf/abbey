@@ -1,10 +1,7 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
-#[derive(DeriveMigrationName)]
-pub struct Migration;
-
 #[derive(DeriveIden)]
-pub enum CyclicProcess {
+pub enum CyclicProcesses {
     Table,
     Id,
     Status,
@@ -14,20 +11,23 @@ pub enum CyclicProcess {
     Elapsed,
 }
 
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .create_table(
                 Table::create()
-                    .table(CyclicProcess::Table)
+                    .table(CyclicProcesses::Table)
                     .if_not_exists()
-                    .col(pk_auto(CyclicProcess::Id))
-                    .col(string(CyclicProcess::Status))
-                    .col(timestamp_with_time_zone_null(CyclicProcess::StartedAt))
-                    .col(timestamp_with_time_zone_null(CyclicProcess::PausedAt))
-                    .col(integer(CyclicProcess::CycleInterval))
-                    .col(integer(CyclicProcess::Elapsed))
+                    .col(pk_auto(CyclicProcesses::Id))
+                    .col(string(CyclicProcesses::Status))
+                    .col(timestamp_with_time_zone_null(CyclicProcesses::StartedAt))
+                    .col(timestamp_with_time_zone_null(CyclicProcesses::PausedAt))
+                    .col(integer(CyclicProcesses::CycleInterval))
+                    .col(integer(CyclicProcesses::Elapsed))
                     .to_owned(),
             )
             .await
@@ -35,7 +35,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(CyclicProcess::Table).to_owned())
+            .drop_table(Table::drop().table(CyclicProcesses::Table).to_owned())
             .await
     }
 }

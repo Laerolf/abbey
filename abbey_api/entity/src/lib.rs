@@ -2,8 +2,15 @@
 
 pub mod prelude;
 
-pub mod cyclic_process;
-pub mod game;
-pub mod monastery;
-pub mod player;
+pub mod cyclic_process_resources;
+pub mod cyclic_processes;
+pub mod games;
+pub mod monasteries;
+pub mod monastery_monks;
+pub mod monk_skills;
+pub mod monks;
+pub mod players;
+pub mod resources;
+pub mod skills;
+pub mod sources;
 pub mod surroundings;

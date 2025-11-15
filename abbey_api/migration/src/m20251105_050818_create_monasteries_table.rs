@@ -1,13 +1,13 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
-#[derive(DeriveMigrationName)]
-pub struct Migration;
-
 #[derive(DeriveIden)]
-pub enum Monastery {
+pub enum Monasteries {
     Table,
     Id,
 }
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
@@ -15,9 +15,9 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Monastery::Table)
+                    .table(Monasteries::Table)
                     .if_not_exists()
-                    .col(pk_auto(Monastery::Id))
+                    .col(pk_auto(Monasteries::Id))
                     .to_owned(),
             )
             .await
@@ -25,7 +25,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Monastery::Table).to_owned())
+            .drop_table(Table::drop().table(Monasteries::Table).to_owned())
             .await
     }
 }

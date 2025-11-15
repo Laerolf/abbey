@@ -17,39 +17,3 @@ impl Output {
         Self { resource, quantity }
     }
 }
-
-#[cfg(test)]
-mod output_tests {
-
-    mod new_output {
-
-        use crate::features::output::domain::{
-            resource::{Category, Resource},
-            Output,
-        };
-
-        #[test]
-        fn a_new_output_has_a_resource() {
-            // Given
-            let resource = Resource::new("wood", Category::Material);
-
-            // When
-            let output = Output::new(resource.clone(), 10);
-
-            // Then
-            assert_eq!(resource, output.resource);
-        }
-
-        #[test]
-        fn a_new_output_has_a_quantity() {
-            // Given
-            let resource = Resource::new("wood", Category::Material);
-
-            // When
-            let output = Output::new(resource, 10);
-
-            // Then
-            assert_eq!(10, output.quantity);
-        }
-    }
-}

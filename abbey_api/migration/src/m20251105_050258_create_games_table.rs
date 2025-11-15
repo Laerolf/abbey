@@ -1,16 +1,13 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
 use crate::{
-    m20251103_085752_create_players_table::Player,
-    m20251105_050818_create_monasteries_table::Monastery,
-    m20251105_051143_create_monastery_surroundings_table::Surroundings,
+    m20251103_085752_create_players_table::Players,
+    m20251105_050818_create_monasteries_table::Monasteries,
+    m20251105_051143_create_surroundings_table::Surroundings,
 };
 
-#[derive(DeriveMigrationName)]
-pub struct Migration;
-
 #[derive(DeriveIden)]
-enum Game {
+enum Games {
     Table,
     Id,
     PlayerId,
@@ -18,38 +15,41 @@ enum Game {
     SurroundingsId,
 }
 
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .create_table(
                 Table::create()
-                    .table(Game::Table)
+                    .table(Games::Table)
                     .if_not_exists()
-                    .col(pk_auto(Game::Id))
-                    .col(integer(Game::PlayerId))
+                    .col(pk_auto(Games::Id))
+                    .col(integer(Games::PlayerId))
+                    .col(integer(Games::MonasteryId))
+                    .col(integer(Games::SurroundingsId))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-game-player")
-                            .from(Game::Table, Game::PlayerId)
-                            .to(Player::Table, Player::Id)
+                            .from(Games::Table, Games::PlayerId)
+                            .to(Players::Table, Players::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .col(integer(Game::MonasteryId))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-game-monastery")
-                            .from(Game::Table, Game::MonasteryId)
-                            .to(Monastery::Table, Monastery::Id)
+                            .from(Games::Table, Games::MonasteryId)
+                            .to(Monasteries::Table, Monasteries::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .col(integer(Game::SurroundingsId))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-game-monastery-surroundings")
-                            .from(Game::Table, Game::SurroundingsId)
+                            .from(Games::Table, Games::SurroundingsId)
                             .to(Surroundings::Table, Surroundings::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
@@ -61,7 +61,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Game::Table).to_owned())
+            .drop_table(Table::drop().table(Games::Table).to_owned())
             .await
     }
 }

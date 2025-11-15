@@ -1,7 +1,17 @@
+use time::Duration;
+
 use crate::{
-    features::surroundings::{
-        domain::Surroundings, error::SurroundingsError, forms::SurroundingsCreationForm,
-        mapper::SurroundingsMapper, repository::SurroundingsRepository,
+    features::{
+        output::{
+            domain::resource::{Category, Resource},
+            service::ResourceService,
+        },
+        process::{domain::CyclicProcess, service::CyclicProcessService},
+        source::{domain::Source, service::SourceService},
+        surroundings::{
+            domain::Surroundings, error::SurroundingsError, forms::SurroundingsCreationForm,
+            mapper::SurroundingsMapper, repository::SurroundingsRepository,
+        },
     },
     shared::error::DomainError,
 };
@@ -10,20 +20,54 @@ use crate::{
 #[derive(Default)]
 pub struct SurroundingsService {
     repository: SurroundingsRepository,
-    mapper: SurroundingsMapper,
+    source_service: SourceService,
+    cyclic_process_service: CyclicProcessService,
+    resource_service: ResourceService,
 }
 
 impl SurroundingsService {
+    /// Creates the [Sources][`Source`] for a new [`Surroundings`].
+    async fn create_sources(&self) -> Result<Vec<Source>, Box<dyn DomainError>> {
+        let beach_resources: Vec<Resource> = vec![
+            self.resource_service
+                .find_by_name_or_create("sand", Category::Material)
+                .await?,
+            self.resource_service
+                .find_by_name_or_create("seaweed", Category::Material)
+                .await?,
+        ];
+        let beach_process: CyclicProcess = self
+            .cyclic_process_service
+            .create_cyclic_process(beach_resources, Duration::minutes(1), Vec::new())
+            .await?;
+
+        let beach: Source = self
+            .source_service
+            .create_source("the_beach", beach_process)
+            .await?;
+
+        Ok(vec![beach])
+    }
+
     /// Creates a new [`Surroundings`].
     pub async fn create_surroundings(&self) -> Result<Surroundings, Box<dyn DomainError>> {
-        let creation_form = SurroundingsCreationForm::new();
+        let sources = self
+            .create_sources()
+            .await
+            .expect("Failed to create Sources for a Surrounding.");
+
+        let creation_form =
+            SurroundingsCreationForm::new(sources.iter().map(|source| source.id).collect());
 
         match self
             .repository
-            .insert(self.mapper.to_new_active_model(creation_form))
+            .insert(SurroundingsMapper::to_new_active_model(creation_form))
             .await
         {
-            Ok(new_surroundings) => Ok(self.mapper.to_domain_entity(new_surroundings, Vec::new())),
+            Ok(new_surroundings) => Ok(SurroundingsMapper::to_domain_entity(
+                new_surroundings,
+                sources,
+            )),
             Err(_error) => Err(Box::new(SurroundingsError::Creation)),
         }
     }

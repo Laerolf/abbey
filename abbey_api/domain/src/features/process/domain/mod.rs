@@ -1,5 +1,5 @@
 mod task;
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt::Display, rc::Rc, str::FromStr};
 
 pub use task::Task;
 
@@ -55,4 +55,37 @@ pub enum Status {
     Paused,
     /// The [`Process`] has been completed.
     Completed,
+}
+
+impl Status {
+    /// Returns a string representing the [Status].
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::New => "new",
+            Self::InProgress => "in_progress",
+            Self::Paused => "paused",
+            Self::Completed => "completed",
+        }
+    }
+}
+
+impl FromStr for Status {
+    type Err = String;
+
+    /// Returns the [Status] represented by the provided value.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "new" => Ok(Self::New),
+            "in_progress" => Ok(Self::InProgress),
+            "paused" => Ok(Self::Paused),
+            "completed" => Ok(Self::Completed),
+            _ => Err(format!("Invalid status: '{}'", s)),
+        }
+    }
+}
+
+impl Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
 }

@@ -1,4 +1,4 @@
-use entity::game;
+use entity::games;
 use sea_orm::ActiveValue::{NotSet, Set};
 
 use crate::features::{
@@ -9,13 +9,12 @@ use crate::features::{
 };
 
 /// Represents an element that maps [`Game`] elements.
-#[derive(Default)]
 pub struct GameMapper;
 
 impl GameMapper {
     /// Maps a [`GameCreationForm`] to a [model][`game::ActiveModel`] to create.
-    pub fn to_new_active_model(&self, creation_form: GameCreationForm) -> game::ActiveModel {
-        game::ActiveModel {
+    pub fn to_new_active_model(creation_form: GameCreationForm) -> games::ActiveModel {
+        games::ActiveModel {
             id: NotSet,
             monastery_id: Set(creation_form.monastery_id),
             player_id: Set(creation_form.player_id),
@@ -24,8 +23,8 @@ impl GameMapper {
     }
 
     /// Maps a [`Game`] to a [model][`game::ActiveModel`] to update.
-    pub fn to_update_active_model(&self, game: &Game) -> game::ActiveModel {
-        game::ActiveModel {
+    pub fn to_update_active_model(game: &Game) -> games::ActiveModel {
+        games::ActiveModel {
             id: Set(game.id),
             monastery_id: Set(game.monastery.id),
             player_id: Set(game.player.id),
@@ -35,8 +34,7 @@ impl GameMapper {
 
     /// Maps a [model][`game::Model`], a [Player], [Monastery] and [Surroundings] to a [`Game`].
     pub fn to_domain_entity(
-        &self,
-        model: game::Model,
+        model: games::Model,
         player: Player,
         monastery: Monastery,
         surroundings: Surroundings,

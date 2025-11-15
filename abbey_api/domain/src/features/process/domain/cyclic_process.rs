@@ -23,7 +23,7 @@ pub struct CyclicProcess {
     pub status: Status,
 
     /// The possible [Resources][`crate::features::output::domain::resource`] outputted by this [`CyclicProcess`].
-    output_resources: Vec<Resource>,
+    pub output_resources: Vec<Resource>,
 
     /// The time this [`CyclicProcess`] was started last.
     pub started_at: Option<OffsetDateTime>,
@@ -43,16 +43,25 @@ pub struct CyclicProcess {
 
 impl CyclicProcess {
     /// Creates a new [`CyclicProcess`] based on the provided cycle [`time::Duration`].
-    pub fn new(id: i32, cycle_interval: Duration, output_resources: Vec<Resource>) -> Self {
+    pub fn new(
+        id: i32,
+        status: Status,
+        output_resources: Vec<Resource>,
+        started_at: Option<OffsetDateTime>,
+        paused_at: Option<OffsetDateTime>,
+        cycle_interval: Duration,
+        elapsed: Duration,
+        assigned_people: Vec<Rc<RefCell<dyn Person>>>,
+    ) -> Self {
         Self {
             id,
-            status: Status::New,
+            status,
             output_resources,
-            started_at: None,
-            paused_at: None,
+            started_at,
+            paused_at,
             cycle_interval,
-            elapsed: Duration::ZERO,
-            assigned_people: Vec::new(),
+            elapsed,
+            assigned_people,
         }
     }
 
