@@ -1,33 +1,31 @@
 use std::fmt::Display;
 
-use crate::shared::error::DomainError;
+use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
-pub enum GameError {
+pub enum GameErrorKind {
     /// Failed to create a new [Game][`crate::features::game::domain::Game`].
     Creation,
 }
 
-impl std::error::Error for GameError {}
-
-impl DomainError for GameError {
+impl DomainErrorKind for GameErrorKind {
     /// Gets the locale code of a [`GameError`].
-    fn code(&self) -> &'static str {
+    fn code(&self) -> String {
         match self {
-            Self::Creation => "error.game.creation",
+            Self::Creation => "error.game.creation".to_string(),
         }
     }
 
     /// Gets the message of a [`GameError`].
-    fn message(&self) -> &'static str {
+    fn message(&self) -> String {
         match self {
-            Self::Creation => "Failed to create a new game.",
+            Self::Creation => "Failed to create a new game.".to_string(),
         }
     }
 }
 
-impl Display for GameError {
+impl Display for GameErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message())
+        write!(f, "[{}] {}", self.code(), self.message())
     }
 }

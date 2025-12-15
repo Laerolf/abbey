@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use entity::resources;
-use sea_orm::ActiveValue::{NotSet, Set};
+use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
 
 use crate::features::output::{
     domain::resource::{Category, Resource},
@@ -22,11 +22,11 @@ impl ResourceMapper {
     }
 
     /// Maps a [`Resource`] to a [model][`resources::ActiveModel`] to update.
-    pub fn to_update_active_model(resource: &Resource) -> resources::ActiveModel {
+    pub fn to_update_active_model(resource: Resource) -> resources::ActiveModel {
         resources::ActiveModel {
-            id: Set(resource.id),
-            name: Set(resource.name.clone()),
-            category: Set(resource.category.to_string()),
+            id: Unchanged(resource.id),
+            name: Unchanged(resource.name),
+            category: Unchanged(resource.category.to_string()),
         }
     }
 

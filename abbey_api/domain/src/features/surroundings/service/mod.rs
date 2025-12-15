@@ -1,3 +1,4 @@
+use sea_orm::DatabaseTransaction;
 use time::Duration;
 
 use crate::{
@@ -7,10 +8,11 @@ use crate::{
             service::ResourceService,
         },
         process::{domain::CyclicProcess, service::CyclicProcessService},
-        source::{domain::Source, service::SourceService},
+        source::{domain::Source, error::SourceErrorKind, service::SourceService},
         surroundings::{
-            domain::Surroundings, error::SurroundingsError, forms::SurroundingsCreationForm,
-            mapper::SurroundingsMapper, repository::SurroundingsRepository,
+            error::SurroundingsErrorKind,
+            forms::SurroundingsCreationForm,
+            repository::{SurroundingsRepository, SurroundingsWithRelations},
         },
     },
     shared::error::DomainError,
@@ -41,48 +43,57 @@ impl SurroundingsService {
     }
 
     /// Creates the [Sources][`Source`] for a new [`Surroundings`].
-    async fn create_sources(&self) -> Result<Vec<Source>, Box<dyn DomainError>> {
+    async fn create_sources_in_transaction(
+        &self,
+        transaction: &DatabaseTransaction,
+    ) -> Result<Vec<Source>, DomainError<SourceErrorKind>> {
         let beach_resources: Vec<Resource> = vec![
             self.resource_service
-                .find_by_name_or_create("sand", Category::Material)
-                .await?,
+                .find_by_name_or_create_in_transaction("sand", Category::Material, transaction)
+                .await
+                .map_err(|error| DomainError::from(SourceErrorKind::Creation).with_cause(error))?,
             self.resource_service
-                .find_by_name_or_create("seaweed", Category::Material)
-                .await?,
+                .find_by_name_or_create_in_transaction("seaweed", Category::Material, transaction)
+                .await
+                .map_err(|error| DomainError::from(SourceErrorKind::Creation).with_cause(error))?,
         ];
+
         let beach_process: CyclicProcess = self
             .cyclic_process_service
-            .create_cyclic_process(beach_resources, Duration::minutes(1), Vec::new())
-            .await?;
+            .create_cyclic_process_in_transaction(
+                beach_resources,
+                Duration::minutes(1),
+                transaction,
+            )
+            .await
+            .map_err(|error| DomainError::from(SourceErrorKind::Creation).with_cause(error))?;
 
         let beach: Source = self
             .source_service
-            .create_source("the_beach", beach_process)
+            .create_source_in_transaction("the_beach", beach_process, transaction)
             .await?;
 
         Ok(vec![beach])
     }
 
-    /// Creates a new [`Surroundings`].
-    pub async fn create_surroundings(&self) -> Result<Surroundings, Box<dyn DomainError>> {
-        let sources = self
-            .create_sources()
+    /// Creates a new [`Surroundings`][`SurroundingsWithRelations`].
+    pub async fn create_surroundings_in_transaction(
+        &self,
+        transaction: &DatabaseTransaction,
+    ) -> Result<SurroundingsWithRelations, DomainError<SurroundingsErrorKind>> {
+        let source_ids: Vec<i32> = self
+            .create_sources_in_transaction(transaction)
             .await
-            .expect("Failed to create Sources for a Surrounding.");
+            .map_err(|error| DomainError::from(SurroundingsErrorKind::Creation).with_cause(error))?
+            .iter()
+            .map(|source| source.id)
+            .collect();
 
-        let creation_form =
-            SurroundingsCreationForm::new(sources.iter().map(|source| source.id).collect());
+        let creation_form = SurroundingsCreationForm::new(source_ids);
 
-        match self
-            .repository
-            .insert(SurroundingsMapper::to_new_active_model(creation_form))
+        self.repository
+            .create_with_relations_in_transaction(creation_form, transaction)
             .await
-        {
-            Ok(new_surroundings) => Ok(SurroundingsMapper::to_domain_entity(
-                new_surroundings,
-                sources,
-            )),
-            Err(_error) => Err(Box::new(SurroundingsError::Creation)),
-        }
+            .map_err(|error| DomainError::from(SurroundingsErrorKind::Creation).with_cause(error))
     }
 }

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="c92f582f-413c-4bac-89c4-bcd18882e6b4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/abbey_api/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/api/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/api/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/api/src/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/api/src/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/api/src/features/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/api/src/features/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/api/src/features/player/mod.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/api/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/api/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/api/src/shared/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/api/src/shared/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/domain/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/domain/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/domain/monk.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/domain/monk.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/domain/person.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/domain/person.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/forms/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/forms/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/actor/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/assignment/domain/process_assignment_factory.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/assignment/domain/process_assignment_factory.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/assignment/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/assignment/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/game/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/game/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/game/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/game/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/game/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/game/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/game/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/game/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/game/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/game/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/forms/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/forms/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/monastery/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/output/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/output/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/output/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/output/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/output/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/output/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/output/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/output/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/player/domain/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/player/domain/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/player/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/player/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/player/forms/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/player/forms/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/player/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/player/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/player/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/player/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/player/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/player/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/process/domain/cyclic_process.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/process/domain/cyclic_process.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/process/domain/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/process/domain/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/process/domain/task.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/process/domain/task.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/process/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/process/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/process/forms/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/process/forms/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/process/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/process/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/process/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/process/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/process/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/process/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/forms/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/forms/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/skill/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/source/domain/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/source/domain/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/source/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/source/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/source/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/source/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/source/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/source/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/source/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/source/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/forms/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/forms/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/mapper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/mapper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/repository/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/repository/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/service/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/features/surroundings/service/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/shared/db.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/shared/db.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/domain/src/shared/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/domain/src/shared/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/cyclic_process.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/game.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/games.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/entity/src/games.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/entity/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/monastery.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/monk.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/player.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/prelude.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/entity/src/prelude.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/source.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/sources.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/entity/src/sources.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/entity/src/surroundings.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/entity/src/surroundings.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/MIGRATION.md" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/migration/MIGRATION.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/migration/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251103_085752_create_players_table.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/migration/src/m20251103_085752_create_players_table.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251103_095220_create_cyclic_processes_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251105_050258_create_games_table.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/migration/src/m20251105_050258_create_games_table.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251105_050818_create_monasteries_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251105_051143_create_surroundings_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251105_071714_create_monks_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251106_231216_create_sources_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251109_050909_create_resources_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251109_051335_create_cyclic_process_resources_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251115_034534_create_monastery_monks_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251115_042853_create_skills_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/migration/src/m20251115_042921_create_monk_skills_table.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/abbey_api/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/abbey_api/src/main.rs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="368TUphhIWeGT5hofmUQpiarqUm" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.standard&quot;: &quot;&quot;,
+    &quot;nodejs_interpreter_path&quot;: &quot;node&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;pnpm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;settings.nodejs&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-WS-241.18034.50" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="c92f582f-413c-4bac-89c4-bcd18882e6b4" name="Changes" comment="" />
+      <created>1764387217726</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1764387217726</updated>
+      <workItem from="1764387219033" duration="12000" />
+      <workItem from="1765365565593" duration="593000" />
+    </task>
+    <servers />
+  </component>
+</project>

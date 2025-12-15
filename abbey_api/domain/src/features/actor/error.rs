@@ -1,37 +1,35 @@
 use std::fmt::Display;
 
-use crate::shared::error::DomainError;
+use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
-pub enum ActorError {
+pub enum ActorErrorKind {
     /// Failed to create a new [`Actor`][`super::domain::Actor`].
     Creation,
     /// The [`Actor`][`super::domain::Actor`] is not available.
     Assigned,
 }
 
-impl std::error::Error for ActorError {}
-
-impl DomainError for ActorError {
+impl DomainErrorKind for ActorErrorKind {
     /// Gets the locale code of the [`ActorError`].
-    fn code(&self) -> &'static str {
+    fn code(&self) -> String {
         match self {
-            Self::Creation => "error.actor.creation",
-            Self::Assigned => "error.actor.assigned",
+            Self::Creation => "error.actor.creation".to_string(),
+            Self::Assigned => "error.actor.assigned".to_string(),
         }
     }
 
     /// Gets the message of the [`ActorError`].
-    fn message(&self) -> &'static str {
+    fn message(&self) -> String {
         match self {
-            Self::Creation => "Failed to create a new Actor.",
-            Self::Assigned => "An Actor can only be assigned to one Process.",
+            Self::Creation => "Failed to create a new Actor.".to_string(),
+            Self::Assigned => "An Actor can only be assigned to one Process.".to_string(),
         }
     }
 }
 
-impl Display for ActorError {
+impl Display for ActorErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message())
+        write!(f, "[{}] {}", self.code(), self.message())
     }
 }

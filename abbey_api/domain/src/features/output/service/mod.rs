@@ -1,7 +1,9 @@
+use sea_orm::DatabaseTransaction;
+
 use crate::{
     features::output::{
         domain::resource::{Category, Resource},
-        error::ResourceError,
+        error::ResourceErrorKind,
         forms::ResourceCreationForm,
         mapper::ResourceMapper,
         repository::ResourceRepository,
@@ -17,35 +19,38 @@ pub struct ResourceService {
 
 impl ResourceService {
     /// Finds a [`Resource`] by its name, if not found, the resource will be created.
-    pub async fn find_by_name_or_create(
+    pub async fn find_by_name_or_create_in_transaction(
         &self,
         name: impl Into<String>,
         category: Category,
-    ) -> Result<Resource, Box<dyn DomainError>> {
-        let name_string = name.into();
+        transaction: &DatabaseTransaction,
+    ) -> Result<Resource, DomainError<ResourceErrorKind>> {
+        let creation_form = ResourceCreationForm::new(name, category.to_string());
 
-        if let Ok(Some(existing_resource)) = self.repository.find_by_name(&name_string).await {
-            return Ok(ResourceMapper::to_domain_entity(existing_resource));
-        }
+        let resource = self
+            .repository
+            .find_by_name_or_create_in_transaction(creation_form, transaction)
+            .await
+            .map_err(|error| DomainError::from(ResourceErrorKind::Creation).with_cause(error))?;
 
-        self.create_resource(name_string, category).await
+        Ok(ResourceMapper::to_domain_entity(resource))
     }
 
     /// Creates a new [`Resource`].
-    pub async fn create_resource(
+    pub async fn create_resource_in_transaction(
         &self,
         name: impl Into<String>,
         category: Category,
-    ) -> Result<Resource, Box<dyn DomainError>> {
+        transaction: &DatabaseTransaction,
+    ) -> Result<Resource, DomainError<ResourceErrorKind>> {
         let creation_form = ResourceCreationForm::new(name, category.to_string());
 
-        match self
+        let resource = self
             .repository
-            .insert(ResourceMapper::to_new_active_model(creation_form))
+            .create_in_transaction(creation_form, transaction)
             .await
-        {
-            Ok(new_resource) => Ok(ResourceMapper::to_domain_entity(new_resource)),
-            Err(_error) => Err(Box::new(ResourceError::Creation)),
-        }
+            .map_err(|error| DomainError::from(ResourceErrorKind::Creation).with_cause(error))?;
+
+        Ok(ResourceMapper::to_domain_entity(resource))
     }
 }

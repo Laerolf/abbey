@@ -1,6 +1,6 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
-use crate::m20251103_095220_create_cyclic_processes_table::CyclicProcesses;
+use crate::m20251102_095220_create_cyclic_processes_table::CyclicProcesses;
 
 #[derive(DeriveIden)]
 pub enum Players {

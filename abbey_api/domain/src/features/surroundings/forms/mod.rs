@@ -1,7 +1,8 @@
 /// Represents a [Surroundings][`super::domain::Surroundings`] creation form.
+#[derive(Clone)]
 pub struct SurroundingsCreationForm {
     /// The IDs of the [Source][`crate::features::source::domain::Source`]s of [Surroundings][`super::domain::Surroundings`].
-    source_ids: Vec<i32>,
+    pub source_ids: Vec<i32>,
 }
 
 impl SurroundingsCreationForm {

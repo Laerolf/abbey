@@ -1,20 +1,12 @@
-use std::{cell::RefCell, rc::Rc};
-
-use entity::cyclic_process_resources;
-use futures::future::try_join_all;
-use sea_orm::DbErr;
+use sea_orm::DatabaseTransaction;
 use time::Duration;
 
 use crate::{
     features::{
-        actor::domain::person::Person,
         output::domain::resource::Resource,
         process::{
-            domain::CyclicProcess,
-            error::ProcessError,
-            forms::CyclicProcessCreationForm,
-            mapper::CyclicProcessMapper,
-            repository::{CyclicProcessRepository, CyclicProcessResourceRepository},
+            domain::CyclicProcess, error::ProcessErrorKind, forms::CyclicProcessCreationForm,
+            mapper::CyclicProcessMapper, repository::CyclicProcessRepository,
         },
     },
     shared::error::DomainError,
@@ -24,33 +16,35 @@ use crate::{
 #[derive(Default, Clone)]
 pub struct CyclicProcessService {
     repository: CyclicProcessRepository,
-    cyclic_process_resource_repository: CyclicProcessResourceRepository,
 }
 
 impl CyclicProcessService {
-    /// Adds a [Resource] to a [`CyclicProcess`].
-    async fn add_resource_to_cyclic_process(
+    /// Finds a [`CyclicProcess`] and all its related entities by its ID.
+    pub async fn find_by_id_with_relations(
         &self,
-        cyclic_process: &CyclicProcess,
-        resource: &Resource,
-    ) -> Result<cyclic_process_resources::Model, DbErr> {
-        self.cyclic_process_resource_repository
-            .insert(
-                CyclicProcessMapper::to_new_cyclic_process_resource_active_model(
-                    cyclic_process,
-                    resource,
-                ),
-            )
+        id: i32,
+    ) -> Result<Option<CyclicProcess>, ProcessErrorKind> {
+        let Some(model) = self
+            .repository
+            .find_by_id_with_relations(id)
             .await
+            .map_err(|_error| ProcessErrorKind::Creation)?
+        else {
+            return Ok(None);
+        };
+
+        Ok(Some(CyclicProcessMapper::to_domain_entity_with_relations(
+            model,
+        )))
     }
 
     /// Creates a new [`CyclicProcess`].
-    pub async fn create_cyclic_process(
+    pub async fn create_cyclic_process_in_transaction(
         &self,
         output_resources: Vec<Resource>,
         cycle_interval: Duration,
-        assigned_people: Vec<Rc<RefCell<dyn Person>>>,
-    ) -> Result<CyclicProcess, Box<dyn DomainError>> {
+        transaction: &DatabaseTransaction,
+    ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
         let creation_form = CyclicProcessCreationForm::new(
             output_resources
                 .iter()
@@ -59,28 +53,14 @@ impl CyclicProcessService {
             cycle_interval,
         );
 
-        match self
+        let related_process = self
             .repository
-            .insert(CyclicProcessMapper::to_new_active_model(creation_form))
+            .create_with_relations_in_transaction(creation_form, transaction)
             .await
-        {
-            Ok(new_cyclic_process) => {
-                let process = CyclicProcessMapper::to_domain_entity(
-                    new_cyclic_process,
-                    output_resources.clone(),
-                    assigned_people,
-                );
+            .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))?;
 
-                match try_join_all(output_resources.iter().map(|output_resource| {
-                    self.add_resource_to_cyclic_process(&process, output_resource)
-                }))
-                .await
-                {
-                    Ok(_) => Ok(process),
-                    Err(_) => Err(Box::new(ProcessError::Creation)),
-                }
-            }
-            Err(_error) => Err(Box::new(ProcessError::Creation)),
-        }
+        Ok(CyclicProcessMapper::to_domain_entity_with_relations(
+            related_process,
+        ))
     }
 }

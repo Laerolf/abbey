@@ -1,33 +1,31 @@
 use std::fmt::Display;
 
-use crate::shared::error::DomainError;
+use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
-pub enum SkillError {
+pub enum SkillErrorKind {
     /// Failed to create a new [`Skill`][`super::domain::Skill`].
     Creation,
 }
 
-impl std::error::Error for SkillError {}
-
-impl DomainError for SkillError {
+impl DomainErrorKind for SkillErrorKind {
     /// Gets the locale code of the [`SkillError`].
-    fn code(&self) -> &'static str {
+    fn code(&self) -> String {
         match self {
-            Self::Creation => "error.skill.creation",
+            Self::Creation => "error.skill.creation".to_string(),
         }
     }
 
     /// Gets the message of the [`SkillError`].
-    fn message(&self) -> &'static str {
+    fn message(&self) -> String {
         match self {
-            Self::Creation => "Failed to create a new Skill.",
+            Self::Creation => "Failed to create a new Skill.".to_string(),
         }
     }
 }
 
-impl Display for SkillError {
+impl Display for SkillErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message())
+        write!(f, "[{}] {}", self.code(), self.message())
     }
 }

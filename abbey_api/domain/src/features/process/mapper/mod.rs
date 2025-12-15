@@ -1,15 +1,15 @@
-use std::{cell::RefCell, rc::Rc, str::FromStr};
+use std::str::FromStr;
 
 use entity::{cyclic_process_resources, cyclic_processes};
-use sea_orm::ActiveValue::{NotSet, Set};
+use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
 use time::Duration;
 
 use crate::features::{
-    actor::domain::person::Person,
-    output::domain::resource::Resource,
+    output::{domain::resource::Resource, mapper::ResourceMapper},
     process::{
         domain::{CyclicProcess, Status},
         forms::CyclicProcessCreationForm,
+        repository::CyclicProcessWithRelations,
     },
 };
 
@@ -34,7 +34,7 @@ impl CyclicProcessMapper {
             status: Set(Status::New.to_string()),
             started_at: NotSet,
             paused_at: NotSet,
-            elapsed: NotSet,
+            elapsed: Set(0),
         }
     }
 
@@ -51,7 +51,7 @@ impl CyclicProcessMapper {
     }
 
     /// Maps a [`CyclicProcess`] to a [model][`cyclic_processes::ActiveModel`] to update.
-    pub fn to_update_active_model(cyclic_process: &CyclicProcess) -> cyclic_processes::ActiveModel {
+    pub fn to_update_active_model(cyclic_process: CyclicProcess) -> cyclic_processes::ActiveModel {
         let duration_in_seconds: i32 = cyclic_process
             .cycle_interval
             .whole_seconds()
@@ -67,7 +67,7 @@ impl CyclicProcessMapper {
             .expect("Failed to convert a cyclic process elapsed to seconds.");
 
         cyclic_processes::ActiveModel {
-            id: Set(cyclic_process.id),
+            id: Unchanged(cyclic_process.id),
             cycle_interval: Set(duration_in_seconds),
             status: Set(cyclic_process.status.to_string()),
             started_at: Set(cyclic_process.started_at),
@@ -77,21 +77,38 @@ impl CyclicProcessMapper {
     }
 
     /// Maps a [model][`cyclic_processes::Model`] to a [`CyclicProcess`].
-    pub fn to_domain_entity(
-        model: cyclic_processes::Model,
-        output_resources: Vec<Resource>,
-        assigned_people: Vec<Rc<RefCell<dyn Person>>>,
-    ) -> CyclicProcess {
+    pub fn to_domain_entity(model: cyclic_processes::Model) -> CyclicProcess {
         CyclicProcess::new(
             model.id,
             Status::from_str(&model.status)
                 .expect("Failed to find a process status with the provided value."),
-            output_resources,
+            Vec::new(),
             model.started_at,
             model.paused_at,
             Duration::seconds(model.cycle_interval.into()),
             Duration::seconds(model.elapsed.into()),
-            assigned_people,
+            Vec::new(),
+        )
+    }
+
+    /// Maps a [model][`CyclicProcessWithRelations`] to a [`CyclicProcess`].
+    pub fn to_domain_entity_with_relations(relations: CyclicProcessWithRelations) -> CyclicProcess {
+        let resources = relations
+            .resources
+            .into_iter()
+            .map(ResourceMapper::to_domain_entity)
+            .collect();
+
+        CyclicProcess::new(
+            relations.cyclic_process.id,
+            Status::from_str(&relations.cyclic_process.status)
+                .expect("Failed to find a process status with the provided value."),
+            resources,
+            relations.cyclic_process.started_at,
+            relations.cyclic_process.paused_at,
+            Duration::seconds(relations.cyclic_process.cycle_interval.into()),
+            Duration::seconds(relations.cyclic_process.elapsed.into()),
+            Vec::new(),
         )
     }
 }

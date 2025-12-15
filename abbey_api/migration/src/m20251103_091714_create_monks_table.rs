@@ -1,14 +1,13 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
-use crate::m20251103_095220_create_cyclic_processes_table::CyclicProcesses;
+use crate::m20251102_095220_create_cyclic_processes_table::CyclicProcesses;
 
 #[derive(DeriveIden)]
-pub enum Sources {
+pub enum Monks {
     Table,
     Id,
     Name,
-    CyclicProcessId,
-    LastClaimAt,
+    AssignedCyclicProcessId,
 }
 
 #[derive(DeriveMigrationName)]
@@ -20,18 +19,17 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Sources::Table)
+                    .table(Monks::Table)
                     .if_not_exists()
-                    .col(pk_auto(Sources::Id))
-                    .col(string(Sources::Name))
-                    .col(integer(Sources::CyclicProcessId))
-                    .col(timestamp_with_time_zone_null(Sources::LastClaimAt))
+                    .col(pk_auto(Monks::Id))
+                    .col(string(Monks::Name))
+                    .col(integer_null(Monks::AssignedCyclicProcessId))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-source-cyclic-process")
-                            .from(Sources::Table, Sources::CyclicProcessId)
+                            .name("fk-monk-cyclic-process")
+                            .from(Monks::Table, Monks::AssignedCyclicProcessId)
                             .to(CyclicProcesses::Table, CyclicProcesses::Id)
-                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_delete(ForeignKeyAction::SetNull)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
@@ -41,7 +39,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Sources::Table).to_owned())
+            .drop_table(Table::drop().table(Monks::Table).to_owned())
             .await
     }
 }

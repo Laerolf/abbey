@@ -1,33 +1,35 @@
 use std::fmt::Display;
 
-use crate::shared::error::DomainError;
+use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
-pub enum PlayerError {
+pub enum PlayerErrorKind {
     /// Failed to create a new [Player][`crate::features::player::domain::Player`].
     Creation,
+    /// Failed find a [Player][`crate::features::player::domain::Player`] by its ID.
+    FindById,
 }
 
-impl std::error::Error for PlayerError {}
-
-impl DomainError for PlayerError {
+impl DomainErrorKind for PlayerErrorKind {
     /// Gets the locale code of a [`PlayerError`].
-    fn code(&self) -> &'static str {
+    fn code(&self) -> String {
         match self {
-            Self::Creation => "error.player.creation",
+            Self::Creation => "error.player.creation".to_string(),
+            Self::FindById => "error.player.findById".to_string(),
         }
     }
 
     /// Gets the message of a [`PlayerError`].
-    fn message(&self) -> &'static str {
+    fn message(&self) -> String {
         match self {
-            Self::Creation => "Failed to create a new player.",
+            Self::Creation => "Failed to create a new player.".to_string(),
+            Self::FindById => "Failed to find a player by its ID.".to_string(),
         }
     }
 }
 
-impl Display for PlayerError {
+impl Display for PlayerErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message())
+        write!(f, "[{}] {}", self.code(), self.message())
     }
 }

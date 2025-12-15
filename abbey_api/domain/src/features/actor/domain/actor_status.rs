@@ -8,8 +8,6 @@ pub enum ActorStatus {
     Assigned,
 }
 
-impl std::error::Error for ActorStatus {}
-
 impl ActorStatus {
     /// Gets the locale code of the [`ActorStatus`].
     fn code(&self) -> &'static str {

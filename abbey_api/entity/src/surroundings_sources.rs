@@ -3,33 +3,24 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(schema_name = "public", table_name = "game")]
+#[sea_orm(schema_name = "public", table_name = "surroundings_sources")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub player_id: i32,
-    pub monastery_id: i32,
     pub surroundings_id: i32,
+    pub source_id: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::monastery::Entity",
-        from = "Column::MonasteryId",
-        to = "super::monastery::Column::Id",
+        belongs_to = "super::sources::Entity",
+        from = "Column::SurroundingsId",
+        to = "super::sources::Column::Id",
         on_update = "Cascade",
         on_delete = "Cascade"
     )]
-    Monastery,
-    #[sea_orm(
-        belongs_to = "super::player::Entity",
-        from = "Column::PlayerId",
-        to = "super::player::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
-    )]
-    Player,
+    Sources,
     #[sea_orm(
         belongs_to = "super::surroundings::Entity",
         from = "Column::SurroundingsId",
@@ -40,15 +31,9 @@ pub enum Relation {
     Surroundings,
 }
 
-impl Related<super::monastery::Entity> for Entity {
+impl Related<super::sources::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Monastery.def()
-    }
-}
-
-impl Related<super::player::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Player.def()
+        Relation::Sources.def()
     }
 }
 

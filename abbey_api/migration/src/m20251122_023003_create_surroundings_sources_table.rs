@@ -1,16 +1,16 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
 use crate::{
-    m20251103_095220_create_cyclic_processes_table::CyclicProcesses,
-    m20251109_050909_create_resources_table::Resources,
+    m20251102_101143_create_surroundings_table::Surroundings,
+    m20251103_231216_create_sources_table::Sources,
 };
 
 #[derive(DeriveIden)]
-enum CyclicProcessResources {
+enum SurroundingsSources {
     Table,
     Id,
-    CylicProcessId,
-    ResourceId,
+    SurroundingsId,
+    SourceId,
 }
 
 #[derive(DeriveMigrationName)]
@@ -22,30 +22,30 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(CyclicProcessResources::Table)
+                    .table(SurroundingsSources::Table)
                     .if_not_exists()
-                    .col(pk_auto(CyclicProcessResources::Id))
-                    .col(integer(CyclicProcessResources::CylicProcessId))
-                    .col(integer(CyclicProcessResources::ResourceId))
+                    .col(pk_auto(SurroundingsSources::Id))
+                    .col(integer(SurroundingsSources::SurroundingsId))
+                    .col(integer(SurroundingsSources::SourceId))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-cyclic-process-resource-cyclic-process")
+                            .name("fk-surroundings-sources-surroundings")
                             .from(
-                                CyclicProcessResources::Table,
-                                CyclicProcessResources::CylicProcessId,
+                                SurroundingsSources::Table,
+                                SurroundingsSources::SurroundingsId,
                             )
-                            .to(CyclicProcesses::Table, CyclicProcesses::Id)
+                            .to(Surroundings::Table, Surroundings::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-cyclic-process-resource-resource")
+                            .name("fk-surroundings-sources-source")
                             .from(
-                                CyclicProcessResources::Table,
-                                CyclicProcessResources::ResourceId,
+                                SurroundingsSources::Table,
+                                SurroundingsSources::SurroundingsId,
                             )
-                            .to(Resources::Table, Resources::Id)
+                            .to(Sources::Table, Sources::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
@@ -56,11 +56,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(
-                Table::drop()
-                    .table(CyclicProcessResources::Table)
-                    .to_owned(),
-            )
+            .drop_table(Table::drop().table(SurroundingsSources::Table).to_owned())
             .await
     }
 }

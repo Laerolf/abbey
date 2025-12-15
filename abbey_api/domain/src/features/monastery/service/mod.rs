@@ -1,17 +1,14 @@
-use entity::monastery_monks;
-use futures::future::try_join_all;
-use sea_orm::DbErr;
+use sea_orm::DatabaseTransaction;
 
 use crate::{
     features::{
-        actor::{domain::monk::Monk, service::MonkService},
+        actor::{domain::monk::Monk, forms::MonkCreationForm, service::MonkService},
         monastery::{
-            domain::Monastery,
-            error::MonasteryError,
+            error::MonasteryErrorKind,
             forms::MonasteryCreationForm,
-            mapper::MonasteryMapper,
-            repository::{MonasteryMonksRepository, MonasteryRepository},
+            repository::{MonasteryRepository, MonasteryWithRelations},
         },
+        skill::{domain::Skill, service::SkillService},
     },
     shared::error::DomainError,
 };
@@ -23,71 +20,59 @@ pub const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 #[derive(Clone)]
 pub struct MonasteryService {
     repository: MonasteryRepository,
-    monastery_monks_repository: MonasteryMonksRepository,
     monk_service: MonkService,
+    skill_service: SkillService,
 }
 
 impl MonasteryService {
     /// Creates a new [`MonasteryService`].
-    pub fn new(monk_service: MonkService) -> Self {
+    pub fn new(monk_service: MonkService, skill_service: SkillService) -> Self {
         Self {
             repository: MonasteryRepository::default(),
-            monastery_monks_repository: MonasteryMonksRepository::default(),
             monk_service,
+            skill_service,
         }
-    }
-
-    /// Adds a [Monk] to a [`Monastery`].
-    async fn add_monk_to_monastery(
-        &self,
-        monastery: &Monastery,
-        monk: &Monk,
-    ) -> Result<monastery_monks::Model, DbErr> {
-        self.monastery_monks_repository
-            .insert(MonasteryMapper::to_new_monastery_monk_active_model(
-                monastery, monk,
-            ))
-            .await
     }
 
     /// Creates [Monks][`Monk`] for a new [`Monastery`].
-    async fn create_monks(&self) -> Result<Vec<Monk>, Box<dyn DomainError>> {
-        let monks =
-            try_join_all((0..DEFAULT_AMOUNT_OF_MONKS).map(|_| self.monk_service.create_monk()))
-                .await?;
+    async fn create_monks_in_transaction(
+        &self,
+        transaction: &DatabaseTransaction,
+    ) -> Result<Vec<Monk>, DomainError<MonasteryErrorKind>> {
+        let skill_names = vec!["cooking", "brewing"];
 
-        Ok(monks)
+        let skills: Vec<Skill> = self
+            .skill_service
+            .create_many_skills_in_transaction(skill_names, transaction)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
+
+        let skill_ids: Vec<i32> = skills.into_iter().map(|skill| skill.id).collect();
+
+        let monk_creation_forms = (0..DEFAULT_AMOUNT_OF_MONKS)
+            .map(|_| MonkCreationForm::new("Maurits", skill_ids.clone()))
+            .collect();
+
+        self.monk_service
+            .create_many_monks_in_transaction(monk_creation_forms, transaction)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))
     }
 
-    /// Creates a new [`Monastery`].
-    pub async fn create_monastery(&self) -> Result<Monastery, Box<dyn DomainError>> {
-        let monks: Vec<Monk> = self
-            .create_monks()
+    /// Creates a new [`Monastery`][`MonasteryWithRelations`].
+    pub async fn create_monastery_in_transaction(
+        &self,
+        transaction: &DatabaseTransaction,
+    ) -> Result<MonasteryWithRelations, DomainError<MonasteryErrorKind>> {
+        let monks: Vec<Monk> = self.create_monks_in_transaction(transaction).await?;
+
+        let monk_ids = monks.into_iter().map(|monk| monk.id).collect();
+
+        let creation_form = MonasteryCreationForm::new(monk_ids);
+
+        self.repository
+            .create_with_relations(creation_form)
             .await
-            .expect("Failed to create Monks for a new Monastery.");
-
-        let creation_form = MonasteryCreationForm::new();
-
-        match self
-            .repository
-            .insert(MonasteryMapper::to_new_active_model(creation_form))
-            .await
-        {
-            Ok(new_monastery) => {
-                let monastery = MonasteryMapper::to_domain_entity(new_monastery, monks.clone());
-
-                match try_join_all(
-                    monks
-                        .iter()
-                        .map(|monk| self.add_monk_to_monastery(&monastery, monk)),
-                )
-                .await
-                {
-                    Ok(_) => Ok(monastery),
-                    Err(_) => Err(Box::new(MonasteryError::Creation)),
-                }
-            }
-            Err(_error) => Err(Box::new(MonasteryError::Creation)),
-        }
+            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))
     }
 }

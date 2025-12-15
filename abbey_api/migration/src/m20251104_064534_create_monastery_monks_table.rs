@@ -1,8 +1,8 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
 use crate::{
-    m20251105_050818_create_monasteries_table::Monasteries,
-    m20251105_071714_create_monks_table::Monks,
+    m20251102_100818_create_monasteries_table::Monasteries,
+    m20251103_091714_create_monks_table::Monks,
 };
 
 #[derive(DeriveMigrationName)]

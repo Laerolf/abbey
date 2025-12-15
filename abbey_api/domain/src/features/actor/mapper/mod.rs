@@ -1,12 +1,12 @@
-use std::{cell::RefCell, rc::Weak};
+use std::sync::{Arc, Mutex};
 
 use entity::monks;
-use sea_orm::ActiveValue::{NotSet, Set};
+use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
 
 use crate::features::{
-    actor::{domain::monk::Monk, forms::MonkCreationForm},
-    process::domain::Process,
-    skill::domain::Skill,
+    actor::{domain::monk::Monk, forms::MonkCreationForm, repository::MonkWithRelations},
+    process::{domain::Process, mapper::CyclicProcessMapper},
+    skill::mapper::SkillMapper,
 };
 
 /// Represents an element that maps [`Monk`] elements.
@@ -23,26 +23,43 @@ impl MonkMapper {
     }
 
     /// Maps a [`Monk`] to a [model][`monks::ActiveModel`] to update.
-    pub fn to_update_active_model(monk: &Monk) -> monks::ActiveModel {
+    pub fn to_update_active_model(monk: Monk) -> monks::ActiveModel {
         let assigned_cyclic_process_id: Option<i32> = monk
             .assigned_process
             .as_ref()
-            .and_then(|weak_ref| weak_ref.upgrade())
-            .map(|upgraded_ref| upgraded_ref.borrow().id());
+            .map(|as_ref| as_ref.lock().unwrap().id());
 
         monks::ActiveModel {
-            id: Set(monk.id),
-            name: Set(monk.name.clone()),
+            id: Unchanged(monk.id),
+            name: Unchanged(monk.name),
             assigned_cyclic_process_id: Set(assigned_cyclic_process_id),
         }
     }
 
     /// Maps a [model][`monks::Model`] to a [`Monk`].
-    pub fn to_domain_entity(
-        model: monks::Model,
-        skills: Vec<Skill>,
-        assigned_process: Option<Weak<RefCell<dyn Process>>>,
-    ) -> Monk {
-        Monk::new(model.id, model.name, skills, assigned_process)
+    pub fn to_domain_entity(model: monks::Model) -> Monk {
+        Monk::new(model.id, model.name, Vec::new(), None)
+    }
+
+    /// Maps a [model][`monks::Model`] to a [`Monk`].
+    pub fn to_domain_entity_with_relations(relations: MonkWithRelations) -> Monk {
+        let skills = relations
+            .skills
+            .into_iter()
+            .map(SkillMapper::to_domain_entity)
+            .collect();
+
+        let assigned_cyclic_process: Option<Arc<Mutex<dyn Process>>> =
+            relations.cyclic_process.map(|process_model| {
+                let domain_entity = CyclicProcessMapper::to_domain_entity(process_model);
+                Arc::new(Mutex::new(domain_entity)) as _
+            });
+
+        Monk::new(
+            relations.monk.id,
+            relations.monk.name,
+            skills,
+            assigned_cyclic_process,
+        )
     }
 }

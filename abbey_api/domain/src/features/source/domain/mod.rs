@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, Mutex};
 
 use time::OffsetDateTime;
 
@@ -7,7 +7,7 @@ use crate::{
         output::domain::Output,
         process::domain::{CyclicProcess, Process},
     },
-    shared::error::DomainError,
+    shared::error::DomainErrorKind,
 };
 
 /// Represents a source.
@@ -19,7 +19,7 @@ pub struct Source {
     pub name: String,
 
     /// The [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
-    pub process: Rc<RefCell<CyclicProcess>>,
+    pub process: Arc<Mutex<CyclicProcess>>,
 
     /// The last time a claim was made for the output of the completed cycles of this [`Source`].
     pub last_claim_at: Option<OffsetDateTime>,
@@ -31,31 +31,32 @@ impl Source {
         Self {
             id,
             name: name.into(),
-            process: Rc::new(RefCell::new(process)),
+            process: Arc::new(Mutex::new(process)),
             last_claim_at: None,
         }
     }
 
     /// Starts the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
-    pub fn start_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
-        return self.process.borrow_mut().start(now);
+    pub fn start_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
+        return self.process.lock().unwrap().start(now);
     }
 
     /// Pauses the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
-    pub fn pause_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
-        return self.process.borrow_mut().pause(now);
+    pub fn pause_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
+        return self.process.lock().unwrap().pause(now);
     }
 
     /// Resumes the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
-    pub fn resume_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
-        return self.process.borrow_mut().resume(now);
+    pub fn resume_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
+        return self.process.lock().unwrap().resume(now);
     }
 
     /// Claims the output of this [`Source`]'s completed [Process][`crate::features::process::domain::CyclicProcess`] cycles.
     pub fn claim(&mut self, now: OffsetDateTime) -> Vec<Option<Output>> {
         let completed_cycles_since_last_claim = self
             .process
-            .borrow_mut()
+            .lock()
+            .unwrap()
             .completed_cycles(self.last_claim_at.unwrap_or(now));
 
         self.last_claim_at = Some(now);
@@ -65,7 +66,7 @@ impl Source {
         }
 
         (0..completed_cycles_since_last_claim)
-            .map(|_| self.process.borrow_mut().get_yield())
+            .map(|_| self.process.lock().unwrap().get_yield())
             .collect()
     }
 }

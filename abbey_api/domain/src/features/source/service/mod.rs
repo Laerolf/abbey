@@ -1,9 +1,11 @@
+use sea_orm::DatabaseTransaction;
+
 use crate::{
     features::{
         process::domain::{CyclicProcess, Process},
         source::{
-            domain::Source, error::SourceError, forms::SourceCreationForm, mapper::SourceMapper,
-            repository::SourceRepository,
+            domain::Source, error::SourceErrorKind, forms::SourceCreationForm,
+            mapper::SourceMapper, repository::SourceRepository,
         },
     },
     shared::error::DomainError,
@@ -17,20 +19,22 @@ pub struct SourceService {
 
 impl SourceService {
     /// Creates a new [`Source`].
-    pub async fn create_source(
+    pub async fn create_source_in_transaction(
         &self,
         name: impl Into<String>,
         process: CyclicProcess,
-    ) -> Result<Source, Box<dyn DomainError>> {
+        transaction: &DatabaseTransaction,
+    ) -> Result<Source, DomainError<SourceErrorKind>> {
         let creation_form = SourceCreationForm::new(name, process.id());
 
-        match self
+        let related_source = self
             .repository
-            .insert(SourceMapper::to_new_active_model(creation_form))
+            .create_with_relations_in_transaction(creation_form, transaction)
             .await
-        {
-            Ok(new_source) => Ok(SourceMapper::to_domain_entity(new_source, process)),
-            Err(_error) => Err(Box::new(SourceError::Creation)),
-        }
+            .map_err(|error| DomainError::from(SourceErrorKind::Creation).with_cause(error))?;
+
+        Ok(SourceMapper::to_domain_entity_with_relations(
+            related_source,
+        ))
     }
 }

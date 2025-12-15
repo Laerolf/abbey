@@ -1,9 +1,8 @@
 use entity::surroundings;
-use sea_orm::ActiveValue::{NotSet, Set};
+use sea_orm::ActiveValue::{NotSet, Unchanged};
 
-use crate::features::{
-    source::domain::Source,
-    surroundings::{domain::Surroundings, forms::SurroundingsCreationForm},
+use crate::features::surroundings::{
+    domain::Surroundings, forms::SurroundingsCreationForm, repository::SurroundingsWithRelations,
 };
 
 /// Represents an element that maps [`Surroundings`] elements.
@@ -18,14 +17,19 @@ impl SurroundingsMapper {
     }
 
     /// Maps a [`Surroundings`] to a [model][`surroundings::ActiveModel`] to update.
-    pub fn to_update_active_model(surroundings: &Surroundings) -> surroundings::ActiveModel {
+    pub fn to_update_active_model(surroundings: Surroundings) -> surroundings::ActiveModel {
         surroundings::ActiveModel {
-            id: Set(surroundings.id),
+            id: Unchanged(surroundings.id),
         }
     }
 
     /// Maps a [model][`surroundings::Model`] to a [`Surroundings`].
-    pub fn to_domain_entity(model: surroundings::Model, sources: Vec<Source>) -> Surroundings {
-        Surroundings::new(model.id, sources)
+    pub fn to_domain_entity(model: surroundings::Model) -> Surroundings {
+        Surroundings::new(model.id, Vec::new())
+    }
+
+    /// Maps a [model][`surroundings::Model`] to a [`Surroundings`].
+    pub fn to_domain_entity_with_relations(relations: SurroundingsWithRelations) -> Surroundings {
+        Surroundings::new(relations.surroundings.id, relations.sources)
     }
 }

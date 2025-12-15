@@ -1,15 +1,23 @@
 use std::fmt::Display;
 
+use axum::{
+    Json,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
+use domain::shared::error::{DomainError, DomainErrorKind};
+use serde::Serialize;
+
 /// Represents an API [Error][`std::error::Error`].
 #[derive(Debug)]
-pub enum ApiError {
+pub enum StartupError {
     MissingHost,
     MissingPort,
     MissingDbUrl,
     InvalidDbUrl,
 }
 
-impl ApiError {
+impl StartupError {
     /// Gets the locale code of this [`ApiError`].
     fn code(&self) -> &'static str {
         match self {
@@ -31,10 +39,32 @@ impl ApiError {
     }
 }
 
-impl std::error::Error for ApiError {}
-
-impl Display for ApiError {
+impl Display for StartupError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message())
+        write!(f, "{} ({})", self.message(), self.code())
+    }
+}
+
+#[derive(Serialize)]
+pub struct AppError {
+    pub message: String,
+    pub code: String,
+}
+
+impl<K> From<DomainError<K>> for AppError
+where
+    K: DomainErrorKind,
+{
+    fn from(value: DomainError<K>) -> Self {
+        Self {
+            code: value.kind().code(),
+            message: value.kind().message(),
+        }
+    }
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
     }
 }

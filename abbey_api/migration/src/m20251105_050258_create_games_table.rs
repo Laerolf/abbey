@@ -1,13 +1,13 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
 use crate::{
+    m20251102_100818_create_monasteries_table::Monasteries,
+    m20251102_101143_create_surroundings_table::Surroundings,
     m20251103_085752_create_players_table::Players,
-    m20251105_050818_create_monasteries_table::Monasteries,
-    m20251105_051143_create_surroundings_table::Surroundings,
 };
 
 #[derive(DeriveIden)]
-enum Games {
+pub enum Games {
     Table,
     Id,
     PlayerId,

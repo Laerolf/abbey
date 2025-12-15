@@ -1,4 +1,5 @@
 /// Represents a [`Monk`][`super::domain::monk`] creation form.
+#[derive(Clone)]
 pub struct MonkCreationForm {
     /// The name of this [`Monk`][`super::domain::monk`].
     pub name: String,

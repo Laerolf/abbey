@@ -3,29 +3,31 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(schema_name = "public", table_name = "monk")]
+#[sea_orm(schema_name = "public", table_name = "users")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub name: String,
-    pub assigned_cyclic_process_id: Option<i32>,
+    #[sea_orm(unique)]
+    pub email: String,
+    pub status: String,
+    pub game_id: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::cyclic_process::Entity",
-        from = "Column::AssignedCyclicProcessId",
-        to = "super::cyclic_process::Column::Id",
+        belongs_to = "super::games::Entity",
+        from = "Column::GameId",
+        to = "super::games::Column::Id",
         on_update = "Cascade",
-        on_delete = "SetNull"
+        on_delete = "Cascade"
     )]
-    CyclicProcess,
+    Games,
 }
 
-impl Related<super::cyclic_process::Entity> for Entity {
+impl Related<super::games::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::CyclicProcess.def()
+        Relation::Games.def()
     }
 }
 

@@ -1,5 +1,5 @@
 use entity::skills;
-use sea_orm::ActiveValue::{NotSet, Set};
+use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
 
 use crate::features::skill::{domain::Skill, forms::SkillCreationForm};
 
@@ -16,10 +16,10 @@ impl SkillMapper {
     }
 
     /// Maps a [`Skill`] to a [model][`skills::ActiveModel`] to update.
-    pub fn to_update_active_model(skill: &Skill) -> skills::ActiveModel {
+    pub fn to_update_active_model(skill: Skill) -> skills::ActiveModel {
         skills::ActiveModel {
-            id: Set(skill.id),
-            name: Set(skill.name.clone()),
+            id: Unchanged(skill.id),
+            name: Unchanged(skill.name),
         }
     }
 

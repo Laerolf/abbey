@@ -14,3 +14,5 @@ pub mod resources;
 pub mod skills;
 pub mod sources;
 pub mod surroundings;
+pub mod surroundings_sources;
+pub mod users;

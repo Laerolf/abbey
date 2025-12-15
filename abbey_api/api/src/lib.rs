@@ -1,18 +1,16 @@
-mod error;
-mod features;
-mod shared;
-
-use std::env::VarError;
+pub mod error;
+pub mod features;
+pub mod shared;
 
 use axum::Router;
-use domain::shared::db::DatabasePool;
+use domain::shared::db::DatabaseClient;
 use tokio::net::TcpListener;
-use tracing::{Level, event};
+use tracing::{Level, info};
 
-use crate::{error::ApiError, shared::ApiContext};
+use crate::{error::StartupError, shared::ApiContext};
 
 #[derive(Default)]
-pub struct AbbeySetup {
+struct AbbeySetup {
     host: Option<String>,
     port: Option<String>,
     db_url: Option<String>,
@@ -20,21 +18,22 @@ pub struct AbbeySetup {
 }
 
 impl AbbeySetup {
-    fn load_env(mut self) -> Result<Self, VarError> {
+    fn load_env(mut self) -> Result<Self, StartupError> {
         dotenv::dotenv().ok();
 
-        self.db_url = Some(std::env::var("DATABASE_URL")?);
-        self.host = Some(std::env::var("HOST")?);
-        self.port = Some(std::env::var("PORT")?);
+        self.db_url =
+            Some(std::env::var("DATABASE_URL").map_err(|_error| StartupError::MissingDbUrl)?);
+        self.host = Some(std::env::var("HOST").map_err(|_error| StartupError::MissingHost)?);
+        self.port = Some(std::env::var("PORT").map_err(|_error| StartupError::MissingPort)?);
 
         Ok(self)
     }
 
-    pub fn build(self) -> Result<Abbey, ApiError> {
+    pub fn build(self) -> Result<Abbey, StartupError> {
         Ok(Abbey {
-            host: self.host.ok_or(ApiError::MissingHost)?,
-            port: self.port.ok_or(ApiError::MissingPort)?,
-            db_url: self.db_url.ok_or(ApiError::MissingDbUrl)?,
+            host: self.host.ok_or(StartupError::MissingHost)?,
+            port: self.port.ok_or(StartupError::MissingPort)?,
+            db_url: self.db_url.ok_or(StartupError::MissingDbUrl)?,
             log_level: self.log_level.unwrap_or(Level::INFO),
         })
     }
@@ -48,33 +47,30 @@ pub struct Abbey {
 }
 
 impl Abbey {
-    pub fn setup() -> AbbeySetup {
+    fn setup() -> AbbeySetup {
         AbbeySetup::default()
     }
 
-    pub async fn serve() {
-        let abbey = Self::setup()
-            .load_env()
-            .expect("Failed to load configuration from environment")
-            .build()
-            .expect("Failed to build Abbey server");
+    pub async fn serve() -> Result<(), StartupError> {
+        let abbey = Self::setup().load_env()?.build()?;
 
         abbey.serve_with_config().await;
+
+        Ok(())
     }
 
-    pub async fn serve_with_config(self) {
+    async fn serve_with_config(self) {
         tracing_subscriber::fmt()
             .with_max_level(self.log_level)
             .init();
 
-        // TODO: Move this to the api subproject and share with the service constructors in the ApiState
-        DatabasePool::init(&self.db_url)
+        DatabaseClient::init(self.db_url)
             .await
             .expect("Failed to create a database connection.");
 
         let router = Router::new()
             .nest("/api", features::routes())
-            .with_state(ApiContext::new());
+            .with_state(ApiContext::default());
 
         let host_url = format!("{}:{}", self.host, self.port);
 
@@ -83,11 +79,10 @@ impl Abbey {
             .expect("Failed to create an API listener.");
 
         if let Ok(address) = listener.local_addr() {
-            event!(
-                Level::INFO,
+            info!(
                 "{}",
-                &format!("🌐 The Abbey API is listening on http://{}", address)
-            );
+                format!("🌐 The Abbey API is listening on http://{}", address)
+            )
         }
 
         axum::serve(listener, router).await.unwrap();

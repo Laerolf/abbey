@@ -23,7 +23,7 @@ pub enum Relation {
     Monks,
     #[sea_orm(
         belongs_to = "super::skills::Entity",
-        from = "Column::MonkId",
+        from = "Column::SkillId",
         to = "super::skills::Column::Id",
         on_update = "Cascade",
         on_delete = "Cascade"

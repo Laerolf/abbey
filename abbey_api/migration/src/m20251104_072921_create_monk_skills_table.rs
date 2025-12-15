@@ -1,7 +1,7 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
 use crate::{
-    m20251105_071714_create_monks_table::Monks, m20251115_042853_create_skills_table::Skills,
+    m20251102_112853_create_skills_table::Skills, m20251103_091714_create_monks_table::Monks,
 };
 
 #[derive(DeriveIden)]
@@ -37,7 +37,7 @@ impl MigrationTrait for Migration {
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-monk-skills-skill")
-                            .from(MonkSkills::Table, MonkSkills::MonkId)
+                            .from(MonkSkills::Table, MonkSkills::SkillId)
                             .to(Skills::Table, Skills::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),

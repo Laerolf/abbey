@@ -1,33 +1,31 @@
 use std::fmt::Display;
 
-use crate::shared::error::DomainError;
+use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
-pub enum MonasteryError {
+pub enum MonasteryErrorKind {
     /// Failed to create a new [Monastery][`crate::features::monastery::domain::Monastery`].
     Creation,
 }
 
-impl std::error::Error for MonasteryError {}
-
-impl DomainError for MonasteryError {
+impl DomainErrorKind for MonasteryErrorKind {
     /// Gets the locale code of a [`MonasteryError`].
-    fn code(&self) -> &'static str {
+    fn code(&self) -> String {
         match self {
-            Self::Creation => "error.monastery.creation",
+            Self::Creation => "error.monastery.creation".to_string(),
         }
     }
 
     /// Gets the message of a [`MonasteryError`].
-    fn message(&self) -> &'static str {
+    fn message(&self) -> String {
         match self {
-            Self::Creation => "Failed to create a new monastery.",
+            Self::Creation => "Failed to create a new monastery.".to_string(),
         }
     }
 }
 
-impl Display for MonasteryError {
+impl Display for MonasteryErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message())
+        write!(f, "[{}] {}", self.code(), self.message())
     }
 }

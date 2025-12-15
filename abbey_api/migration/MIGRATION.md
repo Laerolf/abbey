@@ -14,6 +14,9 @@
 - [m20251105_071714_create_monks_table.rs](./src/m20251105_071714_create_monks_table.rs)
 - [m20251106_231216_create_sources_table.rs](./src/m20251106_231216_create_sources_table.rs)
 
+### With dependency on Surroundings and Sources
+- [m20251122_023003_create_surroundings_sources_table.rs](./src/m20251122_023003_create_surroundings_sources_table.rs)
+
 ### With dependency on Cyclic Process and Resource
 - [m20251109_051335_create_cyclic_process_resources_table.rs](./src/m20251109_051335_create_cyclic_process_resources_table.rs)
 
@@ -25,3 +28,6 @@
 
 ### With dependency on Player, Monastery and Surroundings
 - [m20251105_050258_create_games_table.rs](./src/m20251105_050258_create_games_table.rs)
+
+### With dependency on Game
+- [m20251115_235801_create_users_table.rs](./src/m20251115_235801_create_users_table.rs)

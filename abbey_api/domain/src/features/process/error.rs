@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
-use crate::shared::error::DomainError;
+use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
-pub enum ProcessError {
+pub enum ProcessErrorKind {
     /// Failed to create a new [Process][`super::domain::Process`].
     Creation,
     /// The [Process][`super::domain::Process`] is not new.
@@ -18,36 +18,34 @@ pub enum ProcessError {
     NoAssignedPeople,
 }
 
-impl std::error::Error for ProcessError {}
-
-impl DomainError for ProcessError {
+impl DomainErrorKind for ProcessErrorKind {
     /// Gets the locale code of the [`ProcessError`].
-    fn code(&self) -> &'static str {
+    fn code(&self) -> String {
         match self {
-            Self::Creation => "error.process.creation",
-            Self::NotNew => "error.process.not_new",
-            Self::NotInProgress => "error.process.not_in_progress",
-            Self::NotPaused => "error.process.not_paused",
-            Self::NotComplete => "error.process.not_complete",
-            Self::NoAssignedPeople => "error.process.no_assigned_people",
+            Self::Creation => "error.process.creation".to_string(),
+            Self::NotNew => "error.process.not_new".to_string(),
+            Self::NotInProgress => "error.process.not_in_progress".to_string(),
+            Self::NotPaused => "error.process.not_paused".to_string(),
+            Self::NotComplete => "error.process.not_complete".to_string(),
+            Self::NoAssignedPeople => "error.process.no_assigned_people".to_string(),
         }
     }
 
     /// Gets the message of the [`ProcessError`].
-    fn message(&self) -> &'static str {
+    fn message(&self) -> String {
         match self {
-            Self::Creation => "Failed to create a new process.",
-            Self::NotNew => "The process is not new.",
-            Self::NotInProgress => "The process is not in progress.",
-            Self::NotPaused => "The process is not paused.",
-            Self::NotComplete => "The process is not complete yet.",
-            Self::NoAssignedPeople => "A process needs assigned people to be run.",
+            Self::Creation => "Failed to create a new process.".to_string(),
+            Self::NotNew => "The process is not new.".to_string(),
+            Self::NotInProgress => "The process is not in progress.".to_string(),
+            Self::NotPaused => "The process is not paused.".to_string(),
+            Self::NotComplete => "The process is not complete yet.".to_string(),
+            Self::NoAssignedPeople => "A process needs assigned people to be run.".to_string(),
         }
     }
 }
 
-impl Display for ProcessError {
+impl Display for ProcessErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message())
+        write!(f, "[{}] {}", self.code(), self.message())
     }
 }

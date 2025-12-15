@@ -22,11 +22,19 @@ pub enum Relation {
         on_delete = "Restrict"
     )]
     CyclicProcesses,
+    #[sea_orm(has_many = "super::surroundings_sources::Entity")]
+    SurroundingsSources,
 }
 
 impl Related<super::cyclic_processes::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CyclicProcesses.def()
+    }
+}
+
+impl Related<super::surroundings_sources::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::SurroundingsSources.def()
     }
 }
 

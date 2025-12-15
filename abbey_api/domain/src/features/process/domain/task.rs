@@ -1,12 +1,12 @@
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, Mutex};
 
 use time::{Duration, OffsetDateTime};
 
 use crate::{
     features::{
-        actor::domain::person::Person, output::domain::Output, process::error::ProcessError,
+        actor::domain::person::Person, output::domain::Output, process::error::ProcessErrorKind,
     },
-    shared::error::DomainError,
+    shared::error::DomainErrorKind,
 };
 
 use super::{Process, Status};
@@ -32,7 +32,7 @@ pub struct Task {
     pub elapsed: Duration,
 
     /// The [People][`crate::features::actor::domain::person`] assigned to this [`Task`].
-    pub assigned_people: Vec<Rc<RefCell<dyn Person>>>,
+    pub assigned_people: Vec<Arc<Mutex<dyn Person>>>,
 }
 
 impl Task {
@@ -74,13 +74,13 @@ impl Task {
 
 impl Process for Task {
     /// Assigns a [Person][`crate::features::actor::domain::person`] to this [`Task`].
-    fn assign_person(&mut self, person: Rc<RefCell<dyn Person>>) {
+    fn assign_person(&mut self, person: Arc<Mutex<dyn Person>>) {
         self.assigned_people.push(person);
     }
 
     /// Unassigns a [Person][`crate::features::actor::domain::person`] to this [`Task`].
-    fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>) {
-        self.assigned_people.retain(|p| !Rc::ptr_eq(p, person));
+    fn unassign_person(&mut self, person: &Arc<Mutex<dyn Person>>) {
+        self.assigned_people.retain(|p| !Arc::ptr_eq(p, person));
     }
 
     /// Gets the ID of this [`Task`].
@@ -94,11 +94,11 @@ impl Process for Task {
     }
 
     /// Starts this [`Task`].
-    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
         if self.status != Status::New {
-            return Err(Box::new(ProcessError::NotNew));
+            return Err(Box::new(ProcessErrorKind::NotNew));
         } else if self.assigned_people.is_empty() {
-            return Err(Box::new(ProcessError::NoAssignedPeople));
+            return Err(Box::new(ProcessErrorKind::NoAssignedPeople));
         }
 
         self.status = Status::InProgress;
@@ -107,9 +107,9 @@ impl Process for Task {
     }
 
     /// Pauses this [`Task`].
-    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
         if self.status != Status::InProgress {
-            return Err(Box::new(ProcessError::NotInProgress));
+            return Err(Box::new(ProcessErrorKind::NotInProgress));
         }
 
         if let Some(started_at) = self.started_at {
@@ -124,11 +124,11 @@ impl Process for Task {
     }
 
     /// Resumes this [`Task`].
-    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
         if self.status != Status::Paused {
-            return Err(Box::new(ProcessError::NotPaused));
+            return Err(Box::new(ProcessErrorKind::NotPaused));
         } else if self.assigned_people.is_empty() {
-            return Err(Box::new(ProcessError::NoAssignedPeople));
+            return Err(Box::new(ProcessErrorKind::NoAssignedPeople));
         }
 
         self.started_at = Some(now);
@@ -138,11 +138,11 @@ impl Process for Task {
     }
 
     /// Completes this [`Task`] if possible.
-    fn complete(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+    fn complete(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
         if self.status != Status::New {
-            return Err(Box::new(ProcessError::NotNew));
+            return Err(Box::new(ProcessErrorKind::NotNew));
         } else if self.assigned_people.is_empty() {
-            return Err(Box::new(ProcessError::NoAssignedPeople));
+            return Err(Box::new(ProcessErrorKind::NoAssignedPeople));
         }
 
         if self.progress(now) >= 1.0 {
@@ -151,7 +151,7 @@ impl Process for Task {
             self.paused_at = None;
             Ok(())
         } else {
-            Err(Box::new(ProcessError::NotComplete))
+            Err(Box::new(ProcessErrorKind::NotComplete))
         }
     }
 

@@ -12,3 +12,5 @@ pub use super::resources::Entity as Resources;
 pub use super::skills::Entity as Skills;
 pub use super::sources::Entity as Sources;
 pub use super::surroundings::Entity as Surroundings;
+pub use super::surroundings_sources::Entity as SurroundingsSources;
+pub use super::users::Entity as Users;

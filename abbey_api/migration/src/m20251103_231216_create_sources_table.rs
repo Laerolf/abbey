@@ -1,13 +1,14 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
-use crate::m20251103_095220_create_cyclic_processes_table::CyclicProcesses;
+use crate::m20251102_095220_create_cyclic_processes_table::CyclicProcesses;
 
 #[derive(DeriveIden)]
-pub enum Monks {
+pub enum Sources {
     Table,
     Id,
     Name,
-    AssignedCyclicProcessId,
+    CyclicProcessId,
+    LastClaimAt,
 }
 
 #[derive(DeriveMigrationName)]
@@ -19,17 +20,18 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Monks::Table)
+                    .table(Sources::Table)
                     .if_not_exists()
-                    .col(pk_auto(Monks::Id))
-                    .col(string(Monks::Name))
-                    .col(integer_null(Monks::AssignedCyclicProcessId))
+                    .col(pk_auto(Sources::Id))
+                    .col(string(Sources::Name))
+                    .col(integer(Sources::CyclicProcessId))
+                    .col(timestamp_with_time_zone_null(Sources::LastClaimAt))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-monk-cyclic-process")
-                            .from(Monks::Table, Monks::AssignedCyclicProcessId)
+                            .name("fk-source-cyclic-process")
+                            .from(Sources::Table, Sources::CyclicProcessId)
                             .to(CyclicProcesses::Table, CyclicProcesses::Id)
-                            .on_delete(ForeignKeyAction::SetNull)
+                            .on_delete(ForeignKeyAction::Restrict)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
@@ -39,7 +41,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Monks::Table).to_owned())
+            .drop_table(Table::drop().table(Sources::Table).to_owned())
             .await
     }
 }

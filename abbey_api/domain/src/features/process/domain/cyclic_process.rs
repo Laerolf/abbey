@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, Mutex};
 
 use rand::seq::SliceRandom;
 use time::{Duration, OffsetDateTime};
@@ -7,9 +7,9 @@ use crate::{
     features::{
         actor::domain::person::Person,
         output::domain::{Output, resource::Resource},
-        process::error::ProcessError,
+        process::error::ProcessErrorKind,
     },
-    shared::error::DomainError,
+    shared::error::DomainErrorKind,
 };
 
 use super::{Process, Status};
@@ -38,7 +38,7 @@ pub struct CyclicProcess {
     pub elapsed: Duration,
 
     /// The [People][`crate::features::actor::domain::person`] assigned to this [`CyclicProcess`].
-    pub assigned_people: Vec<Rc<RefCell<dyn Person>>>,
+    pub assigned_people: Vec<Arc<Mutex<dyn Person>>>,
 }
 
 impl CyclicProcess {
@@ -51,7 +51,7 @@ impl CyclicProcess {
         paused_at: Option<OffsetDateTime>,
         cycle_interval: Duration,
         elapsed: Duration,
-        assigned_people: Vec<Rc<RefCell<dyn Person>>>,
+        assigned_people: Vec<Arc<Mutex<dyn Person>>>,
     ) -> Self {
         Self {
             id,
@@ -82,13 +82,13 @@ impl CyclicProcess {
 
 impl Process for CyclicProcess {
     /// Assigns a [Person][`crate::features::actor::domain::person`] to this [`CyclicProcess`].
-    fn assign_person(&mut self, person: Rc<RefCell<dyn Person>>) {
+    fn assign_person(&mut self, person: Arc<Mutex<dyn Person>>) {
         self.assigned_people.push(person);
     }
 
     /// Unassigns a [Person][`crate::features::actor::domain::person`] to this [`CyclicProcess`].
-    fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>) {
-        self.assigned_people.retain(|p| !Rc::ptr_eq(p, person));
+    fn unassign_person(&mut self, person: &Arc<Mutex<dyn Person>>) {
+        self.assigned_people.retain(|p| !Arc::ptr_eq(p, person));
     }
 
     /// Gets the ID of this [`CyclicProcess`].
@@ -102,11 +102,11 @@ impl Process for CyclicProcess {
     }
 
     // Starts this [`CyclicProcess`].
-    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
         if self.status != Status::New {
-            return Err(Box::new(ProcessError::NotNew));
+            return Err(Box::new(ProcessErrorKind::NotNew));
         } else if self.assigned_people.is_empty() {
-            return Err(Box::new(ProcessError::NoAssignedPeople));
+            return Err(Box::new(ProcessErrorKind::NoAssignedPeople));
         }
 
         self.status = Status::InProgress;
@@ -115,9 +115,9 @@ impl Process for CyclicProcess {
     }
 
     // Pauses this [`CyclicProcess`].
-    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
         if self.status != Status::InProgress {
-            return Err(Box::new(ProcessError::NotInProgress));
+            return Err(Box::new(ProcessErrorKind::NotInProgress));
         }
 
         if let Some(started_at) = self.started_at {
@@ -132,11 +132,11 @@ impl Process for CyclicProcess {
     }
 
     /// Resumes this [`CyclicProcess`].
-    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
+    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
         if self.status != Status::Paused {
-            return Err(Box::new(ProcessError::NotPaused));
+            return Err(Box::new(ProcessErrorKind::NotPaused));
         } else if self.assigned_people.is_empty() {
-            return Err(Box::new(ProcessError::NoAssignedPeople));
+            return Err(Box::new(ProcessErrorKind::NoAssignedPeople));
         }
 
         self.started_at = Some(now);
@@ -161,5 +161,11 @@ impl Process for CyclicProcess {
         } else {
             None
         }
+    }
+
+    fn complete(&mut self, _now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
+        Err(Box::new(
+            crate::shared::error::SharedErrorKind::NotAvailable,
+        ))
     }
 }

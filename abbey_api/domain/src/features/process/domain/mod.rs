@@ -1,5 +1,9 @@
 mod task;
-use std::{cell::RefCell, fmt::Display, rc::Rc, str::FromStr};
+use std::{
+    fmt::Display,
+    str::FromStr,
+    sync::{Arc, Mutex},
+};
 
 pub use task::Task;
 
@@ -9,16 +13,16 @@ use time::OffsetDateTime;
 
 use crate::{
     features::{actor::domain::person::Person, output::domain::Output},
-    shared::error::{DomainError, SharedError},
+    shared::error::{DomainErrorKind, SharedErrorKind},
 };
 
 /// Represents a process.
-pub trait Process {
+pub trait Process: Send {
     /// Asigns a [Person][`crate::features::actor::domain::person`] to this [`Process`].
-    fn assign_person(&mut self, person: Rc<RefCell<dyn Person>>);
+    fn assign_person(&mut self, person: Arc<Mutex<dyn Person>>);
 
     /// Unassign a [Person][`crate::features::actor::domain::person`] from this [`Process`]:
-    fn unassign_person(&mut self, person: &Rc<RefCell<dyn Person>>);
+    fn unassign_person(&mut self, person: &Arc<Mutex<dyn Person>>);
 
     /// Gets the [`Status`] of this [`Process`].
     fn status(&self) -> Status;
@@ -27,20 +31,20 @@ pub trait Process {
     fn id(&self) -> i32;
 
     /// Starts this [`Process`].
-    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>>;
+    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>>;
 
     /// Pauses this [`Process`].
-    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>>;
+    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>>;
 
     /// Resumes this [`Process`].
-    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainError>>;
+    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>>;
 
     /// Gets the [yield][`crate::features::output::domain::Output`] of this [`Process`].
     fn get_yield(&self) -> Option<Output>;
 
     /// Completes this [`Process`].
-    fn complete(&mut self, _now: OffsetDateTime) -> Result<(), Box<dyn DomainError>> {
-        Err(Box::new(SharedError::NotAvailable))
+    fn complete(&mut self, _now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
+        Err(Box::new(SharedErrorKind::NotAvailable))
     }
 }
 

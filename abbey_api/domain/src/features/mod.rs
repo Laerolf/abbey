@@ -1,5 +1,6 @@
 pub mod actor;
 pub mod assignment;
+pub mod auth;
 pub mod game;
 pub mod monastery;
 pub mod output;
@@ -9,3 +10,4 @@ pub mod skill;
 pub mod source;
 pub mod surroundings;
 pub mod time;
+pub mod user;
