@@ -1,13 +1,55 @@
 mod auth;
+mod cyclic_processes;
 mod games;
+mod users;
 
 use axum::Router;
+use sea_orm::DatabaseConnection;
+use utoipa::{
+    OpenApi,
+    openapi::{
+        ComponentsBuilder, InfoBuilder, OpenApi as OpenApiDoc, OpenApiBuilder,
+        security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
+    },
+};
 
 use crate::{
-    features::auth::Feature,
+    features::{
+        auth::{AuthApiDoc, Feature as AuthFeature},
+        cyclic_processes::{CyclicProcessesApiDoc, Feature as CyclicProcessFeature},
+        games::{Feature as GameFeature, GamesApiDoc},
+        users::{Feature as UserFeature, UsersApiDoc},
+    },
     shared::{ApiContext, ApiFeature},
 };
 
-pub fn routes() -> Router<ApiContext> {
-    Router::new().nest("/auth", Feature::routes())
+pub fn openapi() -> OpenApiDoc {
+    OpenApiBuilder::new()
+        .info(InfoBuilder::new().title("Abbey API").build())
+        .components(Some(
+            ComponentsBuilder::new()
+                .security_scheme(
+                    "api_auth",
+                    SecurityScheme::Http(
+                        HttpBuilder::new()
+                            .scheme(HttpAuthScheme::Bearer)
+                            .bearer_format("JWT")
+                            .build(),
+                    ),
+                )
+                .build(),
+        ))
+        .build()
+        .merge_from(AuthApiDoc::openapi())
+        .merge_from(UsersApiDoc::openapi())
+        .merge_from(GamesApiDoc::openapi())
+        .merge_from(CyclicProcessesApiDoc::openapi())
+}
+
+pub fn routes() -> Router<ApiContext<DatabaseConnection>> {
+    Router::new()
+        .nest("/auth", AuthFeature::routes())
+        .nest("/users", UserFeature::routes())
+        .nest("/games", GameFeature::routes())
+        .nest("/cyclic-processes", CyclicProcessFeature::routes())
 }

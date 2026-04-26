@@ -20,3 +20,18 @@ impl GameCreationForm {
         }
     }
 }
+
+/// Represents a [`UserGame`][entity::user_games::ActiveModel] creation form.
+pub struct UserGameCreationForm {
+    /// The ID of the User.
+    pub user_id: i32,
+    /// The ID of the Game.
+    pub game_id: i32,
+}
+
+impl UserGameCreationForm {
+    /// Creates a new [`UserGameCreationForm`].
+    pub fn new(user_id: i32, game_id: i32) -> Self {
+        Self { user_id, game_id }
+    }
+}

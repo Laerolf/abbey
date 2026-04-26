@@ -16,11 +16,27 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(has_many = "super::cyclic_process_resources::Entity")]
     CyclicProcessResources,
+    #[sea_orm(has_many = "super::task_input_resources::Entity")]
+    TaskInputResources,
+    #[sea_orm(has_many = "super::task_output_resources::Entity")]
+    TaskOutputResources,
 }
 
 impl Related<super::cyclic_process_resources::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CyclicProcessResources.def()
+    }
+}
+
+impl Related<super::task_input_resources::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::TaskInputResources.def()
+    }
+}
+
+impl Related<super::task_output_resources::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::TaskOutputResources.def()
     }
 }
 

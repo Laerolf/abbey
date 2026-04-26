@@ -1,41 +1,40 @@
-use std::sync::{Arc, Mutex};
-
 use crate::{
     features::{
-        actor::domain::person::Person, assignment::error::AssignmentErrorKind,
-        process::domain::Process,
+        actor::domain::{Actor, ActorKind},
+        assignment::{domain::ProcessAssignment, error::AssignmentErrorKind},
+        process::domain::{Process, ProcessKind},
     },
-    shared::error::DomainErrorKind,
+    shared::error::DomainError,
 };
 
-pub struct ProcessAssignmentFactory {}
+pub struct ProcessAssignmentFactory;
 
 impl ProcessAssignmentFactory {
-    /// Assigns a [Person][`crate::features::actor::domain::person`] to a [Process][`crate::features::process::domain::Process`].
-    pub fn assign_process_to_person(
-        person: Arc<Mutex<dyn Person>>,
-        process: Arc<Mutex<dyn Process>>,
-    ) -> Result<(), Box<dyn DomainErrorKind>> {
-        let mut mut_person = person.lock().unwrap();
+    /// Assigns [Actors][Vec<ActorKind>] to a [`Process`][ProcessKind].
+    pub fn assign_process_to_actors(
+        actors: Vec<ActorKind>,
+        mut process: ProcessKind,
+    ) -> Result<ProcessAssignment, DomainError<AssignmentErrorKind>> {
+        let updated_actors = actors
+            .into_iter()
+            .map(|mut actor| {
+                actor.assign_process(process.clone()).map_err(|error| {
+                    DomainError::from(AssignmentErrorKind::ActorAssigned).with_cause(error)
+                })?;
+                process.assign_person(actor.clone());
 
-        if mut_person.assign_process(process.clone()).is_err() {
-            return Err(Box::new(AssignmentErrorKind::ActorAssigned));
-        }
+                Ok(actor)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
-        process.lock().unwrap().assign_person(person.clone());
-
-        Ok(())
+        Ok(ProcessAssignment::from(updated_actors, process))
     }
 
-    /// Unassigns a [Person][`crate::features::actor::domain::person`] from a [Process][`crate::features::process::domain::Process`].
-    pub fn unassign_process_from_person(
-        person: Arc<Mutex<dyn Person>>,
-        process: Arc<Mutex<dyn Process>>,
-    ) {
-        let mut mut_person = person.lock().unwrap();
-        let mut mut_process = process.lock().unwrap();
-
-        mut_person.unassign_process();
-        mut_process.unassign_person(&person);
+    /// Unassigns [Actors][Vec<ActorKind>] from a [`Process`][ProcessKind].
+    pub fn unassign_process_from_people(mut actors: Vec<ActorKind>, mut process: ProcessKind) {
+        actors.iter_mut().for_each(|actor| {
+            actor.unassign_process();
+            process.unassign_person(actor);
+        });
     }
 }

@@ -1,13 +1,14 @@
-use entity::games;
+use entity::{games, user_games};
 use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
 
 use crate::features::{
     game::{
-        domain::Game, dto::GameResponse, forms::GameCreationForm, repository::GameWithRelations,
+        domain::Game,
+        forms::{GameCreationForm, UserGameCreationForm},
     },
-    monastery::{mapper::MonasteryMapper, repository::MonasteryWithRelations},
-    player::{mapper::PlayerMapper, repository::PlayerWithRelations},
-    surroundings::{mapper::SurroundingsMapper, repository::SurroundingsWithRelations},
+    monastery::domain::Monastery,
+    player::domain::Player,
+    surroundings::domain::Surroundings,
 };
 
 /// Represents an element that maps [`Game`] elements.
@@ -27,30 +28,34 @@ impl GameMapper {
     /// Maps a [`Game`] to a [model][`games::ActiveModel`] to update.
     pub fn to_update_active_model(game: Game) -> games::ActiveModel {
         games::ActiveModel {
-            id: Unchanged(game.id),
-            monastery_id: Unchanged(game.monastery.id),
-            player_id: Unchanged(game.player.id),
-            surroundings_id: Unchanged(game.surroundings.id),
+            id: Unchanged(game.id().unwrap()),
+            monastery_id: Unchanged(game.monastery().id().unwrap()),
+            player_id: Unchanged(game.player().id().unwrap()),
+            surroundings_id: Unchanged(game.surroundings().id().unwrap()),
         }
     }
 
     /// Maps a [model][`GameWithRelations`] to a [`Game`].
-    pub fn to_domain_entity_with_relations(
-        relations: GameWithRelations,
-        related_player: PlayerWithRelations,
-        related_monastery: MonasteryWithRelations,
-        related_surroundings: SurroundingsWithRelations,
+    pub fn to_domain_entity(
+        game: games::Model,
+        player: Player,
+        monastery: Monastery,
+        surroundings: Surroundings,
     ) -> Game {
-        Game::new(
-            relations.game.id,
-            PlayerMapper::to_domain_entity_with_relations(related_player),
-            MonasteryMapper::to_domain_entity_with_relations(related_monastery),
-            SurroundingsMapper::to_domain_entity_with_relations(related_surroundings),
-        )
+        Game::restore(game.id, player, monastery, surroundings)
     }
+}
 
-    /// Maps [`Game`] to a [GameResponse].
-    pub fn to_response(element: Game) -> GameResponse {
-        GameResponse {}
+/// Represents a mapper for [`UserGames`][user_games::Entity].
+pub struct UserGameMapper;
+
+impl UserGameMapper {
+    /// Maps a [UserGameCreationForm] to a new [`model`][user_games::ActiveModel].
+    pub fn to_new_active_model(creation_form: UserGameCreationForm) -> user_games::ActiveModel {
+        user_games::ActiveModel {
+            id: NotSet,
+            user_id: Set(creation_form.user_id),
+            game_id: Set(creation_form.game_id),
+        }
     }
 }

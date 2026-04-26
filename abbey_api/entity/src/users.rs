@@ -9,25 +9,27 @@ pub struct Model {
     pub id: i32,
     #[sea_orm(unique)]
     pub email: String,
+    pub password: String,
     pub status: String,
-    pub game_id: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::games::Entity",
-        from = "Column::GameId",
-        to = "super::games::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
-    )]
-    Games,
+    #[sea_orm(has_one = "super::refresh_tokens::Entity")]
+    RefreshTokens,
+    #[sea_orm(has_many = "super::user_games::Entity")]
+    UserGames,
 }
 
-impl Related<super::games::Entity> for Entity {
+impl Related<super::refresh_tokens::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Games.def()
+        Relation::RefreshTokens.def()
+    }
+}
+
+impl Related<super::user_games::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::UserGames.def()
     }
 }
 

@@ -5,16 +5,22 @@ edition = "2024"
 publish = false
 
 [dependencies]
-dotenv = "0.15"
 domain = { path = "../domain" }
-axum = { version = "0.8.7", features = ["macros"] }
+axum = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+sea-orm = { workspace = true }
 serde = { workspace = true }
+time = { workspace = true }
+dotenvy = "0.15.7"
+utoipa = { workspace = true }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+tower-cookies = { workspace = true }
 
 [dev-dependencies]
 serde_json = "1.0.145"
 migration = { path = "../migration" }
 sea-orm = { workspace = true }
 tower = "0.5.2"
+serial_test = "3.2.0"

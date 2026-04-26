@@ -29,7 +29,7 @@ impl MigrationTrait for Migration {
                     .col(integer(CyclicProcessResources::ResourceId))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-cyclic-process-resource-cyclic-process")
+                            .name("fk-cyclic-process-resources-cyclic-process")
                             .from(
                                 CyclicProcessResources::Table,
                                 CyclicProcessResources::CylicProcessId,
@@ -40,7 +40,7 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-cyclic-process-resource-resource")
+                            .name("fk-cyclic-process-resources-resource")
                             .from(
                                 CyclicProcessResources::Table,
                                 CyclicProcessResources::ResourceId,

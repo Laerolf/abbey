@@ -32,7 +32,7 @@ impl MigrationTrait for Migration {
                     .col(integer(Games::SurroundingsId))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-game-player")
+                            .name("fk-games-player")
                             .from(Games::Table, Games::PlayerId)
                             .to(Players::Table, Players::Id)
                             .on_delete(ForeignKeyAction::Cascade)
@@ -40,7 +40,7 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-game-monastery")
+                            .name("fk-games-monastery")
                             .from(Games::Table, Games::MonasteryId)
                             .to(Monasteries::Table, Monasteries::Id)
                             .on_delete(ForeignKeyAction::Cascade)
@@ -48,7 +48,7 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-game-monastery-surroundings")
+                            .name("fk-games-surroundings")
                             .from(Games::Table, Games::SurroundingsId)
                             .to(Surroundings::Table, Surroundings::Id)
                             .on_delete(ForeignKeyAction::Cascade)

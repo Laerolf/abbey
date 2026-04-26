@@ -24,7 +24,7 @@ impl MigrationTrait for Migration {
                     .col(integer_null(Players::AssignedProcessId))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-player-cyclic-process")
+                            .name("fk-players-cyclic-process")
                             .from(Players::Table, Players::AssignedProcessId)
                             .to(CyclicProcesses::Table, CyclicProcesses::Id)
                             .on_delete(ForeignKeyAction::SetNull)

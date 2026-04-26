@@ -1,72 +1,119 @@
-use std::sync::{Arc, Mutex};
-
 use time::OffsetDateTime;
 
 use crate::{
     features::{
         output::domain::Output,
-        process::domain::{CyclicProcess, Process},
+        process::{
+            domain::{Process, cyclic_process::CyclicProcess},
+            error::ProcessErrorKind,
+        },
+        source::error::SourceErrorKind,
     },
-    shared::error::DomainErrorKind,
+    shared::error::DomainError,
 };
 
 /// Represents a source.
+#[derive(Clone)]
 pub struct Source {
     /// The ID of this [`Source`].
-    pub id: i32,
+    id: Option<i32>,
 
     /// The name of this [`Source`].
-    pub name: String,
+    name: String,
 
-    /// The [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
-    pub process: Arc<Mutex<CyclicProcess>>,
+    /// The [CyclicProcess][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
+    process: CyclicProcess,
 
     /// The last time a claim was made for the output of the completed cycles of this [`Source`].
-    pub last_claim_at: Option<OffsetDateTime>,
+    last_claim_at: Option<OffsetDateTime>,
 }
 
 impl Source {
-    /// Creates a new [`Source`] based on the provided parameters.
-    pub fn new(id: i32, name: impl Into<String>, process: CyclicProcess) -> Self {
+    /// Creates a new [`Source`].
+    pub fn new(name: impl Into<String>, process: CyclicProcess) -> Self {
         Self {
-            id,
+            id: None,
             name: name.into(),
-            process: Arc::new(Mutex::new(process)),
+            process,
             last_claim_at: None,
         }
     }
 
-    /// Starts the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
-    pub fn start_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
-        return self.process.lock().unwrap().start(now);
+    /// Creates a [`Source`] based on the provided parameters.
+    pub fn from(id: i32, name: impl Into<String>, process: CyclicProcess) -> Self {
+        Self {
+            id: Some(id),
+            name: name.into(),
+            process,
+            last_claim_at: None,
+        }
     }
 
-    /// Pauses the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
-    pub fn pause_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
-        return self.process.lock().unwrap().pause(now);
+    /// Gets the ID of this [`Source`].
+    pub fn id(&self) -> &Option<i32> {
+        &self.id
     }
 
-    /// Resumes the [Process][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
-    pub fn resume_fetching(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
-        return self.process.lock().unwrap().resume(now);
+    /// Gets the name of this [`Source`].
+    pub fn name(&self) -> &String {
+        &self.name
     }
 
-    /// Claims the output of this [`Source`]'s completed [Process][`crate::features::process::domain::CyclicProcess`] cycles.
+    /// Gets the [Process][`CyclicProcess`] of this [`Source`].
+    pub fn process(&self) -> &CyclicProcess {
+        &self.process
+    }
+
+    /// Gets the [date of the last claim][`Option<OffsetDateTime>`] of this [`Source`].
+    pub fn last_claim_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_claim_at
+    }
+
+    /// Starts the [CyclicProcess][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
+    pub fn start_fetching(
+        &mut self,
+        now: OffsetDateTime,
+    ) -> Result<(), DomainError<SourceErrorKind>> {
+        self.process
+            .start(now)
+            .map_err(|error| DomainError::from(SourceErrorKind::StartFetching).with_cause(error))?;
+
+        Ok(())
+    }
+
+    /// Pauses the [CyclicProcess][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
+    pub fn pause_fetching(
+        &mut self,
+        now: OffsetDateTime,
+    ) -> Result<(), DomainError<ProcessErrorKind>> {
+        self.process.pause(now)?;
+
+        Ok(())
+    }
+
+    /// Resumes the [CyclicProcess][`crate::features::process::domain::CyclicProcess`] of this [`Source`].
+    pub fn resume_fetching(
+        &mut self,
+        now: OffsetDateTime,
+    ) -> Result<(), DomainError<ProcessErrorKind>> {
+        self.process.resume(now)?;
+
+        Ok(())
+    }
+
+    /// Claims the output of this [`Source`]'s completed [CyclicProcess][`crate::features::process::domain::CyclicProcess`] cycles.
     pub fn claim(&mut self, now: OffsetDateTime) -> Vec<Option<Output>> {
-        let completed_cycles_since_last_claim = self
+        let completed_cycles = self
             .process
-            .lock()
-            .unwrap()
             .completed_cycles(self.last_claim_at.unwrap_or(now));
-
         self.last_claim_at = Some(now);
 
-        if completed_cycles_since_last_claim == 0 {
+        if completed_cycles == 0 {
             return Vec::new();
         }
 
-        (0..completed_cycles_since_last_claim)
-            .map(|_| self.process.lock().unwrap().get_yield())
+        (0..completed_cycles)
+            .map(|_| self.process.get_yield())
             .collect()
     }
 }

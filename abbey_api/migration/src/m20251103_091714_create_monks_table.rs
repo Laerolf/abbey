@@ -26,7 +26,7 @@ impl MigrationTrait for Migration {
                     .col(integer_null(Monks::AssignedCyclicProcessId))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-monk-cyclic-process")
+                            .name("fk-monks-cyclic-process")
                             .from(Monks::Table, Monks::AssignedCyclicProcessId)
                             .to(CyclicProcesses::Table, CyclicProcesses::Id)
                             .on_delete(ForeignKeyAction::SetNull)

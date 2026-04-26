@@ -3,7 +3,7 @@ pub struct SourceCreationForm {
     /// The name of the [`Source`].
     pub name: String,
 
-    /// The ID of the [Process][`crate::features::process::domain::CyclicProcess`] of this [Source][`super::domain::Source`].
+    /// The ID of the [CyclicProcess][`crate::features::process::domain::CyclicProcess`] of this [Source][`super::domain::Source`].
     pub process_id: i32,
 }
 

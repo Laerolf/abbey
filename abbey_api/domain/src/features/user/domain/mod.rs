@@ -3,26 +3,77 @@ use std::{fmt::Display, str::FromStr};
 use crate::features::game::domain::Game;
 
 /// Represents a user.
+#[derive(Clone)]
 pub struct User {
     /// The ID of the [`User`].
-    pub id: i32,
+    id: Option<i32>,
     /// The email address of the [`User`].
-    pub email: String,
+    email: String,
+    /// The password of the [`User`].
+    password: String,
     /// The status of the [`User`].
-    pub status: Status,
-    /// The [Game] of the [`User`].
-    pub game: Option<Game>,
+    status: Status,
+    /// The [Game]s of the [`User`].
+    games: Vec<Game>,
 }
 
 impl User {
     /// Creates a new [`User`].
-    pub fn new(id: i32, email: impl Into<String>, status: Status, game: Option<Game>) -> Self {
+    pub fn new(
+        email: impl Into<String>,
+        password: impl Into<String>,
+        status: Status,
+        games: Vec<Game>,
+    ) -> Self {
         Self {
-            id,
+            id: None,
             email: email.into(),
+            password: password.into(),
             status,
-            game,
+            games,
         }
+    }
+
+    /// Creates a [`User`].
+    pub fn restore(
+        id: i32,
+        email: impl Into<String>,
+        password: impl Into<String>,
+        status: Status,
+        games: Vec<Game>,
+    ) -> Self {
+        Self {
+            id: Some(id),
+            email: email.into(),
+            password: password.into(),
+            status,
+            games,
+        }
+    }
+
+    /// Gets the ID of the [`User`].
+    pub fn id(&self) -> &Option<i32> {
+        &self.id
+    }
+
+    /// Gets the email address of the [`User`].
+    pub fn email(&self) -> &String {
+        &self.email
+    }
+
+    /// Gets the password of the [`User`].
+    pub fn password(&self) -> &String {
+        &self.password
+    }
+
+    /// Gets the status of the [`User`].
+    pub fn status(&self) -> &Status {
+        &self.status
+    }
+
+    /// Gets the [Games][`Vec<Game>`] of the [`User`].
+    pub fn games(&self) -> &Vec<Game> {
+        &self.games
     }
 }
 

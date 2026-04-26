@@ -1,68 +1,108 @@
-use std::sync::{Arc, Mutex};
+use std::any::Any;
 
 use rand::seq::SliceRandom;
 use time::{Duration, OffsetDateTime};
 
 use crate::{
     features::{
-        actor::domain::person::Person,
+        actor::domain::{Actor, ActorKind},
         output::domain::{Output, resource::Resource},
         process::error::ProcessErrorKind,
     },
-    shared::error::DomainErrorKind,
+    shared::error::DomainError,
 };
 
 use super::{Process, Status};
 
+/// The state of a [`CyclicProcess`].
+pub struct CyclicProcessState {
+    pub status: Status,
+    pub output_resources: Vec<Resource>,
+    pub started_at: Option<OffsetDateTime>,
+    pub paused_at: Option<OffsetDateTime>,
+    pub cycle_interval: Duration,
+    pub elapsed: Duration,
+    pub assigned_people: Vec<ActorKind>,
+}
+
 /// Represents a [`super::Process`] with cycles that have an interval.
+#[derive(Clone, Debug)]
 pub struct CyclicProcess {
     /// The ID of this [`CyclicProcess`].
-    pub id: i32,
+    id: Option<i32>,
 
-    /// The [Status][`super::Status`] of this [`CyclicProcess`].
-    pub status: Status,
+    /// The [Status] of this [`CyclicProcess`].
+    status: Status,
 
-    /// The possible [Resources][`crate::features::output::domain::resource`] outputted by this [`CyclicProcess`].
-    pub output_resources: Vec<Resource>,
+    /// The possible [Resources][Vec<Resource>] outputted by this [`CyclicProcess`].
+    output_resources: Vec<Resource>,
 
     /// The time this [`CyclicProcess`] was started last.
-    pub started_at: Option<OffsetDateTime>,
+    started_at: Option<OffsetDateTime>,
 
     /// The time this [`CyclicProcess`] was paused last.
-    pub paused_at: Option<OffsetDateTime>,
+    paused_at: Option<OffsetDateTime>,
 
     /// The cycle interval of this [`CyclicProcess`].
-    pub cycle_interval: Duration,
+    cycle_interval: Duration,
 
     /// The time that has elapsed since this [`CyclicProcess`] was started.
-    pub elapsed: Duration,
+    elapsed: Duration,
 
-    /// The [People][`crate::features::actor::domain::person`] assigned to this [`CyclicProcess`].
-    pub assigned_people: Vec<Arc<Mutex<dyn Person>>>,
+    /// The [People][`ActorKind`] assigned to this [`CyclicProcess`].
+    assigned_people: Vec<ActorKind>,
 }
 
 impl CyclicProcess {
-    /// Creates a new [`CyclicProcess`] based on the provided cycle [`time::Duration`].
+    /// Creates a new [`CyclicProcess`] based on the provided parameters.
     pub fn new(
-        id: i32,
-        status: Status,
         output_resources: Vec<Resource>,
-        started_at: Option<OffsetDateTime>,
-        paused_at: Option<OffsetDateTime>,
         cycle_interval: Duration,
-        elapsed: Duration,
-        assigned_people: Vec<Arc<Mutex<dyn Person>>>,
-    ) -> Self {
-        Self {
-            id,
-            status,
+    ) -> Result<Self, DomainError<ProcessErrorKind>> {
+        if output_resources.is_empty() {
+            return Err(DomainError::from(ProcessErrorKind::NoOutputResources));
+        };
+
+        Ok(Self {
+            id: None,
+            status: Status::New,
             output_resources,
-            started_at,
-            paused_at,
+            started_at: None,
+            paused_at: None,
             cycle_interval,
-            elapsed,
-            assigned_people,
-        }
+            elapsed: Duration::seconds(0),
+            assigned_people: Vec::new(),
+        })
+    }
+
+    /// Creates a [`CyclicProcess`] based on the provided parameters.
+    pub fn restore(
+        id: i32,
+        state: CyclicProcessState,
+    ) -> Result<Self, DomainError<ProcessErrorKind>> {
+        if state.output_resources.is_empty() {
+            return Err(DomainError::from(ProcessErrorKind::NoOutputResources));
+        };
+
+        Ok(Self {
+            id: Some(id),
+            status: state.status,
+            output_resources: state.output_resources,
+            started_at: state.started_at,
+            paused_at: state.paused_at,
+            cycle_interval: state.cycle_interval,
+            elapsed: state.elapsed,
+            assigned_people: state.assigned_people,
+        })
+    }
+
+    pub fn output_resources(&self) -> &Vec<Resource> {
+        &self.output_resources
+    }
+
+    /// Returns the duration of a cycle of this [`CyclicProcess`].
+    pub fn cycle_interval(&self) -> &Duration {
+        &self.cycle_interval
     }
 
     /// Calculates the completed cycles since the provided time.
@@ -81,43 +121,65 @@ impl CyclicProcess {
 }
 
 impl Process for CyclicProcess {
-    /// Assigns a [Person][`crate::features::actor::domain::person`] to this [`CyclicProcess`].
-    fn assign_person(&mut self, person: Arc<Mutex<dyn Person>>) {
+    /// Used to downcast to a [`CyclicProcess`].
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    /// Assigns a [Person][`ActorKind`] to this [`CyclicProcess`].
+    fn assign_person(&mut self, person: ActorKind) {
         self.assigned_people.push(person);
     }
 
-    /// Unassigns a [Person][`crate::features::actor::domain::person`] to this [`CyclicProcess`].
-    fn unassign_person(&mut self, person: &Arc<Mutex<dyn Person>>) {
-        self.assigned_people.retain(|p| !Arc::ptr_eq(p, person));
+    /// Unassigns a [Person][`ActorKind`] to this [`CyclicProcess`].
+    fn unassign_person(&mut self, actor_to_unassign: &ActorKind) {
+        self.assigned_people
+            .retain(|actor| actor.id() != actor_to_unassign.id());
     }
 
     /// Gets the ID of this [`CyclicProcess`].
-    fn id(&self) -> i32 {
-        self.id
+    fn id(&self) -> &Option<i32> {
+        &self.id
     }
 
-    /// Gets the [Status][`super::Status`] of this [`CyclicProcess`].
-    fn status(&self) -> Status {
-        self.status
+    /// Gets the [Status] of this [`CyclicProcess`].
+    fn status(&self) -> &Status {
+        &self.status
     }
 
-    // Starts this [`CyclicProcess`].
-    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
+    /// Gets the time this [`CyclicProcess`] was last started.
+    fn started_at(&self) -> &Option<OffsetDateTime> {
+        &self.started_at
+    }
+
+    /// Gets the time this [`CyclicProcess`] was last paused.
+    fn paused_at(&self) -> &Option<OffsetDateTime> {
+        &self.paused_at
+    }
+
+    /// Returns the time this [`CyclicProcess`] ran.
+    fn elapsed(&self) -> &Duration {
+        &self.elapsed
+    }
+
+    /// Starts this [`CyclicProcess`].
+    fn start(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
         if self.status != Status::New {
-            return Err(Box::new(ProcessErrorKind::NotNew));
+            return Err(DomainError::from(ProcessErrorKind::NotNew));
         } else if self.assigned_people.is_empty() {
-            return Err(Box::new(ProcessErrorKind::NoAssignedPeople));
+            return Err(DomainError::from(ProcessErrorKind::NoAssignedPeople));
         }
 
         self.status = Status::InProgress;
         self.started_at = Some(now);
+
         Ok(())
     }
 
-    // Pauses this [`CyclicProcess`].
-    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
+    /// Pauses this [`CyclicProcess`].
+    fn pause(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
         if self.status != Status::InProgress {
-            return Err(Box::new(ProcessErrorKind::NotInProgress));
+            return Err(DomainError::from(ProcessErrorKind::NotInProgress));
         }
 
         if let Some(started_at) = self.started_at {
@@ -132,16 +194,17 @@ impl Process for CyclicProcess {
     }
 
     /// Resumes this [`CyclicProcess`].
-    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
+    fn resume(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
         if self.status != Status::Paused {
-            return Err(Box::new(ProcessErrorKind::NotPaused));
+            return Err(DomainError::from(ProcessErrorKind::NotPaused));
         } else if self.assigned_people.is_empty() {
-            return Err(Box::new(ProcessErrorKind::NoAssignedPeople));
+            return Err(DomainError::from(ProcessErrorKind::NoAssignedPeople));
         }
 
         self.started_at = Some(now);
         self.status = Status::InProgress;
         self.paused_at = None;
+
         Ok(())
     }
 
@@ -161,11 +224,5 @@ impl Process for CyclicProcess {
         } else {
             None
         }
-    }
-
-    fn complete(&mut self, _now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
-        Err(Box::new(
-            crate::shared::error::SharedErrorKind::NotAvailable,
-        ))
     }
 }

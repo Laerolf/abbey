@@ -1,194 +1,184 @@
-use entity::{cyclic_processes, sources, surroundings, surroundings_sources};
+use entity::{
+    cyclic_process_resources, cyclic_processes, resources, sources, surroundings,
+    surroundings_sources,
+};
 use sea_orm::{
-    ActiveModelTrait,
-    ActiveValue::{NotSet, Set},
-    ColumnTrait, DatabaseTransaction, DbErr, EntityTrait, ModelTrait, QueryFilter,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
 };
 
 use crate::{
     features::{
-        process::mapper::CyclicProcessMapper,
-        source::{domain::Source, mapper::SourceMapper},
-        surroundings::{forms::SurroundingsCreationForm, mapper::SurroundingsMapper},
+        output::{domain::resource::Resource, mapper::ResourceMapper},
+        process::{
+            domain::{Process, cyclic_process::CyclicProcess},
+            mapper::cyclic_process::CyclicProcessMapper,
+        },
+        source::mapper::SourceMapper,
+        surroundings::{
+            domain::Surroundings,
+            error::SurroundingsErrorKind,
+            forms::{SurroundingSourceCreationForm, SurroundingsCreationForm},
+            mapper::{SurroundingsMapper, SurroundingsSourceMapper},
+        },
     },
-    shared::db::DatabaseClient,
+    shared::error::DomainError,
 };
 
 /// Represents an element that handles all [Surroundings][`super::domain::Surroundings`] database topics.
 #[derive(Default, Clone)]
-pub struct SurroundingsRepository {}
+pub struct SurroundingsRepository;
 
 impl SurroundingsRepository {
-    /// Inserts a [Surroundings][`surroundings::Model`].
-    pub async fn insert(
+    /// Get all relations of a [`Surroundings`].
+    async fn get_relations<C: ConnectionTrait>(
         &self,
-        new_surroundings: surroundings::ActiveModel,
-    ) -> Result<surroundings::Model, DbErr> {
-        new_surroundings.insert(DatabaseClient::get_connection()).await
-    }
-
-    /// Finds a [Player][`surroundings::Model`] by its ID.
-    pub async fn find_by_id(&self, id: i32) -> Result<Option<surroundings::Model>, DbErr> {
-        surroundings::Entity::find_by_id(id)
-            .one(DatabaseClient::get_connection())
-            .await
-    }
-
-    /// Finds a [Player][`surroundings::Model`] by its ID.
-    pub async fn find_by_id_in_transaction(
-        &self,
-        id: i32,
-        transaction: &DatabaseTransaction,
-    ) -> Result<Option<surroundings::Model>, DbErr> {
-        surroundings::Entity::find_by_id(id).one(transaction).await
-    }
-
-    /// Finds the [sources][`Source`] of the [`Surroundings`][`surroundings::Model`].
-    async fn find_sources(
-        &self,
-        surroundings_source_models: Vec<surroundings_sources::Model>,
-    ) -> Result<Vec<Source>, DbErr> {
-        let db = DatabaseClient::get_connection();
-
-        let surroundings_source_ids: Vec<i32> = surroundings_source_models
-            .iter()
-            .map(|source| source.id)
-            .collect();
-
+        surroundings_model: surroundings::Model,
+        db_connection: &C,
+    ) -> Result<Surroundings, DomainError<SurroundingsErrorKind>> {
         let source_models = sources::Entity::find()
-            .filter(sources::Column::Id.is_in(surroundings_source_ids))
-            .all(db)
-            .await?;
-
-        if source_models.is_empty() {
-            return Ok(Vec::new());
-        }
+            .inner_join(surroundings_sources::Entity)
+            .filter(surroundings_sources::Column::SourceId.eq(surroundings_model.id))
+            .all(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(SurroundingsErrorKind::FindAllSources).with_cause(error)
+            })?;
 
         let source_process_ids: Vec<i32> = source_models
             .iter()
-            .map(|source| source.cyclic_process_id)
+            .map(|model| model.cyclic_process_id)
             .collect();
 
-        let source_processes = cyclic_processes::Entity::find()
-            .filter(cyclic_processes::Column::Id.is_in(source_process_ids))
-            .all(db)
-            .await?;
+        let all_source_output_resource_assignments = cyclic_process_resources::Entity::find()
+            .filter(
+                cyclic_process_resources::Column::CylicProcessId.is_in(source_process_ids.clone()),
+            )
+            .all(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(SurroundingsErrorKind::FindById).with_cause(error)
+            })?;
 
-        Ok(source_models
+        let all_source_output_resource_ids: Vec<i32> = all_source_output_resource_assignments
+            .iter()
+            .map(|model| model.resource_id)
+            .collect();
+
+        let all_source_output_resources: Vec<Resource> = resources::Entity::find()
+            .filter(resources::Column::Id.is_in(all_source_output_resource_ids))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(SurroundingsErrorKind::FindById).with_cause(error))?
+            .into_iter()
+            .map(ResourceMapper::to_domain_entity)
+            .collect();
+
+        let all_source_cyclic_processes: Vec<CyclicProcess> = cyclic_processes::Entity::find()
+            .filter(cyclic_processes::Column::Id.is_in(source_process_ids))
+            .all(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(SurroundingsErrorKind::FindAllSources).with_cause(error)
+            })?
+            .into_iter()
+            .map(|cyclic_process_model| {
+                let output_resource_ids: Vec<i32> = all_source_output_resource_assignments
+                    .iter()
+                    .filter(|model| model.cylic_process_id == cyclic_process_model.id)
+                    .map(|model| model.resource_id)
+                    .collect();
+
+                let output_resources: Vec<Resource> = all_source_output_resources
+                    .clone()
+                    .into_iter()
+                    .filter(|resource| output_resource_ids.contains(&resource.id().unwrap()))
+                    .collect();
+
+                CyclicProcessMapper::to_domain_entity(
+                    cyclic_process_model,
+                    output_resources,
+                    Vec::new(),
+                )
+                .unwrap()
+            })
+            .collect();
+
+        let sources = source_models
             .into_iter()
             .map(|source_model| {
-                let process_model = source_processes
+                let process_model = all_source_cyclic_processes
                     .iter()
-                    .find(|process| process.id == source_model.cyclic_process_id)
-                    .expect("A source should have a process.")
-                    .clone();
+                    .find(|model| source_model.cyclic_process_id == model.id().unwrap())
+                    .ok_or(DomainError::from(SurroundingsErrorKind::FindAllSources))?;
 
-                SourceMapper::to_domain_entity(
+                Ok(SourceMapper::to_domain_entity(
                     source_model,
-                    CyclicProcessMapper::to_domain_entity(process_model),
-                )
+                    process_model.clone(),
+                ))
             })
-            .collect())
+            .collect::<Result<Vec<_>, _>>()?;
+
+        SurroundingsMapper::to_domain_entity(surroundings_model, sources).map_err(|error| {
+            DomainError::from(SurroundingsErrorKind::FindAllSources).with_cause(error)
+        })
     }
 
-    /// Finds a [Surroundings][`SurroundingsWithRelations`] by its ID and with all its related entities.
-    pub async fn find_by_id_with_relations(
+    /// Finds a [Surroundings] by its ID and with all its related entities.
+    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,
-        id: i32,
-    ) -> Result<Option<SurroundingsWithRelations>, DbErr> {
-        let Some(surroundings_model) = self.find_by_id(id).await? else {
-            return Ok(None);
-        };
-
-        let db = DatabaseClient::get_connection();
-
-        let surroundings_sources = surroundings_model
-            .find_related(surroundings_sources::Entity)
-            .all(db)
-            .await?;
-
-        if surroundings_sources.is_empty() {
-            return Ok(Some(SurroundingsWithRelations {
-                surroundings: surroundings_model,
-                sources: Vec::new(),
-            }));
-        }
-
-        let sources = self.find_sources(surroundings_sources).await?;
-
-        Ok(Some(SurroundingsWithRelations {
-            surroundings: surroundings_model,
-            sources,
-        }))
-    }
-
-    /// Finds a [Surroundings][`SurroundingsWithRelations`] by its ID and with all its related entities.
-    pub async fn find_by_id_with_relations_in_transaction(
-        &self,
-        id: i32,
-        transaction: &DatabaseTransaction,
-    ) -> Result<Option<SurroundingsWithRelations>, DbErr> {
-        let Some(surroundings_model) = self.find_by_id_in_transaction(id, transaction).await?
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<Surroundings>, DomainError<SurroundingsErrorKind>> {
+        let Some(surroundings_model) = surroundings::Entity::find_by_id(*id)
+            .one(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(SurroundingsErrorKind::FindById).with_cause(error)
+            })?
         else {
             return Ok(None);
         };
 
-        let surroundings_sources = surroundings_model
-            .find_related(surroundings_sources::Entity)
-            .all(transaction)
-            .await?;
-
-        if surroundings_sources.is_empty() {
-            return Ok(Some(SurroundingsWithRelations {
-                surroundings: surroundings_model,
-                sources: Vec::new(),
-            }));
-        }
-
-        let sources = self.find_sources(surroundings_sources).await?;
-
-        Ok(Some(SurroundingsWithRelations {
-            surroundings: surroundings_model,
-            sources,
-        }))
+        Ok(Some(
+            self.get_relations(surroundings_model, db_connection)
+                .await?,
+        ))
     }
 
-    /// Creates a [`Surroundings`][`SurroundingsWithRelations`] with all its relations.
-    pub async fn create_with_relations_in_transaction(
+    /// Creates a new [`Surroundings`] and persists it in the database.
+    pub async fn create(
         &self,
-        form: SurroundingsCreationForm,
-        transaction: &DatabaseTransaction,
-    ) -> Result<SurroundingsWithRelations, DbErr> {
-        let surroundings = SurroundingsMapper::to_new_active_model(form.clone())
-            .insert(transaction)
-            .await?;
+        creation_form: SurroundingsCreationForm,
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<Surroundings, DomainError<SurroundingsErrorKind>> {
+        let new_surroundings_model: surroundings::Model = SurroundingsMapper::to_new_active_model()
+            .insert(db_transaction)
+            .await
+            .map_err(|error| {
+                DomainError::from(SurroundingsErrorKind::Creation).with_cause(error)
+            })?;
 
-        if !form.source_ids.is_empty() {
-            let surroundings_sources: Vec<surroundings_sources::ActiveModel> = form
+        if !creation_form.source_ids.is_empty() {
+            let surroundings_sources: Vec<surroundings_sources::ActiveModel> = creation_form
                 .source_ids
                 .iter()
-                .map(|id| surroundings_sources::ActiveModel {
-                    id: NotSet,
-                    surroundings_id: Set(surroundings.id),
-                    source_id: Set(*id),
+                .map(|source_id| {
+                    SurroundingsSourceMapper::to_new_active_model(
+                        SurroundingSourceCreationForm::new(new_surroundings_model.id, *source_id),
+                    )
                 })
                 .collect();
 
             surroundings_sources::Entity::insert_many(surroundings_sources)
-                .exec(transaction)
-                .await?;
+                .exec(db_transaction)
+                .await
+                .map_err(|error| {
+                    DomainError::from(SurroundingsErrorKind::Creation).with_cause(error)
+                })?;
         }
 
-        self.find_by_id_with_relations_in_transaction(surroundings.id, transaction)
+        self.find_by_id_with_relations(&new_surroundings_model.id, db_transaction)
             .await?
-            .ok_or(DbErr::RecordNotFound(
-                "Failed to find new created surroundings.".to_string(),
-            ))
+            .ok_or(DomainError::from(SurroundingsErrorKind::Creation))
     }
-}
-
-/// [`Surroundings`][`surroundings::Model`] with all its related entities.
-pub struct SurroundingsWithRelations {
-    pub surroundings: surroundings::Model,
-    pub sources: Vec<Source>,
 }

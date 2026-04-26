@@ -2,13 +2,13 @@ use resource::Resource;
 
 pub mod resource;
 
-/// Represents output, a [`resource::Resource`] and a quantity.
+/// Represents output, a [`Resource`] and a quantity.
 pub struct Output {
     /// The resource of the output.
-    pub resource: Resource,
+    resource: Resource,
 
     /// The quantity of the output.
-    pub quantity: i32,
+    quantity: i32,
 }
 
 impl Output {

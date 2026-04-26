@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 use axum::{
     Json,
@@ -7,6 +7,7 @@ use axum::{
 };
 use domain::shared::error::{DomainError, DomainErrorKind};
 use serde::Serialize;
+use utoipa::ToSchema;
 
 /// Represents an API [Error][`std::error::Error`].
 #[derive(Debug)]
@@ -45,10 +46,21 @@ impl Display for StartupError {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct AppError {
+    /// The message of the error.
+    #[schema(example = "Ozzy is in heaven.")]
     pub message: String,
+    /// The message code of the error.
+    #[schema(example = "error.ozzy.in_heaven")]
     pub code: String,
+    /// The context of the error.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(example = json!({"since": "2025-07-22T00:00:00Z"}))]
+    pub context: Option<HashMap<String, String>>,
+
+    #[serde(skip)]
+    status_code: StatusCode,
 }
 
 impl<K> From<DomainError<K>> for AppError
@@ -59,12 +71,14 @@ where
         Self {
             code: value.kind().code(),
             message: value.kind().message(),
+            context: value.context().clone(),
+            status_code: value.kind().http_status(),
         }
     }
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+        (self.status_code, Json(self)).into_response()
     }
 }

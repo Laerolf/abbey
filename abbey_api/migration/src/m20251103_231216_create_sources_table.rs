@@ -28,7 +28,7 @@ impl MigrationTrait for Migration {
                     .col(timestamp_with_time_zone_null(Sources::LastClaimAt))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-source-cyclic-process")
+                            .name("fk-sources-cyclic-process")
                             .from(Sources::Table, Sources::CyclicProcessId)
                             .to(CyclicProcesses::Table, CyclicProcesses::Id)
                             .on_delete(ForeignKeyAction::Restrict)

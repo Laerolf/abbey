@@ -2,48 +2,45 @@ use sea_orm::DatabaseTransaction;
 
 use crate::{
     features::actor::{
-        domain::monk::Monk, error::ActorErrorKind, forms::MonkCreationForm, mapper::MonkMapper,
+        domain::monk::Monk, error::ActorErrorKind, forms::MonkCreationForm,
         repository::MonkRepository,
     },
     shared::error::DomainError,
 };
 
 /// Represents a service handling the [`Monk`] topic.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct MonkService {
     repository: MonkRepository,
 }
 
 impl MonkService {
+    /// Creates a new [`MonkService`].
+    pub fn new(repository: MonkRepository) -> Self {
+        Self { repository }
+    }
+
     /// Creates a new [`Monk`].
     pub async fn create_monk(
         &self,
         creation_form: MonkCreationForm,
+        db_transaction: &DatabaseTransaction,
     ) -> Result<Monk, DomainError<ActorErrorKind>> {
-        let related_monk = self
-            .repository
-            .create_with_relations(creation_form)
+        self.repository
+            .create(creation_form, db_transaction)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))?;
-
-        Ok(MonkMapper::to_domain_entity_with_relations(related_monk))
+            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))
     }
 
-    /// Creates new [`Monks`][`Monk`].
-    pub async fn create_many_monks_in_transaction(
+    /// Creates new [`Monks`][Vec<Monk>].
+    pub async fn create_many_monks(
         &self,
         creation_forms: Vec<MonkCreationForm>,
-        transaction: &DatabaseTransaction,
+        db_transaction: &DatabaseTransaction,
     ) -> Result<Vec<Monk>, DomainError<ActorErrorKind>> {
-        let related_monks = self
-            .repository
-            .create_many_with_relations_in_transaction(creation_forms, transaction)
+        self.repository
+            .create_many(creation_forms, db_transaction)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))?;
-
-        Ok(related_monks
-            .into_iter()
-            .map(MonkMapper::to_domain_entity_with_relations)
-            .collect())
+            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))
     }
 }

@@ -1,50 +1,161 @@
-mod task;
-use std::{
-    fmt::Display,
-    str::FromStr,
-    sync::{Arc, Mutex},
-};
-
-pub use task::Task;
-
-mod cyclic_process;
-pub use cyclic_process::CyclicProcess;
-use time::OffsetDateTime;
+use std::{any::Any, fmt::Display, str::FromStr};
+use time::{Duration, OffsetDateTime};
 
 use crate::{
-    features::{actor::domain::person::Person, output::domain::Output},
-    shared::error::{DomainErrorKind, SharedErrorKind},
+    features::{
+        actor::domain::ActorKind,
+        output::domain::Output,
+        process::{
+            domain::{cyclic_process::CyclicProcess, task::Task},
+            error::ProcessErrorKind,
+        },
+    },
+    shared::error::DomainError,
 };
 
-/// Represents a process.
-pub trait Process: Send {
-    /// Asigns a [Person][`crate::features::actor::domain::person`] to this [`Process`].
-    fn assign_person(&mut self, person: Arc<Mutex<dyn Person>>);
+pub mod cyclic_process;
+pub mod task;
 
-    /// Unassign a [Person][`crate::features::actor::domain::person`] from this [`Process`]:
-    fn unassign_person(&mut self, person: &Arc<Mutex<dyn Person>>);
+#[derive(Clone, Debug)]
+pub enum ProcessKind {
+    CyclicProcess(CyclicProcess),
+    Task(Task),
+}
+
+impl Process for ProcessKind {
+    fn as_any(&self) -> &dyn Any {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.as_any(),
+            ProcessKind::Task(task) => task.as_any(),
+        }
+    }
+
+    fn assign_person(&mut self, person: ActorKind) {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.assign_person(person),
+            ProcessKind::Task(task) => task.assign_person(person),
+        }
+    }
+
+    fn unassign_person(&mut self, person: &ActorKind) {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.unassign_person(person),
+            ProcessKind::Task(task) => task.unassign_person(person),
+        }
+    }
+
+    fn status(&self) -> &Status {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.status(),
+            ProcessKind::Task(task) => task.status(),
+        }
+    }
+
+    fn id(&self) -> &Option<i32> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.id(),
+            ProcessKind::Task(task) => task.id(),
+        }
+    }
+
+    fn started_at(&self) -> &Option<OffsetDateTime> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.started_at(),
+            ProcessKind::Task(task) => task.started_at(),
+        }
+    }
+
+    fn paused_at(&self) -> &Option<OffsetDateTime> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.paused_at(),
+            ProcessKind::Task(task) => task.paused_at(),
+        }
+    }
+
+    fn elapsed(&self) -> &Duration {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.elapsed(),
+            ProcessKind::Task(task) => task.elapsed(),
+        }
+    }
+
+    fn start(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.start(now),
+            ProcessKind::Task(task) => task.start(now),
+        }
+    }
+
+    fn pause(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.pause(now),
+            ProcessKind::Task(task) => task.pause(now),
+        }
+    }
+
+    fn resume(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.resume(now),
+            ProcessKind::Task(task) => task.resume(now),
+        }
+    }
+
+    fn get_yield(&self) -> Option<Output> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.get_yield(),
+            ProcessKind::Task(task) => task.get_yield(),
+        }
+    }
+
+    fn complete(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.complete(now),
+            ProcessKind::Task(task) => task.complete(now),
+        }
+    }
+}
+
+/// Represents a process.
+pub trait Process: Send + Any {
+    /// Used to downcast a [`Process`].
+    fn as_any(&self) -> &dyn Any;
+
+    /// Asigns a [Person][`ActorKind`] to this [`Process`].
+    fn assign_person(&mut self, person: ActorKind);
+
+    /// Unassign a [Person][`ActorKind`] from this [`Process`]:
+    fn unassign_person(&mut self, person: &ActorKind);
 
     /// Gets the [`Status`] of this [`Process`].
-    fn status(&self) -> Status;
+    fn status(&self) -> &Status;
 
     /// Returns the ID of this [Process].
-    fn id(&self) -> i32;
+    fn id(&self) -> &Option<i32>;
+
+    /// Returns time when this [Process] was last started.
+    fn started_at(&self) -> &Option<OffsetDateTime>;
+
+    /// Returns time when this [Process] was last paused.
+    fn paused_at(&self) -> &Option<OffsetDateTime>;
+
+    /// Returns the time this [Process] ran.
+    fn elapsed(&self) -> &Duration;
 
     /// Starts this [`Process`].
-    fn start(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>>;
+    fn start(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>>;
 
     /// Pauses this [`Process`].
-    fn pause(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>>;
+    fn pause(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>>;
 
     /// Resumes this [`Process`].
-    fn resume(&mut self, now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>>;
+    fn resume(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>>;
 
-    /// Gets the [yield][`crate::features::output::domain::Output`] of this [`Process`].
+    /// Gets the [yield][`Output`] of this [`Process`].
     fn get_yield(&self) -> Option<Output>;
 
     /// Completes this [`Process`].
-    fn complete(&mut self, _now: OffsetDateTime) -> Result<(), Box<dyn DomainErrorKind>> {
-        Err(Box::new(SharedErrorKind::NotAvailable))
+    fn complete(&mut self, _now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
+        Err(DomainError::from(ProcessErrorKind::NotFound))
     }
 }
 

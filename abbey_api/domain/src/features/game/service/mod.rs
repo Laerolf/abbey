@@ -1,10 +1,9 @@
-use sea_orm::DatabaseTransaction;
+use sea_orm::{ConnectionTrait, DatabaseTransaction};
 
 use crate::{
     features::{
         game::{
-            domain::Game, error::GameErrorKind, forms::GameCreationForm, mapper::GameMapper,
-            repository::GameRepository,
+            domain::Game, error::GameErrorKind, forms::GameCreationForm, repository::GameRepository,
         },
         monastery::service::MonasteryService,
         player::service::PlayerService,
@@ -25,12 +24,13 @@ pub struct GameService {
 impl GameService {
     /// Creates a new [`GameService`].
     pub fn new(
+        repository: GameRepository,
         monastery_service: MonasteryService,
         player_service: PlayerService,
         surroundings_service: SurroundingsService,
     ) -> Self {
         Self {
-            repository: GameRepository,
+            repository,
             monastery_service,
             player_service,
             surroundings_service,
@@ -38,51 +38,70 @@ impl GameService {
     }
 
     /// Finds a [`Game`] by its ID.
-    pub async fn find_by_id(&self, _id: i32) -> Result<Option<Game>, GameErrorKind> {
-        // TODO: Find everything by its ID and construct the Game as in create_game
-        Ok(None)
+    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<Game>, DomainError<GameErrorKind>> {
+        let game = self
+            .repository
+            .find_by_id_with_relations(id, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(GameErrorKind::FindById)
+                    .with_cause(error)
+                    .with_context("ID", id.to_string())
+            })?;
+
+        Ok(game)
+    }
+
+    /// Gets a [`Game`] by its ID.
+    pub async fn get_by_id_with_relations<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Game, DomainError<GameErrorKind>> {
+        self.find_by_id_with_relations(id, db_connection)
+            .await?
+            .ok_or(DomainError::from(GameErrorKind::GetById))
     }
 
     /// Creates a new [Game].
-    pub async fn create_game_in_transaction(
+    pub async fn create_game(
         &self,
-        transaction: &DatabaseTransaction,
+        db_transaction: &DatabaseTransaction,
     ) -> Result<Game, DomainError<GameErrorKind>> {
-        let related_monastery = self
+        let monastery = self
             .monastery_service
-            .create_monastery_in_transaction(transaction)
+            .create_monastery(db_transaction)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
-        let related_player = self
+        let player = self
             .player_service
-            .create_player_in_transaction(transaction)
+            .create_player(db_transaction)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
-        let related_surroundings = self
+        let surroundings = self
             .surroundings_service
-            .create_surroundings_in_transaction(transaction)
+            .create_surroundings(db_transaction)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
         let creation_form = GameCreationForm::new(
-            related_player.player.id,
-            related_monastery.monastery.id,
-            related_surroundings.surroundings.id,
+            player.id().unwrap(),
+            monastery.id().unwrap(),
+            surroundings.id().unwrap(),
         );
 
         let related_game = self
             .repository
-            .create_with_relations_in_transaction(creation_form, transaction)
+            .create(creation_form, db_transaction)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
-        Ok(GameMapper::to_domain_entity_with_relations(
-            related_game,
-            related_player,
-            related_monastery,
-            related_surroundings,
-        ))
+        Ok(related_game)
     }
 }

@@ -2,8 +2,8 @@ use entity::sources;
 use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
 
 use crate::features::{
-    process::{domain::CyclicProcess, mapper::CyclicProcessMapper},
-    source::{domain::Source, forms::SourceCreationForm, repository::SourceWithRelations},
+    process::domain::{Process, cyclic_process::CyclicProcess},
+    source::{domain::Source, forms::SourceCreationForm},
 };
 
 /// Represents an element that maps [`Source`] elements.
@@ -22,25 +22,16 @@ impl SourceMapper {
 
     /// Maps a [`Source`] to a [model][`sources::ActiveModel`] to update.
     pub fn to_update_active_model(source: Source) -> sources::ActiveModel {
-        let assigned_process_id: i32 = source.process.as_ref().lock().unwrap().id;
-
         sources::ActiveModel {
-            id: Unchanged(source.id),
-            name: Unchanged(source.name),
-            cyclic_process_id: Set(assigned_process_id),
-            last_claim_at: Set(source.last_claim_at),
+            id: Unchanged(source.id().unwrap()),
+            name: Unchanged(source.name().to_string()),
+            cyclic_process_id: Set(source.process().id().unwrap()),
+            last_claim_at: Set(*source.last_claim_at()),
         }
     }
 
-    /// Maps a [model][`SourceWithRelations`] to a [`Source`].
-    pub fn to_domain_entity_with_relations(relations: SourceWithRelations) -> Source {
-        let process = CyclicProcessMapper::to_domain_entity(relations.process);
-
-        Source::new(relations.source.id, relations.source.name, process)
-    }
-
     /// Maps a [model][`sources::Model`] to a [`Source`].
-    pub fn to_domain_entity(model: sources::Model, process: CyclicProcess) -> Source {
-        Source::new(model.id, model.name, process)
+    pub fn to_domain_entity(model: sources::Model, cyclic_process: CyclicProcess) -> Source {
+        Source::from(model.id, model.name, cyclic_process)
     }
 }

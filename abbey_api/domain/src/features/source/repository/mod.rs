@@ -1,109 +1,90 @@
-use entity::{cyclic_processes, sources};
-use sea_orm::{ActiveModelTrait, DatabaseTransaction, DbErr, EntityTrait, ModelTrait};
+use entity::{cyclic_process_resources, cyclic_processes, resources, sources};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
+};
 
 use crate::{
-    features::source::{forms::SourceCreationForm, mapper::SourceMapper},
-    shared::db::DatabaseClient,
+    features::{
+        output::{domain::resource::Resource, mapper::ResourceMapper},
+        process::mapper::cyclic_process::CyclicProcessMapper,
+        source::{
+            domain::Source, error::SourceErrorKind, forms::SourceCreationForm, mapper::SourceMapper,
+        },
+    },
+    shared::error::DomainError,
 };
 
 /// Represents an element that handles all [Source][`super::domain::Source`] database topics.
 #[derive(Default, Clone)]
-pub struct SourceRepository {}
+pub struct SourceRepository;
 
 impl SourceRepository {
-    /// Inserts a [`Source`][`sources::Model`].
-    pub async fn insert(&self, new_source: sources::ActiveModel) -> Result<sources::Model, DbErr> {
-        new_source.insert(DatabaseClient::get_connection()).await
-    }
-
-    /// Finds a [`Source`][`sources::Model`] by its ID.
-    pub async fn find_by_id(&self, id: i32) -> Result<Option<sources::Model>, DbErr> {
-        sources::Entity::find_by_id(id)
-            .one(DatabaseClient::get_connection())
+    /// Gets all relations of a [`Source`].
+    async fn get_relations<C: ConnectionTrait>(
+        &self,
+        source_model: sources::Model,
+        db_connection: &C,
+    ) -> Result<Source, DomainError<SourceErrorKind>> {
+        let source_process_model = cyclic_processes::Entity::find()
+            .inner_join(sources::Entity)
+            .filter(sources::Column::CyclicProcessId.eq(source_model.cyclic_process_id))
+            .one(db_connection)
             .await
+            .map_err(|error| DomainError::from(SourceErrorKind::FindProcess).with_cause(error))?
+            .ok_or(DomainError::from(SourceErrorKind::ProcessNotFound))?;
+
+        let source_process_output_resources: Vec<Resource> = resources::Entity::find()
+            .inner_join(cyclic_process_resources::Entity)
+            .filter(cyclic_process_resources::Column::CylicProcessId.eq(source_process_model.id))
+            .all(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(SourceErrorKind::NoPossibleResources).with_cause(error)
+            })?
+            .into_iter()
+            .map(ResourceMapper::to_domain_entity)
+            .collect();
+
+        let source_process = CyclicProcessMapper::to_domain_entity(
+            source_process_model,
+            source_process_output_resources,
+            Vec::new(),
+        )
+        .map_err(|error| DomainError::from(SourceErrorKind::ProcessNotFound).with_cause(error))?;
+
+        Ok(SourceMapper::to_domain_entity(source_model, source_process))
     }
 
-    /// Finds a [`Source`][`sources::Model`] by its ID.
-    pub async fn find_by_id_in_transaction(
+    /// Finds a [`Source`] by its ID.
+    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,
-        id: i32,
-        transaction: &DatabaseTransaction,
-    ) -> Result<Option<sources::Model>, DbErr> {
-        sources::Entity::find_by_id(id).one(transaction).await
-    }
-
-    /// Finds a [`Source`][`sources::Model`] with all its related entities by its ID.
-    pub async fn find_by_id_with_relations(
-        &self,
-        id: i32,
-    ) -> Result<Option<SourceWithRelations>, DbErr> {
-        let Some(model) = self.find_by_id(id).await? else {
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<Source>, DomainError<SourceErrorKind>> {
+        let Some(source_model) = sources::Entity::find_by_id(*id)
+            .one(db_connection)
+            .await
+            .map_err(|error| DomainError::from(SourceErrorKind::FindById).with_cause(error))?
+        else {
             return Ok(None);
         };
 
-        let db = DatabaseClient::get_connection();
-
-        let process = model.find_related(cyclic_processes::Entity).one(db).await?;
-
-        if process.is_none() {
-            return Err(DbErr::RecordNotFound(
-                "Failed to find a source's process.".to_string(),
-            ));
-        }
-
-        Ok(Some(SourceWithRelations {
-            source: model,
-            process: process.expect("A source should have a process."),
-        }))
+        Ok(Some(self.get_relations(source_model, db_connection).await?))
     }
 
-    /// Finds a [`Source`][`sources::Model`] with all its related entities by its ID.
-    pub async fn find_by_id_with_relations_in_transaction(
+    /// Creates a [`Source`] and persists it in the database.
+    pub async fn create(
         &self,
-        id: i32,
-        transaction: &DatabaseTransaction,
-    ) -> Result<Option<SourceWithRelations>, DbErr> {
-        let Some(model) = self.find_by_id_in_transaction(id, transaction).await? else {
-            return Ok(None);
-        };
+        creation_form: SourceCreationForm,
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<Source, DomainError<SourceErrorKind>> {
+        let new_source_model: sources::Model = SourceMapper::to_new_active_model(creation_form)
+            .insert(db_transaction)
+            .await
+            .map_err(|error| DomainError::from(SourceErrorKind::Creation).with_cause(error))?;
 
-        let process = model
-            .find_related(cyclic_processes::Entity)
-            .one(transaction)
-            .await?;
-
-        if process.is_none() {
-            return Err(DbErr::RecordNotFound(
-                "Failed to find a source's process.".to_string(),
-            ));
-        }
-
-        Ok(Some(SourceWithRelations {
-            source: model,
-            process: process.expect("A source should have a process."),
-        }))
-    }
-
-    /// Creates a [`Source`][`SourceWithRelations`] with all its relations.
-    pub async fn create_with_relations_in_transaction(
-        &self,
-        form: SourceCreationForm,
-        transaction: &DatabaseTransaction,
-    ) -> Result<SourceWithRelations, DbErr> {
-        let source = SourceMapper::to_new_active_model(form)
-            .insert(transaction)
-            .await?;
-
-        self.find_by_id_with_relations_in_transaction(source.id, transaction)
+        self.find_by_id_with_relations(&new_source_model.id, db_transaction)
             .await?
-            .ok_or(DbErr::RecordNotFound(
-                "Failed to find a new created source".to_string(),
-            ))
+            .ok_or(DomainError::from(SourceErrorKind::Creation))
     }
-}
-
-/// A [`Source`][`sources::Model`] with all its related entities.
-pub struct SourceWithRelations {
-    pub source: sources::Model,
-    pub process: cyclic_processes::Model,
 }

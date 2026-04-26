@@ -2,12 +2,17 @@ pub mod error;
 pub mod features;
 pub mod shared;
 
-use axum::Router;
-use domain::shared::db::DatabaseClient;
-use tokio::net::TcpListener;
-use tracing::{Level, info};
+use std::sync::Arc;
 
-use crate::{error::StartupError, shared::ApiContext};
+use axum::Router;
+
+use sea_orm::{ConnectOptions, Database};
+use tokio::net::TcpListener;
+use tower_cookies::CookieManagerLayer;
+use tracing::{Level, info};
+use utoipa_swagger_ui::SwaggerUi;
+
+use crate::{error::StartupError, features::openapi, shared::ApiContext};
 
 #[derive(Default)]
 struct AbbeySetup {
@@ -19,7 +24,7 @@ struct AbbeySetup {
 
 impl AbbeySetup {
     fn load_env(mut self) -> Result<Self, StartupError> {
-        dotenv::dotenv().ok();
+        dotenvy::from_filename(".env").ok();
 
         self.db_url =
             Some(std::env::var("DATABASE_URL").map_err(|_error| StartupError::MissingDbUrl)?);
@@ -59,20 +64,25 @@ impl Abbey {
         Ok(())
     }
 
-    async fn serve_with_config(self) {
+    async fn serve_with_config(&self) {
         tracing_subscriber::fmt()
             .with_max_level(self.log_level)
             .init();
 
-        DatabaseClient::init(self.db_url)
+        let mut opt = ConnectOptions::new(&self.db_url);
+        opt.sqlx_logging(false);
+
+        let db_connection = Database::connect(opt)
             .await
             .expect("Failed to create a database connection.");
 
         let router = Router::new()
+            .merge(SwaggerUi::new("/openapi").url("/openapi.json", openapi()))
             .nest("/api", features::routes())
-            .with_state(ApiContext::default());
+            .layer(CookieManagerLayer::new())
+            .with_state(ApiContext::new(Arc::new(db_connection)));
 
-        let host_url = format!("{}:{}", self.host, self.port);
+        let host_url = format!("{}:{}", self.host, &self.port);
 
         let listener = TcpListener::bind(host_url)
             .await
@@ -80,9 +90,9 @@ impl Abbey {
 
         if let Ok(address) = listener.local_addr() {
             info!(
-                "{}",
-                format!("🌐 The Abbey API is listening on http://{}", address)
-            )
+                "🌐 The Abbey API is listening on http://{} (OpenAPI: http://{}/openapi)",
+                address, address
+            );
         }
 
         axum::serve(listener, router).await.unwrap();

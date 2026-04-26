@@ -1,14 +1,12 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
-use crate::m20251105_050258_create_games_table::Games;
-
 #[derive(DeriveIden)]
-enum Users {
+pub enum Users {
     Table,
     Id,
     Email,
+    Password,
     Status,
-    GameId,
 }
 
 #[derive(DeriveMigrationName)]
@@ -24,16 +22,8 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(pk_auto(Users::Id))
                     .col(string_uniq(Users::Email))
+                    .col(string(Users::Password))
                     .col(string(Users::Status))
-                    .col(integer_null(Users::GameId))
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-user-games-user")
-                            .from(Users::Table, Users::GameId)
-                            .to(Games::Table, Games::Id)
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
-                    )
                     .index(
                         Index::create()
                             .name("ui-users-email")

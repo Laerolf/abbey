@@ -1,31 +1,38 @@
-use std::sync::OnceLock;
+use std::{collections::HashMap, sync::Arc};
 
-use api::{error::StartupError, features, shared::ApiContext};
-use axum::{Router, body::Body, http::Request, response::Response};
-use domain::shared::db::DatabaseClient;
+use api::{
+    error::StartupError,
+    features::{self, openapi},
+    shared::ApiContext,
+};
+use axum::{
+    Router,
+    body::Body,
+    http::{Method, Request, header},
+    response::Response,
+};
+use domain::features::auth::domain::AuthenticationTokens;
 use migration::MigratorTrait;
-use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, FromQueryResult, Statement};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use serde_json::Value;
 use tower::ServiceExt;
-use tracing::info;
+use tower_cookies::CookieManagerLayer;
+use tracing::level_filters::LevelFilter;
+use utoipa_swagger_ui::SwaggerUi;
 
-static TEST_APP: OnceLock<TestApp> = OnceLock::new();
-
-#[derive(FromQueryResult)]
-struct TableName {
-    tablename: String,
-}
+pub mod fixtures;
+pub mod utils;
 
 #[derive(Default)]
 struct TestSetup {
-    db_url: Option<String>,
+    db_url: String,
 }
 
 impl TestSetup {
     fn load_env(mut self) -> Result<Self, StartupError> {
-        dotenv::from_filename(".env.test").ok();
+        dotenvy::from_filename(".env.test").ok();
 
-        self.db_url =
-            Some(std::env::var("DATABASE_URL").map_err(|_error| StartupError::MissingDbUrl)?);
+        self.db_url = std::env::var("DATABASE_URL").map_err(|_error| StartupError::MissingDbUrl)?;
 
         Ok(self)
     }
@@ -37,43 +44,42 @@ impl TestSetup {
     }
 
     pub async fn build(self) -> Result<TestApp, StartupError> {
-        tracing_subscriber::fmt().with_test_writer().try_init().ok();
+        tracing_subscriber::fmt()
+            .with_max_level(LevelFilter::DEBUG)
+            .with_test_writer()
+            .try_init()
+            .ok();
 
-        DatabaseClient::init(
-            self.db_url
-                .as_ref()
-                .expect("A database URL is required.")
-                .to_string(),
-        )
-        .await
-        .expect("Failed to create a database connection.");
+        let mut opt = ConnectOptions::new(&self.db_url);
+        opt.sqlx_logging(false);
 
-        self.refresh_migrations(DatabaseClient::get_connection())
-            .await;
+        let db_connection = Database::connect(opt)
+            .await
+            .expect("Failed to create a database connection.");
+
+        self.refresh_migrations(&db_connection).await;
+
+        let context = ApiContext::new(Arc::new(db_connection));
 
         let router = Router::new()
+            .merge(SwaggerUi::new("/openapi").url("/openapi.json", openapi()))
             .nest("/api", features::routes())
-            .with_state(ApiContext::default());
+            .layer(CookieManagerLayer::new())
+            .with_state(context.clone());
 
-        Ok(TestApp { router })
+        Ok(TestApp { router, context })
     }
 }
 
-#[derive(Debug)]
 pub struct TestApp {
     router: Router,
+    pub context: ApiContext<DatabaseConnection>,
 }
 
 impl TestApp {
-    /// Gets a [`TestApp`].
-    pub async fn instance() -> &'static TestApp {
-        if TEST_APP.get().is_none() {
-            TEST_APP
-                .set(TestApp::create().await)
-                .expect("Failed to create the test app.");
-        }
-
-        TEST_APP.get().unwrap()
+    /// Creates a new [`TestApp`].
+    pub async fn new() -> TestApp {
+        TestApp::create().await
     }
 
     async fn create() -> Self {
@@ -85,52 +91,79 @@ impl TestApp {
             .expect("Failed to setup the test app.")
     }
 
-    pub async fn reset_database(&self) {
-        let db = DatabaseClient::get_connection();
-
-        info!("RESETING DATABASE [START]");
-
-        let tables: Vec<TableName> = db
-            .query_all(Statement::from_string(
-                DbBackend::Postgres,
-                "SELECT tablename FROM pg_tables WHERE schemaname = 'public'".to_owned(),
-            ))
-            .await
-            .expect("Failed to get table names")
-            .iter()
-            .filter_map(|row| TableName::from_query_result(row, "").ok())
-            .collect();
-
-        for table in tables {
-            if table.tablename == "seaql_migrations" {
-                continue;
-            }
-
-            db.execute(Statement::from_string(
-                DbBackend::Postgres,
-                format!(
-                    "TRUNCATE TABLE \"{}\" RESTART IDENTITY CASCADE",
-                    table.tablename
-                ),
-            ))
-            .await
-            .ok();
-        }
-
-        info!("RESETING DATABASE [START]");
+    pub fn post(&self, uri: &str) -> RequestBuilder {
+        RequestBuilder::new(&self.router, Method::POST, uri)
     }
 
-    pub async fn post(&self, uri: &str, body: serde_json::Value) -> Response<Body> {
+    pub fn get(&self, uri: &str) -> RequestBuilder {
+        RequestBuilder::new(&self.router, Method::GET, uri)
+    }
+}
+
+pub struct RequestBuilder {
+    router: Router,
+    http_method: Method,
+    uri: String,
+    body: Body,
+    headers: HashMap<String, String>,
+    cookies: Vec<String>,
+}
+
+impl RequestBuilder {
+    fn new(router: &Router, http_method: impl Into<Method>, uri: impl Into<String>) -> Self {
+        let mut default_headers = HashMap::new();
+        default_headers.insert(
+            header::CONTENT_TYPE.to_string(),
+            "application/json".to_string(),
+        );
+
+        Self {
+            router: router.clone(),
+            http_method: http_method.into(),
+            uri: uri.into(),
+            body: Body::empty(),
+            headers: default_headers,
+            cookies: Vec::new(),
+        }
+    }
+
+    pub fn body(mut self, body: &Value) -> Self {
+        self.body = Body::from(serde_json::to_string(body).unwrap());
+        self
+    }
+
+    pub fn header(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.headers.insert(key.into(), value.into());
+        self
+    }
+
+    pub fn bearer(self, token: impl Into<String>) -> Self {
+        self.header(
+            AuthenticationTokens::SessionToken.header_name(),
+            format!("Bearer {}", token.into()),
+        )
+    }
+
+    pub fn cookie(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
+        self.cookies
+            .push(format!("{}={}", name.into(), value.into()));
+        self
+    }
+
+    pub async fn send(self) -> Response<Body> {
+        let mut request = Request::builder().method(self.http_method).uri(self.uri);
+
+        for (key, value) in self.headers {
+            request = request.header(key, value);
+        }
+
+        if !self.cookies.is_empty() {
+            let cookie_header = self.cookies.join("; ");
+            request = request.header("cookie", cookie_header);
+        }
+
         self.router
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri(uri)
-                    .header("content-type", "application/json")
-                    .body(Body::from(serde_json::to_string(&body).unwrap()))
-                    .unwrap(),
-            )
+            .oneshot(request.body(self.body).unwrap())
             .await
             .unwrap()
     }

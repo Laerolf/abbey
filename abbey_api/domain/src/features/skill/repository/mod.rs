@@ -2,90 +2,120 @@ use std::collections::HashSet;
 
 use entity::skills;
 use sea_orm::{
-    ActiveModelTrait,
-    ActiveValue::{NotSet, Set},
-    ColumnTrait, DatabaseTransaction, DbErr, EntityTrait, QueryFilter,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
+    QuerySelect,
 };
 
 use crate::{
-    features::skill::{forms::SkillCreationForm, mapper::SkillMapper},
-    shared::db::DatabaseClient,
+    features::skill::{
+        domain::Skill, error::SkillErrorKind, forms::SkillCreationForm, mapper::SkillMapper,
+    },
+    shared::error::DomainError,
 };
 
 /// Represents an element that handles all [`Skill`][`super::domain::Skill`] database topics.
 #[derive(Default, Clone)]
-pub struct SkillRepository {}
+pub struct SkillRepository;
 
 impl SkillRepository {
-    /// Finds a [`Skill`][`skills::Model`] by its name.
-    pub async fn find_by_name(&self, name: &String) -> Result<Option<skills::Model>, DbErr> {
-        skills::Entity::find()
+    /// Finds a [`Skill`] by its name.
+    pub async fn find_by_name<C: ConnectionTrait>(
+        &self,
+        name: &String,
+        db_connection: &C,
+    ) -> Result<Option<Skill>, DomainError<SkillErrorKind>> {
+        let Some(skill_model) = skills::Entity::find()
             .filter(skills::Column::Name.eq(name))
-            .one(DatabaseClient::get_connection())
+            .one(db_connection)
             .await
+            .map_err(|error| DomainError::from(SkillErrorKind::FindByName).with_cause(error))?
+        else {
+            return Ok(None);
+        };
+
+        Ok(Some(SkillMapper::to_domain_entity(skill_model)))
     }
 
-    /// Finds a [`Skills`][`Vec<skills::Model>`] by their names.
-    pub async fn find_many_by_name(
+    /// Finds [`Skills`][Vec<Skill>] by their names.
+    pub async fn find_many_by_name<C: ConnectionTrait>(
         &self,
         names: &Vec<String>,
-    ) -> Result<Vec<skills::Model>, DbErr> {
-        skills::Entity::find()
+        db_connection: &C,
+    ) -> Result<Vec<Skill>, DomainError<SkillErrorKind>> {
+        let skills = skills::Entity::find()
             .filter(skills::Column::Name.is_in(names))
-            .all(DatabaseClient::get_connection())
+            .distinct()
+            .all(db_connection)
             .await
-    }
-
-    /// Creates a [`Skill`][`skills::Model`].
-    pub async fn create(&self, form: SkillCreationForm) -> Result<skills::Model, DbErr> {
-        SkillMapper::to_new_active_model(form)
-            .insert(DatabaseClient::get_connection())
-            .await
-    }
-
-    /// Creates many [`Skills`][`Vec<skills::Model>`].
-    pub async fn create_many_in_transaction(
-        &self,
-        forms: Vec<SkillCreationForm>,
-        transaction: &DatabaseTransaction,
-    ) -> Result<Vec<skills::Model>, DbErr> {
-        let skill_models: Vec<skills::ActiveModel> = forms
+            .map_err(|error| DomainError::from(SkillErrorKind::FindByNames).with_cause(error))?
             .into_iter()
-            .map(|form| skills::ActiveModel {
-                id: NotSet,
-                name: Set(form.name),
-            })
+            .map(SkillMapper::to_domain_entity)
             .collect();
 
-        skills::Entity::insert_many(skill_models)
-            .exec_with_returning_many(transaction)
-            .await
+        Ok(skills)
     }
 
-    /// Finds a [`Skill`][`skills::Model`] by its name or creates it if it doesn't exist.
+    /// Creates a [`Skill`] and persists it in the database.
+    pub async fn create(
+        &self,
+        form: SkillCreationForm,
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<Skill, DomainError<SkillErrorKind>> {
+        let new_skill_model: skills::Model = SkillMapper::to_new_active_model(form)
+            .insert(db_transaction)
+            .await
+            .map_err(|error| DomainError::from(SkillErrorKind::Creation).with_cause(error))?;
+
+        Ok(SkillMapper::to_domain_entity(new_skill_model))
+    }
+
+    /// Creates many [`Skills`][Vec<Skill>].
+    pub async fn create_many(
+        &self,
+        forms: Vec<SkillCreationForm>,
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<Vec<Skill>, DomainError<SkillErrorKind>> {
+        let new_skill_active_models: Vec<skills::ActiveModel> = forms
+            .into_iter()
+            .map(SkillMapper::to_new_active_model)
+            .collect();
+
+        let new_skill_models = skills::Entity::insert_many(new_skill_active_models)
+            .exec_with_returning_many(db_transaction)
+            .await
+            .map_err(|error| DomainError::from(SkillErrorKind::Creation).with_cause(error))?;
+
+        Ok(new_skill_models
+            .into_iter()
+            .map(SkillMapper::to_domain_entity)
+            .collect())
+    }
+
+    /// Finds a [`Skill`] by its name or creates it if it doesn't exist.
     pub async fn find_by_name_or_create(
         &self,
         form: SkillCreationForm,
-    ) -> Result<skills::Model, DbErr> {
-        match self.find_by_name(&form.name).await? {
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<Skill, DomainError<SkillErrorKind>> {
+        match self.find_by_name(&form.name, db_transaction).await? {
             Some(model) => Ok(model),
-            None => self.create(form).await,
+            None => self.create(form, db_transaction).await,
         }
     }
 
-    /// Finds many [`Skills`][`Vec<skills::Model>`] by their name or creates them if they don't exist.
-    pub async fn find_by_name_or_create_many_in_transaction(
+    /// Finds many [`Skills`][`Vec<Skill>`] by their name or creates them if they don't exist.
+    pub async fn find_by_name_or_create_many(
         &self,
         forms: Vec<SkillCreationForm>,
-        transaction: &DatabaseTransaction,
-    ) -> Result<Vec<skills::Model>, DbErr> {
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<Vec<Skill>, DomainError<SkillErrorKind>> {
         let skill_names = forms.iter().map(|form| form.name.clone()).collect();
 
-        let found_skill_models = self.find_many_by_name(&skill_names).await?;
+        let found_skill_models = self.find_many_by_name(&skill_names, db_transaction).await?;
 
         let found_skill_names: HashSet<String> = found_skill_models
             .iter()
-            .map(|skill| skill.name.clone())
+            .map(|skill| skill.name().to_string())
             .collect();
 
         let missing_skill_forms: Vec<SkillCreationForm> = forms
@@ -94,7 +124,7 @@ impl SkillRepository {
             .collect();
 
         let created_skill_models = if !missing_skill_forms.is_empty() {
-            self.create_many_in_transaction(missing_skill_forms, transaction)
+            self.create_many(missing_skill_forms, db_transaction)
                 .await?
         } else {
             Vec::new()
@@ -102,6 +132,7 @@ impl SkillRepository {
 
         let mut all_skills = found_skill_models;
         all_skills.extend(created_skill_models);
+
         Ok(all_skills)
     }
 }

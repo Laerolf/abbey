@@ -1,17 +1,17 @@
-use sea_orm::{DatabaseTransaction, TransactionTrait};
+use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use tracing::info;
 
 use crate::{
     features::{
-        game::{domain::Game, service::GameService},
+        game::{forms::UserGameCreationForm, service::GameService},
         user::{
             domain::User,
             error::{UserCreationErrorKind, UserErrorKind},
             forms::UserCreationForm,
-            mapper::UserMapper,
-            repository::{UserRepository, UserWithRelations},
+            repository::UserRepository,
         },
     },
-    shared::{db::DatabaseClient, error::DomainError},
+    shared::error::DomainError,
 };
 
 /// Represents a service handling the [`User`] topic.
@@ -22,46 +22,74 @@ pub struct UserService {
 }
 
 impl UserService {
-    pub fn new(game_service: GameService) -> Self {
+    pub fn new(repository: UserRepository, game_service: GameService) -> Self {
         Self {
-            repository: UserRepository::default(),
+            repository,
             game_service,
         }
     }
 
-    /// Finds a [`User`] by its email.
-    pub async fn find_by_email(
+    /// Finds a [`User`] by its ID.
+    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,
-        email: impl Into<String>,
-    ) -> Result<Option<User>, UserErrorKind> {
-        let Some(model) = self
-            .repository
-            .find_by_email(&email.into())
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<User>, DomainError<UserErrorKind>> {
+        self.repository
+            .find_by_id_with_relations(id, db_connection)
             .await
-            .map_err(|_error| UserErrorKind::FindByEmail)?
-        else {
-            return Ok(None);
-        };
+            .map_err(|error| DomainError::from(UserErrorKind::FindById).with_cause(error))
+    }
 
-        Ok(Some(UserMapper::to_domain_entity(model)))
+    /// Get a [`User`] by its ID.
+    pub async fn get_by_id_with_relations<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<User, DomainError<UserErrorKind>> {
+        self.repository
+            .find_by_id_with_relations(id, db_connection)
+            .await
+            .map_err(|error| DomainError::from(UserErrorKind::FindById).with_cause(error))?
+            .ok_or_else(|| DomainError::from(UserErrorKind::GetById))
+    }
+
+    /// Finds a [`User`] by its email.
+    pub async fn find_by_email<C: ConnectionTrait>(
+        &self,
+        email: impl Into<&String>,
+        db_connection: &C,
+    ) -> Result<Option<User>, DomainError<UserErrorKind>> {
+        self.repository
+            .find_by_email_with_relations(email.into(), db_connection)
+            .await
+            .map_err(|error| DomainError::from(UserErrorKind::FindByEmail).with_cause(error))
     }
 
     /// Creates a new [`User`].
     pub async fn create_user(
         &self,
         creation_form: UserCreationForm,
-    ) -> Result<UserWithRelations, DomainError<UserErrorKind>> {
-        let transaction = DatabaseClient::get_connection()
-            .begin()
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<User, DomainError<UserErrorKind>> {
+        if (self
+            .repository
+            .find_by_email_with_relations(&creation_form.email, db_transaction)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
                     .with_cause(error)
-            })?;
+            })?)
+        .is_some()
+        {
+            return Err(DomainError::from(UserErrorKind::Creation(
+                UserCreationErrorKind::EmailAlreadyExists(creation_form.email),
+            )));
+        }
 
-        let mut related_user = self
+        let mut new_user = self
             .repository
-            .create_with_relations_in_transaction(creation_form, &transaction)
+            .create(creation_form, db_transaction)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
@@ -70,18 +98,17 @@ impl UserService {
 
         let new_game = self
             .game_service
-            .create_game_in_transaction(&transaction)
+            .create_game(db_transaction)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::CreateGame))
                     .with_cause(error)
             })?;
 
-        related_user = self
-            .assign_game_in_transaction(
-                UserMapper::to_domain_entity(related_user.user),
-                new_game,
-                &transaction,
+        new_user = self
+            .assign_game(
+                UserGameCreationForm::new(new_user.id().unwrap(), new_game.id().unwrap()),
+                db_transaction,
             )
             .await
             .map_err(|error| {
@@ -89,32 +116,23 @@ impl UserService {
                     .with_cause(error)
             })?;
 
-        transaction.commit().await.map_err(|error| {
-            DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
-                .with_cause(error)
-        })?;
+        info!("Created a new user.");
 
-        Ok(related_user)
+        Ok(new_user)
     }
 
-    /// Assigns a [Game] to a [`User`][UserWithRelations].
-    pub async fn assign_game_in_transaction(
+    /// Assigns a Game to a [`User`].
+    pub async fn assign_game(
         &self,
-        mut user: User,
-        game: Game,
-        transaction: &DatabaseTransaction,
-    ) -> Result<UserWithRelations, DomainError<UserErrorKind>> {
-        user.game = Some(game);
-
-        let related_user = self
-            .repository
-            .update_with_relations_in_transaction(user, transaction)
+        creation_form: UserGameCreationForm,
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<User, DomainError<UserErrorKind>> {
+        self.repository
+            .assign_game(creation_form, db_transaction)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::AssignGame))
                     .with_cause(error)
-            })?;
-
-        Ok(related_user)
+            })
     }
 }

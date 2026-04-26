@@ -11,3 +11,21 @@ impl SurroundingsCreationForm {
         Self { source_ids }
     }
 }
+
+/// Represents a [`SurroundingsSource`][entity::surroundings_sources::ActiveModel] creation form.
+pub struct SurroundingSourceCreationForm {
+    /// The ID of the Surroundings.
+    pub surroundings_id: i32,
+    /// The ID of the Source.
+    pub source_id: i32,
+}
+
+impl SurroundingSourceCreationForm {
+    /// Creates a new [`SurroundingSourceCreationForm`].
+    pub fn new(surroundings_id: i32, source_id: i32) -> Self {
+        Self {
+            surroundings_id,
+            source_id,
+        }
+    }
+}

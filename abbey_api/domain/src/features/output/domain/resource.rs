@@ -38,22 +38,46 @@ impl Display for Category {
 #[derive(PartialEq, Debug, Clone)]
 pub struct Resource {
     /// The ID of this [Resource].
-    pub id: i32,
+    id: Option<i32>,
 
     /// The name of this [Resource].
-    pub name: String,
+    name: String,
 
     /// The category of this [Resource].
-    pub category: Category,
+    category: Category,
 }
 
 impl Resource {
-    /// Creates a new [Resource] based on the provided parameters.
-    pub fn new(id: i32, name: impl Into<String>, category: Category) -> Self {
+    /// Creates a new [Resource].
+    pub fn new(name: impl Into<String>, category: Category) -> Self {
         Self {
-            id,
+            id: None,
             name: name.into(),
             category,
         }
+    }
+
+    /// Creates a [Resource] based on the provided parameters.
+    pub fn restore(id: i32, name: impl Into<String>, category: Category) -> Self {
+        Self {
+            id: Some(id),
+            name: name.into(),
+            category,
+        }
+    }
+
+    /// Gets the ID of this [`Resource`].
+    pub fn id(&self) -> &Option<i32> {
+        &self.id
+    }
+
+    /// Gets the name of this [`Resource`].
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
+    /// Gets the category of this [`Resource`].
+    pub fn category(&self) -> &Category {
+        &self.category
     }
 }

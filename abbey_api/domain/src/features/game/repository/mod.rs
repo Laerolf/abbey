@@ -1,9 +1,28 @@
-use entity::{games, monasteries, players, surroundings};
-use sea_orm::{ActiveModelTrait, DatabaseTransaction, DbErr, EntityTrait, ModelTrait};
+use entity::{
+    cyclic_process_resources, cyclic_processes, games, monasteries, monastery_monks, monk_skills,
+    monks, players, resources, skills, sources, surroundings, surroundings_sources,
+};
+
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect,
+};
 
 use crate::{
-    features::game::{forms::GameCreationForm, mapper::GameMapper},
-    shared::db::DatabaseClient,
+    features::{
+        actor::mapper::MonkMapper,
+        game::{domain::Game, error::GameErrorKind, forms::GameCreationForm, mapper::GameMapper},
+        monastery::{domain::Monastery, mapper::MonasteryMapper},
+        output::{domain::resource::Resource, mapper::ResourceMapper},
+        player::{domain::Player, mapper::PlayerMapper},
+        process::{
+            domain::{Process, ProcessKind, cyclic_process::CyclicProcess},
+            mapper::cyclic_process::CyclicProcessMapper,
+        },
+        skill::{domain::Skill, mapper::SkillMapper},
+        source::{domain::Source, mapper::SourceMapper},
+        surroundings::{domain::Surroundings, mapper::SurroundingsMapper},
+    },
+    shared::error::DomainError,
 };
 
 /// Represents an element that handles all [Game][`crate::features::game::domain::Game`] database topics.
@@ -11,122 +30,265 @@ use crate::{
 pub struct GameRepository;
 
 impl GameRepository {
-    /// Inserts a [Game][`games::Model`].
-    pub async fn insert(&self, new_game: games::ActiveModel) -> Result<games::Model, DbErr> {
-        new_game.insert(DatabaseClient::get_connection()).await
-    }
-
-    /// Finds a [Game][`games::Model`] by its ID.
-    pub async fn find_by_id(&self, id: i32) -> Result<Option<games::Model>, DbErr> {
-        games::Entity::find_by_id(id)
-            .one(DatabaseClient::get_connection())
-            .await
-    }
-
-    /// Finds a [Game][`games::Model`] by its ID.
-    pub async fn find_by_id_in_transaction(
+    /// Gets the [Player], [Monastery] and [Surroundings] of a [`Game`][games::Model].
+    async fn get_relations<C: ConnectionTrait>(
         &self,
-        id: i32,
-        transaction: &DatabaseTransaction,
-    ) -> Result<Option<games::Model>, DbErr> {
-        games::Entity::find_by_id(id).one(transaction).await
-    }
+        game_model: games::Model,
+        db_connection: &C,
+    ) -> Result<Game, DomainError<GameErrorKind>> {
+        let player = get_player(&game_model, db_connection).await?;
+        let monastery = get_monastery(&game_model, db_connection).await?;
+        let surroundings = get_surroundings(&game_model, db_connection).await?;
 
-    /// Finds a [Game][`games::Model`] by its ID and with all its related entities.
-    pub async fn find_by_id_with_relations(
-        &self,
-        id: i32,
-    ) -> Result<Option<GameWithRelations>, DbErr> {
-        let Some(model) = self.find_by_id(id).await? else {
-            return Ok(None);
-        };
-
-        let db = DatabaseClient::get_connection();
-
-        let player = model
-            .find_related(players::Entity)
-            .one(db)
-            .await?
-            .ok_or_else(|| DbErr::Custom("A game should have a player.".to_string()))?;
-
-        let monastery = model
-            .find_related(monasteries::Entity)
-            .one(db)
-            .await?
-            .ok_or_else(|| DbErr::Custom("A game should have a monastery.".to_string()))?;
-
-        let surroundings = model
-            .find_related(surroundings::Entity)
-            .one(db)
-            .await?
-            .ok_or_else(|| DbErr::Custom("A game should have surroundings.".to_string()))?;
-
-        Ok(Some(GameWithRelations {
-            game: model,
+        Ok(GameMapper::to_domain_entity(
+            game_model,
             player,
             monastery,
             surroundings,
-        }))
+        ))
     }
 
-    /// Finds a [Game][`games::Model`] by its ID and with all its related entities.
-    pub async fn find_by_id_with_relations_in_transaction(
-        &self,
-        id: i32,
-        transaction: &DatabaseTransaction,
-    ) -> Result<Option<GameWithRelations>, DbErr> {
-        let Some(model) = self.find_by_id_in_transaction(id, transaction).await? else {
-            return Ok(None);
-        };
-
-        let player = model
-            .find_related(players::Entity)
-            .one(transaction)
-            .await?
-            .ok_or_else(|| DbErr::Custom("A game should have a player.".to_string()))?;
-
-        let monastery = model
-            .find_related(monasteries::Entity)
-            .one(transaction)
-            .await?
-            .ok_or_else(|| DbErr::Custom("A game should have a monastery.".to_string()))?;
-
-        let surroundings = model
-            .find_related(surroundings::Entity)
-            .one(transaction)
-            .await?
-            .ok_or_else(|| DbErr::Custom("A game should have surroundings.".to_string()))?;
-
-        Ok(Some(GameWithRelations {
-            game: model,
-            player,
-            monastery,
-            surroundings,
-        }))
-    }
-
-    /// Creates a new [Game][`GameWithRelations`].
-    pub async fn create_with_relations_in_transaction(
+    /// Creates a new [Game][`games::Model`] and persists it in the database.
+    pub async fn create<C: ConnectionTrait>(
         &self,
         creation_form: GameCreationForm,
-        transaction: &DatabaseTransaction,
-    ) -> Result<GameWithRelations, DbErr> {
-        let game = GameMapper::to_new_active_model(creation_form)
-            .insert(transaction)
-            .await?;
+        db_connection: &C,
+    ) -> Result<Game, DomainError<GameErrorKind>> {
+        let new_game_model: games::Model = GameMapper::to_new_active_model(creation_form)
+            .insert(db_connection)
+            .await
+            .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
-        self.find_by_id_with_relations_in_transaction(game.id, transaction)
-            .await?
-            .ok_or(DbErr::RecordNotFound(
-                "Failed to find a new created game".to_string(),
-            ))
+        self.get_relations(new_game_model, db_connection)
+            .await
+            .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))
+    }
+
+    /// Finds a [Game] by its ID and with all its related entities.
+    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<Game>, DomainError<GameErrorKind>> {
+        let Some(game_model) = games::Entity::find_by_id(*id)
+            .one(db_connection)
+            .await
+            .map_err(|error| DomainError::from(GameErrorKind::FindById).with_cause(error))?
+        else {
+            return Ok(None);
+        };
+
+        Ok(Some(self.get_relations(game_model, db_connection).await?))
     }
 }
 
-/// [`Game`][`games::Model`] with all its related entities.
-pub struct GameWithRelations {
-    pub game: games::Model,
-    pub player: players::Model,
-    pub monastery: monasteries::Model,
-    pub surroundings: surroundings::Model,
+/// Gets the [Player] of the [`Game`].
+async fn get_player<C: ConnectionTrait>(
+    game_model: &games::Model,
+    db_connection: &C,
+) -> Result<Player, DomainError<GameErrorKind>> {
+    let Some(player) = players::Entity::find()
+        .inner_join(games::Entity)
+        .filter(games::Column::PlayerId.eq(game_model.player_id))
+        .one(db_connection)
+        .await
+        .map_err(|error| DomainError::from(GameErrorKind::PlayerNotFound).with_cause(error))?
+        .map(|model| PlayerMapper::to_domain_entity(model, None))
+    else {
+        return Err(DomainError::from(GameErrorKind::PlayerNotFound));
+    };
+
+    Ok(player)
+}
+
+/// Gets the [Monastery] of a [`Game`].
+async fn get_monastery<C: ConnectionTrait>(
+    game_model: &games::Model,
+    db_connection: &C,
+) -> Result<Monastery, DomainError<GameErrorKind>> {
+    let Some(monastery_model) = monasteries::Entity::find()
+        .inner_join(games::Entity)
+        .filter(games::Column::MonasteryId.eq(game_model.monastery_id))
+        .one(db_connection)
+        .await
+        .map_err(|error| DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error))?
+    else {
+        return Err(DomainError::from(GameErrorKind::MonasteryNotFound));
+    };
+
+    let monastery_monks_models = monks::Entity::find()
+        .inner_join(monastery_monks::Entity)
+        .filter(monastery_monks::Column::MonasteryId.eq(monastery_model.id))
+        .all(db_connection)
+        .await
+        .map_err(|error| DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error))?;
+
+    let monastery_monk_ids: Vec<i32> = monastery_monks_models
+        .iter()
+        .map(|model| model.id)
+        .collect();
+
+    let monastery_monk_skill_assignments = monk_skills::Entity::find()
+        .filter(monk_skills::Column::MonkId.is_in(monastery_monk_ids))
+        .all(db_connection)
+        .await
+        .map_err(|error| DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error))?;
+
+    let monastery_monk_skill_ids: Vec<i32> = monastery_monk_skill_assignments
+        .iter()
+        .map(|assignment| assignment.skill_id)
+        .collect();
+
+    let monastery_monk_skills: Vec<Skill> = skills::Entity::find()
+        .filter(skills::Column::Id.is_in(monastery_monk_skill_ids))
+        .distinct()
+        .all(db_connection)
+        .await
+        .map_err(|error| DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error))?
+        .into_iter()
+        .map(SkillMapper::to_domain_entity)
+        .collect();
+
+    let monastery_monk_process_ids: Vec<i32> = monastery_monks_models
+        .iter()
+        .filter_map(|model| model.assigned_cyclic_process_id)
+        .collect();
+
+    let monastery_monk_processes: Vec<CyclicProcess> = cyclic_processes::Entity::find()
+        .filter(cyclic_processes::Column::Id.is_in(monastery_monk_process_ids))
+        .all(db_connection)
+        .await
+        .map_err(|error| DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error))?
+        .into_iter()
+        .map(|model| CyclicProcessMapper::to_domain_entity(model, Vec::new(), Vec::new()).unwrap())
+        .collect();
+
+    let monastery_monks = monastery_monks_models
+        .into_iter()
+        .map(|monk_model| {
+            let monk_skill_ids: Vec<i32> = monastery_monk_skill_assignments
+                .iter()
+                .filter(|skill_assignment| skill_assignment.monk_id == monk_model.id)
+                .map(|skill_assignment| skill_assignment.skill_id)
+                .collect();
+
+            let monk_skills: Vec<Skill> = monastery_monk_skills
+                .iter()
+                .filter(|skill| monk_skill_ids.contains(&skill.id().unwrap()))
+                .cloned()
+                .collect();
+
+            let monk_process = monastery_monk_processes
+                .iter()
+                .find(|cyclic_process| {
+                    *cyclic_process.id() == monk_model.assigned_cyclic_process_id
+                })
+                .map(|cyclic_process| ProcessKind::CyclicProcess(cyclic_process.clone()));
+
+            MonkMapper::to_domain_entity(monk_model, monk_skills, monk_process).unwrap()
+        })
+        .collect();
+
+    MonasteryMapper::to_domain_entity(monastery_model, monastery_monks)
+        .map_err(|error| DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error))
+}
+
+/// Gets the [Surroundings] of a [Game].
+async fn get_surroundings<C: ConnectionTrait>(
+    game_model: &games::Model,
+    db_connection: &C,
+) -> Result<Surroundings, DomainError<GameErrorKind>> {
+    let Some(surroundings_model) = surroundings::Entity::find()
+        .inner_join(games::Entity)
+        .filter(games::Column::SurroundingsId.eq(game_model.surroundings_id))
+        .one(db_connection)
+        .await
+        .map_err(|error| {
+            DomainError::from(GameErrorKind::SurroundingsNotFound).with_cause(error)
+        })?
+    else {
+        return Err(DomainError::from(GameErrorKind::SurroundingsNotFound));
+    };
+
+    let surroundings_source_models = sources::Entity::find()
+        .inner_join(surroundings_sources::Entity)
+        .filter(surroundings_sources::Column::SurroundingsId.eq(surroundings_model.id))
+        .all(db_connection)
+        .await
+        .map_err(|error| {
+            DomainError::from(GameErrorKind::SurroundingsNotFound).with_cause(error)
+        })?;
+
+    let surroundings_source_process_ids: Vec<i32> = surroundings_source_models
+        .iter()
+        .map(|model| model.cyclic_process_id)
+        .collect();
+
+    let surroundings_source_process_models = cyclic_processes::Entity::find()
+        .filter(cyclic_processes::Column::Id.is_in(surroundings_source_process_ids))
+        .all(db_connection)
+        .await
+        .map_err(|error| {
+            DomainError::from(GameErrorKind::SurroundingsNotFound).with_cause(error)
+        })?;
+
+    let source_process_ids: Vec<i32> = surroundings_source_process_models
+        .iter()
+        .map(|model| model.id)
+        .collect();
+
+    let all_source_output_resource_assignments = cyclic_process_resources::Entity::find()
+        .filter(cyclic_process_resources::Column::CylicProcessId.is_in(source_process_ids.clone()))
+        .all(db_connection)
+        .await
+        .map_err(|error| {
+            DomainError::from(GameErrorKind::SurroundingsNotFound).with_cause(error)
+        })?;
+
+    let all_source_output_resource_ids: Vec<i32> = all_source_output_resource_assignments
+        .iter()
+        .map(|model| model.resource_id)
+        .collect();
+
+    let all_source_output_resources: Vec<Resource> = resources::Entity::find()
+        .filter(resources::Column::Id.is_in(all_source_output_resource_ids))
+        .all(db_connection)
+        .await
+        .map_err(|error| DomainError::from(GameErrorKind::SurroundingsNotFound).with_cause(error))?
+        .into_iter()
+        .map(ResourceMapper::to_domain_entity)
+        .collect();
+
+    let surroundings_sources: Vec<Source> = surroundings_source_models
+        .into_iter()
+        .map(|source_model| {
+            let process_model = surroundings_source_process_models
+                .iter()
+                .find(|model| model.id == source_model.cyclic_process_id)
+                .ok_or_else(|| DomainError::from(GameErrorKind::SurroundingsNotFound))
+                .unwrap()
+                .clone();
+
+            let output_resource_ids: Vec<i32> = all_source_output_resource_assignments
+                .iter()
+                .filter(|model| model.cylic_process_id == process_model.id)
+                .map(|model| model.resource_id)
+                .collect();
+
+            let output_resources: Vec<Resource> = all_source_output_resources
+                .clone()
+                .into_iter()
+                .filter(|resource| output_resource_ids.contains(&resource.id().unwrap()))
+                .collect();
+
+            let process =
+                CyclicProcessMapper::to_domain_entity(process_model, output_resources, Vec::new())
+                    .unwrap();
+
+            SourceMapper::to_domain_entity(source_model, process)
+        })
+        .collect();
+
+    SurroundingsMapper::to_domain_entity(surroundings_model, surroundings_sources)
+        .map_err(|error| DomainError::from(GameErrorKind::SurroundingsNotFound).with_cause(error))
 }

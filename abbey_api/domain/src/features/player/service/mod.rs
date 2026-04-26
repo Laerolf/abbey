@@ -1,50 +1,43 @@
-use sea_orm::DatabaseTransaction;
+use sea_orm::{ConnectionTrait, DatabaseTransaction};
 
 use crate::{
     features::player::{
-        domain::Player,
-        error::PlayerErrorKind,
-        forms::PlayerCreationForm,
-        mapper::PlayerMapper,
-        repository::{PlayerRepository, PlayerWithRelations},
+        domain::Player, error::PlayerErrorKind, forms::PlayerCreationForm,
+        repository::PlayerRepository,
     },
     shared::error::DomainError,
 };
 
 /// Represents a service handling the [`Player`] topic.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct PlayerService {
     repository: PlayerRepository,
 }
 
 impl PlayerService {
-    /// Finds a [`Player`] by its ID and all its related entities.
-    pub async fn find_by_id_with_relations(
-        &self,
-        id: i32,
-    ) -> Result<Option<Player>, DomainError<PlayerErrorKind>> {
-        let Some(model) = self
-            .repository
-            .find_by_id_with_relations(id)
-            .await
-            .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))?
-        else {
-            return Ok(None);
-        };
-
-        Ok(Some(PlayerMapper::to_domain_entity_with_relations(model)))
+    /// Creates a new [`PlayerService`].
+    pub fn new(repository: PlayerRepository) -> Self {
+        Self { repository }
     }
 
-    /// Creates a new [`Player`][`PlayerWithRelations`].
-    pub async fn create_player_in_transaction(
+    /// Finds a [`Player`] by its ID and all its related entities.
+    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,
-        transaction: &DatabaseTransaction,
-    ) -> Result<PlayerWithRelations, DomainError<PlayerErrorKind>> {
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<Player>, DomainError<PlayerErrorKind>> {
+        self.repository
+            .find_by_id_with_relations(id, db_connection)
+            .await
+    }
+
+    /// Creates a new [`Player`].
+    pub async fn create_player(
+        &self,
+        db_transaction: &DatabaseTransaction,
+    ) -> Result<Player, DomainError<PlayerErrorKind>> {
         let creation_form = PlayerCreationForm::new();
 
-        self.repository
-            .create_with_relations_in_transaction(creation_form, transaction)
-            .await
-            .map_err(|error| DomainError::from(PlayerErrorKind::Creation).with_cause(error))
+        self.repository.create(creation_form, db_transaction).await
     }
 }

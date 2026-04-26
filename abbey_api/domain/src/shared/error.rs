@@ -1,8 +1,15 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
+
+use axum::{
+    body::Body,
+    http::{Response, StatusCode},
+    response::IntoResponse,
+};
 
 pub struct DomainError<K> {
     kind: K,
     cause: Option<Box<dyn std::error::Error + Send + Sync>>,
+    context: Option<HashMap<String, String>>,
 }
 
 impl<K> DomainError<K>
@@ -10,7 +17,11 @@ where
     K: DomainErrorKind,
 {
     pub fn from(kind: K) -> Self {
-        Self { kind, cause: None }
+        Self {
+            kind,
+            cause: None,
+            context: None,
+        }
     }
 
     pub fn with_cause(mut self, cause: impl std::error::Error + Send + Sync + 'static) -> Self {
@@ -18,8 +29,19 @@ where
         self
     }
 
+    pub fn with_context(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.context
+            .get_or_insert_with(HashMap::new)
+            .insert(key.into(), value.into());
+        self
+    }
+
     pub fn kind(&self) -> &K {
         &self.kind
+    }
+
+    pub fn context(&self) -> &Option<HashMap<String, String>> {
+        &self.context
     }
 }
 
@@ -33,9 +55,8 @@ where
         let mut debug = f.debug_struct("DomainError");
         debug.field("code", &self.kind.code());
         debug.field("message", &self.kind.message());
-        if let Some(cause) = &self.cause {
-            debug.field("cause", cause);
-        }
+        debug.field("cause", &self.cause);
+        debug.field("context", &self.context);
         debug.finish()
     }
 }
@@ -49,31 +70,60 @@ where
     }
 }
 
+impl<K> IntoResponse for DomainError<K>
+where
+    K: DomainErrorKind,
+{
+    fn into_response(self) -> axum::response::Response {
+        Response::builder()
+            .status(self.kind.http_status())
+            .body(Body::empty())
+            .unwrap()
+    }
+}
+
 /// Represents the kind of a [`DomainError`].
 pub trait DomainErrorKind {
-    /// Gets the locale code of this [`DomainError`].
+    /// Gets the locale code of this [`DomainErrorKind`].
     fn code(&self) -> String;
 
     /// Gets the message of this [`DomainError`].
     fn message(&self) -> String;
+
+    /// Gets the HTTP status code of this [`DomainErrorKind`].
+    fn http_status(&self) -> StatusCode;
+
+    /// Gets the unknown error of this [`DomainErrorKind`].
+    fn unknown() -> Self;
 }
 
 #[derive(Debug)]
 pub enum SharedErrorKind {
     NotAvailable,
+    Unknown,
 }
 
 impl DomainErrorKind for SharedErrorKind {
     fn code(&self) -> String {
         match self {
             Self::NotAvailable => "error.shared.not_available".to_string(),
+            Self::Unknown => "error.shared.unknown".to_string(),
         }
     }
 
     fn message(&self) -> String {
         match self {
             Self::NotAvailable => "This is functionality is not available.".to_string(),
+            Self::Unknown => "An unknown error occurred.".to_string(),
         }
+    }
+
+    fn http_status(&self) -> StatusCode {
+        StatusCode::INTERNAL_SERVER_ERROR
+    }
+
+    fn unknown() -> Self {
+        Self::Unknown
     }
 }
 
