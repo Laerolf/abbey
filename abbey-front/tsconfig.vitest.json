@@ -1,9 +1,8 @@
 {
   "extends": "./tsconfig.app.json",
 
-  // Override to include only test files and clear exclusions.
-  // Application code imported in tests is automatically included via module resolution.
-  "include": ["src/**/__tests__/*", "env.d.ts"],
+  // Override to include test files, Vue components, type declarations, and env.d.ts.
+  "include": ["src/__tests__/*", "src/__tests__/**/*", "src/**/*.vue", "env.d.ts", "components.d.ts"],
   "exclude": [],
 
   "compilerOptions": {
@@ -11,6 +10,11 @@
     // Adjust lib and types accordingly.
     "lib": [],
     "types": ["node", "jsdom"],
+
+    // Path mapping for cleaner imports.
+    "paths": {
+      "@/*": ["./src/*"]
+    },
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
     // Specified here to keep it out of the root directory.

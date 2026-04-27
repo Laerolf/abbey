@@ -1,0 +1,27 @@
+:root {
+  /* Colors */
+  --color-text: black;
+  --color-text-muted: darkgrey;
+  --color-ui-hover: blue;
+  --color-border: black;
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --space-8: 2rem;
+  /* Radius */
+  --radius-1: 0.25rem;
+  --radius-2: 0.5rem;
+  /* Border Widths */
+  --border-width-1: 0.15rem;
+  --border-width-2: 0.3rem;
+  /* Typography */
+  /** Chapter titles, era headers **/
+  --font-display: 'IM Fell English', serif;
+  /** Descriptions, lore text **/
+  --font-body: 'Crimson Pro', serif;
+  /** Small caps variant for buttons **/
+  --font-ui: 'IM Fell English SC', serif;
+  /** Resource counters **/
+  --font-numbers: 'Cinzel', serif;
+}
