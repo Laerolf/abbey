@@ -12,10 +12,6 @@
   font-family: var(--font-ui);
   cursor: pointer;
 
-  &:hover {
-    background-color: var(--color-ui-hover);
-  }
-
   &:disabled {
     cursor: default;
   }

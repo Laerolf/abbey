@@ -28,7 +28,6 @@ const classes = computed(() => {
   display: grid;
   column-gap: var(--space-1);
   row-gap: var(--space-1);
-  grid-template-columns: max-content;
 
   .columns {
     grid-auto-flow: column;

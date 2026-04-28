@@ -20,7 +20,7 @@
   border-radius: var(--radius-1);
 
   * {
-    padding: var(--space-1)
+    padding: var(--space-2) var(--space-4)
   }
 }
 </style>

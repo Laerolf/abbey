@@ -8,8 +8,12 @@ import type { RouteRecordRaw } from 'vue-router'
 const authRoutes: readonly RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'Index',
-    component: () => import('@/pages/RegisterPage.vue')
+    component: () => import('@/layouts/DefaultLayout.vue'),
+    children: [{
+      path: '/',
+      name: 'Index',
+      component: () => import('@/pages/RegisterPage.vue')
+    }]
   }
 ]
 

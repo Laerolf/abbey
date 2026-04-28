@@ -4,7 +4,7 @@ import { useField } from 'vee-validate'
 
 const props = defineProps<{
   name: string,
-  secret?: boolean
+  options: Record<string, string>
 }>()
 
 defineModel<string>()
@@ -13,21 +13,23 @@ const { value, errorMessage, handleBlur, meta } = useField(() => props.name, und
   syncVModel: true
 })
 
-const type = computed(() => props.secret ? 'password' : 'text')
-
 const classes = computed(() => ({
   error: meta.dirty && !meta.valid
 }))
 </script>
 
 <template>
-  <a-grid rows class="a-text-field" :class="classes">
+  <a-grid rows class="a-select-field" :class="classes">
     <a-grid rows class="content">
       <label :for="name">
         <slot />
       </label>
 
-      <input :id="name" :name="name" v-model="value" @blur="handleBlur" :type="type" />
+      <select :id="name" :name="name" v-model="value" @blur="handleBlur">
+        <option v-for="([key, label], index) in Object.entries(options)" :key="`${index}-${key}`" :value="key">
+          {{ label }}
+        </option>
+      </select>
     </a-grid>
 
     <p class="error-message" v-if="errorMessage">{{ errorMessage }}</p>
@@ -35,7 +37,7 @@ const classes = computed(() => ({
 </template>
 
 <style scoped>
-.a-text-field {
+.a-select-field {
   gap: var(--space-0);
 
   .content {

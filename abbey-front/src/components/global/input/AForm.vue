@@ -16,6 +16,7 @@
 .a-form {
   .actions {
     margin-top: var(--space-4);
+    grid-template-columns: max-content;
   }
 }
 </style>
