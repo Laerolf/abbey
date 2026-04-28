@@ -4,7 +4,9 @@
   --color-text-muted: darkgrey;
   --color-ui-hover: blue;
   --color-border: black;
+  --color-error: red;
   /* Spacing */
+  --space-0: 0rem;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-4: 1rem;

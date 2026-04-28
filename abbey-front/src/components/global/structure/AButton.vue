@@ -15,5 +15,9 @@
   &:hover {
     background-color: var(--color-ui-hover);
   }
+
+  &:disabled {
+    cursor: default;
+  }
 }
 </style>

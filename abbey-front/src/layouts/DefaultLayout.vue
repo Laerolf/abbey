@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <a-grid>
     <router-view />
-  </main>
+  </a-grid>
 </template>

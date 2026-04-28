@@ -13,7 +13,9 @@ declare module 'vue' {
   export interface GlobalComponents {
     AButton: typeof import('./src/components/global/structure/AButton.vue')['default']
     ACard: typeof import('./src/components/global/structure/ACard.vue')['default']
+    AForm: typeof import('./src/components/global/input/AForm.vue')['default']
     AGrid: typeof import('./src/components/global/structure/AGrid.vue')['default']
+    ATextField: typeof import('./src/components/global/input/ATextField.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }
