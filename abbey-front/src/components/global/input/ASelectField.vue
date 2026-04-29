@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
 import { useField } from 'vee-validate'
 
 const props = defineProps<{
-  name: string,
+  name: string
   options: Record<string, string>
 }>()
 
 defineModel<string>()
 
 const { value, errorMessage, handleBlur, meta } = useField(() => props.name, undefined, {
-  syncVModel: true
+  syncVModel: true,
 })
 
 const classes = computed(() => ({
-  error: meta.dirty && !meta.valid
+  error: meta.dirty && !meta.valid,
 }))
 </script>
 
@@ -32,7 +32,7 @@ const classes = computed(() => ({
       </select>
     </a-grid>
 
-    <p class="error-message" v-if="errorMessage">{{ errorMessage }}</p>
+    <p class="error-message" v-show="errorMessage">{{ errorMessage }}</p>
   </a-grid>
 </template>
 
@@ -47,7 +47,7 @@ const classes = computed(() => ({
       font-family: var(--font-ui);
     }
 
-    input {
+    select {
       border: var(--border-width-1) solid var(--color-border);
       border-radius: var(--radius-1);
     }
@@ -62,7 +62,7 @@ const classes = computed(() => ({
       color: var(--color-error);
     }
 
-    input {
+    select {
       border-color: var(--color-error);
     }
   }

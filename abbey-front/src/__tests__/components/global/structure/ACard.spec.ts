@@ -11,7 +11,9 @@ describe('ACard', () => {
     const expectedFooterText = "I'm the footer!"
 
     // When
-    const aCard = mount(ACard, { slots: { header: expectedHeaderText, default: expectedBodyText, footer: expectedFooterText } })
+    const aCard = mount(ACard, {
+      slots: { header: expectedHeaderText, default: expectedBodyText, footer: expectedFooterText },
+    })
 
     // Then
     expect(aCard.classes()).toStrictEqual(['a-grid', 'rows', 'a-card'])

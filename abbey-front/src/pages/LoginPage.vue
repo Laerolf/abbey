@@ -9,8 +9,7 @@ import { useAuthStore } from '@/stores/authStore'
 
 import useTranslations from '@/composables/useLocale'
 
-
-const { translate } = useTranslations('pages.userRegistration')
+const { translate } = useTranslations('pages.userLogin')
 
 useHead({
   title: computed(() => translate("title"))
@@ -31,20 +30,7 @@ const validationSchema = computed(() =>
           v.string(),
           v.nonEmpty(translate('form.fields.password.validations.required')),
         ),
-        confirmPassword: v.pipe(
-          v.optional(v.string(), ''),
-          v.string(),
-          v.nonEmpty(translate('form.fields.confirmPassword.validations.required')),
-        ),
-      }),
-      v.forward(
-        v.partialCheck(
-          [['password'], ['confirmPassword']],
-          (input) => input.password === input.confirmPassword,
-          translate('form.fields.confirmPassword.validations.match'),
-        ),
-        ['confirmPassword'],
-      ),
+      })
     ),
   ),
 )
@@ -53,13 +39,12 @@ const { handleSubmit, meta } = useForm({
   validationSchema,
 })
 
-const { registerUser } = useAuthStore()
+const { loginUser } = useAuthStore()
 
 const onSubmit = handleSubmit(async (values) => {
-  await registerUser({
+  await loginUser({
     email: values.email,
-    password: values.password,
-    confirmed_password: values.confirmPassword,
+    password: values.password
   })
 })
 </script>
@@ -80,10 +65,6 @@ const onSubmit = handleSubmit(async (values) => {
           {{ translate('form.fields.password.label') }}
         </a-text-field>
 
-        <a-text-field secret name="confirmPassword">
-          {{ translate('form.fields.confirmPassword.label') }}
-        </a-text-field>
-
         <template #actions>
           <a-button :disabled="meta.dirty && !meta.valid" type="submit">{{
             translate('form.actions.submit')
@@ -93,7 +74,7 @@ const onSubmit = handleSubmit(async (values) => {
     </a-card>
 
     <ul>
-      <li><router-link to="Login">{{ translate("links.login") }}</router-link></li>
+      <li><router-link to="Register">{{ translate("links.register") }}</router-link></li>
     </ul>
   </a-grid>
 </template>

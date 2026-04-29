@@ -10,7 +10,10 @@ describe('ATextField', () => {
     const expectedFieldName = 'ponyCrap'
 
     // When
-    const aTextField = mount(ATextField, { props: { name: expectedFieldName }, slots: { default: expectedLabelText } })
+    const aTextField = mount(ATextField, {
+      props: { name: expectedFieldName },
+      slots: { default: expectedLabelText },
+    })
 
     // Then
     expect(aTextField.classes()).toStrictEqual(['a-grid', 'rows', 'a-text-field'])

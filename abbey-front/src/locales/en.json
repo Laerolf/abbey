@@ -1,43 +1,72 @@
 {
-    "app": {
-        "title": "Abbey"
-    },
-    "shared": {
-        "locales": {
-            "en": "English",
-            "ja": "日本語"
-        }
-    },
-    "pages": {
-        "userRegistration": {
-            "title": "User Registration",
-            "form": {
-                "fields": {
-                    "email": {
-                        "label": "Email",
-                        "validations": {
-                            "required": "An email is required.",
-                            "email": "Please enter a valid email address."
-                        }
-                    },
-                    "password": {
-                        "label": "Password",
-                        "validations": {
-                            "required": "A password is required."
-                        }
-                    },
-                    "confirmPassword": {
-                        "label": "Password confirmation",
-                        "validations": {
-                            "required": "Please confirm your password.",
-                            "match": "Please confirm your password correctly."
-                        }
-                    }
-                },
-                "actions": {
-                    "submit": "Register"
-                }
-            }
-        }
+  "app": {
+    "title": "Abbey"
+  },
+  "shared": {
+    "locales": {
+      "en": "English",
+      "ja": "日本語"
     }
+  },
+  "pages": {
+    "userRegistration": {
+      "title": "User Registration",
+      "form": {
+        "fields": {
+          "email": {
+            "label": "Email",
+            "validations": {
+              "required": "An email is required.",
+              "email": "Please enter a valid email address."
+            }
+          },
+          "password": {
+            "label": "Password",
+            "validations": {
+              "required": "A password is required."
+            }
+          },
+          "confirmPassword": {
+            "label": "Password confirmation",
+            "validations": {
+              "required": "Please confirm your password.",
+              "match": "Please confirm your password correctly."
+            }
+          }
+        },
+        "actions": {
+          "submit": "Register"
+        }
+      },
+      "links": {
+        "login": "Already have an account? Login here."
+      }
+    },
+    "userLogin": {
+      "title": "Login",
+      "form": {
+        "fields": {
+          "email": {
+            "label": "Email",
+            "validations": {
+              "required": "An email is required.",
+              "email": "Please enter a valid email address."
+            }
+          },
+          "password": {
+            "label": "Password",
+            "validations": {
+              "required": "A password is required."
+            }
+          }
+        },
+        "actions": {
+          "submit": "Login"
+        }
+      },
+      "links": {
+        "register": "Don't have an account? Register here."
+      }
+    }
+  }
 }

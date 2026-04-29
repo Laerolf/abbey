@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { onBeforeMount } from 'vue';
-import { loadLocaleMessages } from './plugins/i18n';
+import { computed } from 'vue'
+import { useHead } from '@unhead/vue'
 
-onBeforeMount(async () => {
-  await loadLocaleMessages("en");
-});
+import { useI18n } from 'vue-i18n'
+
+const { te, t } = useI18n()
+
+useHead({
+  titleTemplate: computed(() => {
+    if (!te('app.title')) return '%s'
+    return `%s | ${t('app.title')}`
+  })
+})
 </script>
 
 <template>

@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
 import { useField } from 'vee-validate'
 
 const props = defineProps<{
-  name: string,
+  name: string
   secret?: boolean
 }>()
 
 defineModel<string>()
 
-const { value, errorMessage, handleBlur, meta } = useField(() => props.name, undefined, {
-  syncVModel: true
+const { value, errorMessage, handleBlur } = useField(() => props.name, undefined, {
+  syncVModel: true,
 })
 
-const type = computed(() => props.secret ? 'password' : 'text')
+const type = computed(() => (props.secret ? 'password' : 'text'))
 
 const classes = computed(() => ({
-  error: meta.dirty && !meta.valid
+  error: !!errorMessage.value,
 }))
 </script>
 
@@ -30,7 +30,7 @@ const classes = computed(() => ({
       <input :id="name" :name="name" v-model="value" @blur="handleBlur" :type="type" />
     </a-grid>
 
-    <p class="error-message" v-if="errorMessage">{{ errorMessage }}</p>
+    <p class="error-message" v-show="errorMessage">{{ errorMessage }}</p>
   </a-grid>
 </template>
 
@@ -56,10 +56,6 @@ const classes = computed(() => ({
   }
 
   &.error {
-    label {
-      color: var(--color-error);
-    }
-
     input {
       border-color: var(--color-error);
     }

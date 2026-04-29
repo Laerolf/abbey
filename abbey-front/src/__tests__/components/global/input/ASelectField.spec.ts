@@ -11,7 +11,10 @@ describe('ASelectField', () => {
     const expectedOptions = { yes: 'Yes', no: 'No' }
 
     // When
-    const aSelectField = mount(ASelectField, { props: { name: expectedFieldName, options: expectedOptions }, slots: { default: expectedLabelText } })
+    const aSelectField = mount(ASelectField, {
+      props: { name: expectedFieldName, options: expectedOptions },
+      slots: { default: expectedLabelText },
+    })
 
     // Then
     expect(aSelectField.classes()).toStrictEqual(['a-grid', 'rows', 'a-select-field'])

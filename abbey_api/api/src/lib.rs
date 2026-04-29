@@ -4,11 +4,12 @@ pub mod shared;
 
 use std::sync::Arc;
 
-use axum::Router;
+use axum::{Router, http::Method};
 
 use sea_orm::{ConnectOptions, Database};
 use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
+use tower_http::cors::{Any, CorsLayer};
 use tracing::{Level, info};
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -76,10 +77,17 @@ impl Abbey {
             .await
             .expect("Failed to create a database connection.");
 
+        // TODO: Adjust accordingly
+        let cors = CorsLayer::new()
+            .allow_origin(Any)
+            .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+            .allow_headers(Any);
+
         let router = Router::new()
             .merge(SwaggerUi::new("/openapi").url("/openapi.json", openapi()))
             .nest("/api", features::routes())
             .layer(CookieManagerLayer::new())
+            .layer(cors)
             .with_state(ApiContext::new(Arc::new(db_connection)));
 
         let host_url = format!("{}:{}", self.host, &self.port);

@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
 
 const props = defineProps({
   /** Determines the direction of the grid flow, by default `false`. */
   rows: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const classes = computed(() => {
   return {
-    'columns': !props.rows,
-    'rows': props.rows
+    columns: !props.rows,
+    rows: props.rows,
   }
 })
 </script>
