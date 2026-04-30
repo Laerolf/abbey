@@ -4,7 +4,15 @@
   --color-text-muted: darkgrey;
   --color-ui-hover: blue;
   --color-border: black;
-  --color-error: red;
+  --color-border-success: #a8c9b0;
+  --color-border-warning: #d4aa6a;
+  --color-border-error: #c98a8a;
+  --color-bg-success: #f0f7f2;
+  --color-bg-warning: #fdf6e8;
+  --color-bg-error: #fdf0f0;
+  --color-success: #4a7c59;
+  --color-warning: #9a6f2e;
+  --color-error: #8b3a3a;
   /* Spacing */
   --space-0: 0rem;
   --space-1: 0.25rem;

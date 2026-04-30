@@ -6,7 +6,6 @@ import { i18n, loadLocaleMessages } from '@/plugins/i18n'
 import type { RouteRecordRaw } from 'vue-router'
 import type { SupportedLocale } from '@/plugins/i18n'
 
-
 /**
  * Authentication-related routes.
  */
@@ -43,7 +42,5 @@ const router = createRouter({
 router.beforeEach(async () => {
   await loadLocaleMessages(i18n.global.locale.value as SupportedLocale)
 })
-
-
 
 export default router

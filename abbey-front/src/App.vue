@@ -4,6 +4,8 @@ import { useHead } from '@unhead/vue'
 
 import { useI18n } from 'vue-i18n'
 
+import TheNotifications from '@/components/TheNotifications.vue'
+
 const { te, t } = useI18n()
 
 useHead({
@@ -18,4 +20,6 @@ useHead({
   <main>
     <router-view />
   </main>
+
+  <the-notifications />
 </template>

@@ -8,9 +8,11 @@ import { useHead } from '@unhead/vue'
 import { useAuthStore } from '@/stores/authStore'
 
 import useTranslations from '@/composables/useLocale'
+import useNotifications from '@/composables/useNotifications'
 
+import type { AppError } from '@/api'
 
-const { translate } = useTranslations('pages.userRegistration')
+const { translate, t } = useTranslations('pages.userRegistration')
 
 useHead({
   title: computed(() => translate("title"))
@@ -54,13 +56,18 @@ const { handleSubmit, meta } = useForm({
 })
 
 const { registerUser } = useAuthStore()
+const { add } = useNotifications()
 
 const onSubmit = handleSubmit(async (values) => {
-  await registerUser({
-    email: values.email,
-    password: values.password,
-    confirmed_password: values.confirmPassword,
-  })
+  try {
+    await registerUser({
+      email: values.email,
+      password: values.password,
+      confirmed_password: values.confirmPassword,
+    })
+  } catch (error) {
+    add({ content: t((error as AppError).code), variant: 'error' })
+  }
 })
 </script>
 
@@ -87,7 +94,7 @@ const onSubmit = handleSubmit(async (values) => {
         <template #actions>
           <a-button :disabled="meta.dirty && !meta.valid" type="submit">{{
             translate('form.actions.submit')
-            }}</a-button>
+          }}</a-button>
         </template>
       </a-form>
     </a-card>
