@@ -20,8 +20,7 @@ pub enum RegistrationErrorKind {
 pub enum LoginErrorKind {
     EmailRequired,
     PasswordRequired,
-    UserDoesNotExist,
-    WrongPassword,
+    WrongCredentials,
     StartDatabaseTransaction,
     CreateSessionToken,
     CreateRefreshToken,
@@ -96,11 +95,8 @@ impl DomainErrorKind for AuthenticationErrorKind {
                 LoginErrorKind::PasswordRequired => {
                     "error.authentication.login.password_required".to_string()
                 }
-                LoginErrorKind::UserDoesNotExist => {
-                    "error.authentication.login.user_does_not_exist".to_string()
-                }
-                LoginErrorKind::WrongPassword => {
-                    "error.authentication.login.wrong_password".to_string()
+                LoginErrorKind::WrongCredentials => {
+                    "error.authentication.login.wrong_credentials".to_string()
                 }
                 LoginErrorKind::StartDatabaseTransaction => {
                     "error.authentication.login.start_database_transaction".to_string()
@@ -172,8 +168,9 @@ impl DomainErrorKind for AuthenticationErrorKind {
             Self::Login(error) => match error {
                 LoginErrorKind::EmailRequired => "An email is required.".to_string(),
                 LoginErrorKind::PasswordRequired => "A password is required.".to_string(),
-                LoginErrorKind::UserDoesNotExist => "The user does not exist.".to_string(),
-                LoginErrorKind::WrongPassword => "The provided password is wrong.".to_string(),
+                LoginErrorKind::WrongCredentials => {
+                    "The provided mail or password is incorrect.".to_string()
+                }
                 LoginErrorKind::StartDatabaseTransaction => {
                     "Failed to start a database transaction.".to_string()
                 }
@@ -232,8 +229,7 @@ impl DomainErrorKind for AuthenticationErrorKind {
             AuthenticationErrorKind::Login(error) => match error {
                 LoginErrorKind::EmailRequired => StatusCode::BAD_REQUEST,
                 LoginErrorKind::PasswordRequired => StatusCode::BAD_REQUEST,
-                LoginErrorKind::UserDoesNotExist => StatusCode::UNAUTHORIZED,
-                LoginErrorKind::WrongPassword => StatusCode::UNAUTHORIZED,
+                LoginErrorKind::WrongCredentials => StatusCode::UNAUTHORIZED,
                 _ => StatusCode::INTERNAL_SERVER_ERROR,
             },
             AuthenticationErrorKind::Refresh(error) => match error {

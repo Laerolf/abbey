@@ -9,8 +9,9 @@ import { useAuthStore } from '@/stores/authStore'
 
 import useTranslations from '@/composables/useLocale'
 import useNotifications from '@/composables/useNotifications'
+import useLogger from '@/composables/useLogger'
 
-import type { AppError } from '@/api'
+import { isAppError } from '@/utils/mapper'
 
 const { translate, t } = useTranslations('pages.userLogin')
 
@@ -44,6 +45,7 @@ const { handleSubmit, meta } = useForm({
 
 const { loginUser } = useAuthStore()
 const { add } = useNotifications()
+useLogger()
 
 const onSubmit = handleSubmit(async (values) => {
   try {
@@ -52,7 +54,9 @@ const onSubmit = handleSubmit(async (values) => {
       password: values.password
     })
   } catch (error) {
-    add({ content: t((error as AppError).code), variant: 'error' })
+    if (isAppError(error)) {
+      add({ content: t(error.code), variant: 'error' })
+    }
   }
 })
 </script>
@@ -76,7 +80,7 @@ const onSubmit = handleSubmit(async (values) => {
         <template #actions>
           <a-button :disabled="meta.dirty && !meta.valid" type="submit">{{
             translate('form.actions.submit')
-          }}</a-button>
+            }}</a-button>
         </template>
       </a-form>
     </a-card>

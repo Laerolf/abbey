@@ -1,7 +1,11 @@
 import { nextTick } from 'vue'
 import { createI18n } from 'vue-i18n'
 
+import useLogger from '@/composables/useLogger'
+
 import type { Plugin } from 'vue'
+
+const LOG_SCOPE = "@/plugins/i18n.ts"
 
 /**
  * The list of supported locales in the application.
@@ -24,9 +28,11 @@ export const i18n = createI18n({
  * @param locale - The locale for which to load the messages.
  */
 export async function loadLocaleMessages(locale: SupportedLocale): Promise<void> {
+  const logger = useLogger(LOG_SCOPE)
+
   try {
     if (!SUPPORTED_LOCALES.includes(locale)) {
-      console.warn(
+      logger.warn(
         `Locale ${locale} is not supported. Supported locales are: ${SUPPORTED_LOCALES.join(', ')}`,
       )
       return

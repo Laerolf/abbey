@@ -119,16 +119,14 @@ impl AuthenticationService {
             .await
             .map_err(|error| {
                 DomainError::from(AuthenticationErrorKind::Login(
-                    LoginErrorKind::UserDoesNotExist,
+                    LoginErrorKind::WrongCredentials,
                 ))
                 .with_cause(error)
-                .with_context("email", form.email.clone())
             })?
         else {
             return Err(DomainError::from(AuthenticationErrorKind::Login(
-                LoginErrorKind::UserDoesNotExist,
-            ))
-            .with_context("email", form.email.clone()));
+                LoginErrorKind::WrongCredentials,
+            )));
         };
 
         if !self
@@ -136,12 +134,12 @@ impl AuthenticationService {
             .inspect_err(|error| error!("{}", error))
             .map_err(|_error| {
                 DomainError::from(AuthenticationErrorKind::Login(
-                    LoginErrorKind::UserDoesNotExist,
+                    LoginErrorKind::WrongCredentials,
                 ))
             })?
         {
             return Err(DomainError::from(AuthenticationErrorKind::Login(
-                LoginErrorKind::WrongPassword,
+                LoginErrorKind::WrongCredentials,
             )));
         }
 

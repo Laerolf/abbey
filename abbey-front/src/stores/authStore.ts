@@ -1,9 +1,13 @@
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { login, register } from '@/api/sdk.gen'
 
+import useLogger from '@/composables/useLogger'
+
 import type { LoginUserRequest, RegisterUserRequest } from '@/api'
-import { ref } from 'vue'
+
+const LOG_SCOPE = "@/stores/authStore.ts"
 
 /**
  * Represents the authentication store, responsible for managing user authentication state and actions.
@@ -19,10 +23,12 @@ export const useAuthStore = defineStore('auth', () => {
    * @param request - The request object containing user registration details.
    */
   async function registerUser(request: RegisterUserRequest): Promise<void> {
+    const logger = useLogger(LOG_SCOPE)
+
     try {
       await register({ body: request })
     } catch (error) {
-      console.error('Failed to register the user:', error)
+      logger.error('Failed to register the user:', error)
       throw error
     }
   }
@@ -32,6 +38,8 @@ export const useAuthStore = defineStore('auth', () => {
    * @param request - The request object containing user login details.
    */
   async function loginUser(request: LoginUserRequest): Promise<void> {
+    const logger = useLogger(LOG_SCOPE)
+
     try {
       const response = await login({ body: request })
 
@@ -41,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       sessionToken.value = response.data.session_token
     } catch (error) {
-      console.error('Failed to login the user:', error)
+      logger.error('Failed to login the user:', error)
       throw error
     }
   }

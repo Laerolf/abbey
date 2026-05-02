@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/authStore'
 import useTranslations from '@/composables/useLocale'
 import useNotifications from '@/composables/useNotifications'
 
-import type { AppError } from '@/api'
+import { isAppError } from '@/utils/mapper'
 
 const { translate, t } = useTranslations('pages.userRegistration')
 
@@ -66,7 +66,9 @@ const onSubmit = handleSubmit(async (values) => {
       confirmed_password: values.confirmPassword,
     })
   } catch (error) {
-    add({ content: t((error as AppError).code), variant: 'error' })
+    if (isAppError(error)) {
+      add({ content: t(error.code), variant: 'error' })
+    }
   }
 })
 </script>
