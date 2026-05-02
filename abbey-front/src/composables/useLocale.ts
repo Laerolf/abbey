@@ -18,7 +18,6 @@ export default function useLocale(namespace?: string) {
   }
 
   return {
-    translate,
-    t
+    translate
   }
 }
