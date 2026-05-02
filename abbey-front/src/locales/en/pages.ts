@@ -30,6 +30,11 @@ export default {
     },
     "links": {
       "login": "Already have an account? Login here."
+    },
+    feedback: {
+      success: {
+        registration: "Welcome aboard!"
+      }
     }
   },
   "userLogin": {
@@ -56,6 +61,11 @@ export default {
     },
     "links": {
       "register": "Don't have an account? Register here."
+    },
+    feedback: {
+      success: {
+        login: "Welcome!"
+      }
     }
   }
 }

@@ -30,6 +30,11 @@ export default {
     },
     "links": {
       "login": "すでにアカウントをお持ちですか？こちらからログイン。"
+    },
+    feedback: {
+      success: {
+        registration: "登録が完了しました！"
+      }
     }
   },
   "userLogin": {
@@ -56,6 +61,11 @@ export default {
     },
     "links": {
       "register": "アカウントをお持ちでないですか？こちらから登録。"
+    },
+    feedback: {
+      success: {
+        login: "ようこそ！"
+      }
     }
   }
 }

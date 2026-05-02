@@ -4,10 +4,12 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/valibot'
 import * as v from 'valibot'
 import { useHead } from '@unhead/vue'
+import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/authStore'
 
 import useTranslations from '@/composables/useLocale'
+import useNotifications from '@/composables/useNotifications'
 
 const { translate } = useTranslations('pages.userRegistration')
 
@@ -53,6 +55,8 @@ const { handleSubmit, meta } = useForm({
 })
 
 const { registerUser } = useAuthStore()
+const { add } = useNotifications()
+const { push } = useRouter()
 
 const onSubmit = handleSubmit(async (values) => {
   await registerUser({
@@ -60,6 +64,10 @@ const onSubmit = handleSubmit(async (values) => {
     password: values.password,
     confirmed_password: values.confirmPassword,
   })
+
+  add({ content: translate("feedback.success.registration"), variant: 'success' })
+
+  await push({ name: "Login" })
 })
 </script>
 
@@ -86,7 +94,7 @@ const onSubmit = handleSubmit(async (values) => {
         <template #actions>
           <a-button :disabled="meta.dirty && !meta.valid" type="submit">{{
             translate('form.actions.submit')
-            }}</a-button>
+          }}</a-button>
         </template>
       </a-form>
     </a-card>

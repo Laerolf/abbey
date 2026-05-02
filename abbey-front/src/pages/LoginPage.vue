@@ -8,6 +8,7 @@ import { useHead } from '@unhead/vue'
 import { useAuthStore } from '@/stores/authStore'
 
 import useTranslations from '@/composables/useLocale'
+import useNotifications from '@/composables/useNotifications'
 
 const { translate } = useTranslations('pages.userLogin')
 
@@ -40,12 +41,15 @@ const { handleSubmit, meta } = useForm({
 })
 
 const { loginUser } = useAuthStore()
+const { add } = useNotifications()
 
 const onSubmit = handleSubmit(async (values) => {
   await loginUser({
     email: values.email,
     password: values.password
   })
+
+  add({ content: translate("feedback.success.login"), variant: 'success' })
 })
 </script>
 
@@ -68,7 +72,7 @@ const onSubmit = handleSubmit(async (values) => {
         <template #actions>
           <a-button :disabled="meta.dirty && !meta.valid" type="submit">{{
             translate('form.actions.submit')
-          }}</a-button>
+            }}</a-button>
         </template>
       </a-form>
     </a-card>
