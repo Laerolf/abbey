@@ -9,7 +9,13 @@ import i18n from '@/plugins/i18n'
 import errorHandling from '@/plugins/errorHandling'
 
 import '@/assets/styling/main.css'
+import { client } from './api/client.gen'
 
+/// TODO: Improve
+client.setConfig({
+  baseUrl: import.meta.env.VITE_API_URL,
+  credentials: 'include'
+})
 
 const head = createHead({ init: [{ titleTemplate: "%s | Abbey" }] })
 

@@ -46,7 +46,7 @@ impl MonasteryService {
 
         let skills: Vec<Skill> = self
             .skill_service
-            .create_many_skills(skill_names, db_transaction)
+            .find_many_by_name_or_create(skill_names, db_transaction)
             .await
             .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
 

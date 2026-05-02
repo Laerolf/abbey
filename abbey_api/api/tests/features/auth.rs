@@ -1,10 +1,7 @@
 pub mod register {
     use axum::http::StatusCode;
     use domain::{
-        features::auth::{
-            error::{AuthenticationErrorKind, RegistrationErrorKind},
-            forms::RegistrationForm,
-        },
+        features::auth::error::{AuthenticationErrorKind, RegistrationErrorKind},
         shared::error::DomainErrorKind,
     };
     use serde_json::json;
@@ -22,6 +19,37 @@ pub mod register {
         // Given
         let TestUserFixture { email, password } = test_user_fixture();
         let app = TestApp::new().await;
+
+        // When
+        let response = app
+            .post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password
+            }))
+            .send()
+            .await;
+
+        // Then
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[serial]
+    pub async fn test_register_new_user_returns_200_after_multiple_user_registrations() {
+        // Given
+        let TestUserFixture { email, password } = test_user_fixture();
+        let app = TestApp::new().await;
+
+        app.post("/api/auth/register")
+            .body(&json!({
+                "email": "test@test.test",
+                "password": "test",
+                "confirmed_password": "test"
+            }))
+            .send()
+            .await;
 
         // When
         let response = app
@@ -68,15 +96,14 @@ pub mod register {
 
         let app = TestApp::new().await;
 
-        app.context
-            .in_transaction(async |db_transaction| {
-                app.context
-                    .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
-                    .await
-            })
-            .await
-            .expect("Failed to register the test user.");
+        app.post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password
+            }))
+            .send()
+            .await;
 
         // When
         let response = app

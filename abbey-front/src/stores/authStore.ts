@@ -26,7 +26,11 @@ export const useAuthStore = defineStore('auth', () => {
     const logger = useLogger(LOG_SCOPE)
 
     try {
-      await register({ body: request })
+      const response = await register({ body: request })
+
+      if (response.error) {
+        throw response.error
+      }
     } catch (error) {
       logger.error('Failed to register the user:', error)
       throw error

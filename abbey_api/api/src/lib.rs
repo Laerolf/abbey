@@ -4,7 +4,13 @@ pub mod shared;
 
 use std::sync::Arc;
 
-use axum::{Router, http::Method};
+use axum::{
+    Router,
+    http::{
+        HeaderValue, Method,
+        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+    },
+};
 
 use sea_orm::{ConnectOptions, Database};
 use tokio::net::TcpListener;
@@ -79,9 +85,10 @@ impl Abbey {
 
         // TODO: Adjust accordingly
         let cors = CorsLayer::new()
-            .allow_origin(Any)
-            .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
-            .allow_headers(Any);
+            .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
+            .allow_credentials(true)
+            .allow_methods([Method::GET, Method::POST])
+            .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
 
         let router = Router::new()
             .merge(SwaggerUi::new("/openapi").url("/openapi.json", openapi()))

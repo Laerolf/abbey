@@ -19,8 +19,8 @@ impl SkillService {
         Self { repository }
     }
 
-    /// Creates many [`Skills`][`Vec<Skill>`].
-    pub async fn create_many_skills(
+    /// Finds many [`Skills`][`Vec<Skill>`] with the provided names or creates them.
+    pub async fn find_many_by_name_or_create(
         &self,
         names: Vec<impl Into<String>>,
         db_transaction: &DatabaseTransaction,
@@ -31,7 +31,7 @@ impl SkillService {
             .collect();
 
         self.repository
-            .create_many(creation_forms, db_transaction)
+            .find_by_name_or_create_many(creation_forms, db_transaction)
             .await
     }
 }
