@@ -4,6 +4,7 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/valibot'
 import * as v from 'valibot'
 import { useHead } from '@unhead/vue'
+import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/authStore'
 
@@ -13,7 +14,7 @@ import useNotifications from '@/composables/useNotifications'
 const { translate } = useTranslations('pages.userLogin')
 
 useHead({
-  title: computed(() => translate("title"))
+  title: computed(() => translate('title')),
 })
 
 const validationSchema = computed(() =>
@@ -31,7 +32,7 @@ const validationSchema = computed(() =>
           v.string(),
           v.nonEmpty(translate('form.fields.password.validations.required')),
         ),
-      })
+      }),
     ),
   ),
 )
@@ -42,14 +43,17 @@ const { handleSubmit, meta } = useForm({
 
 const { loginUser } = useAuthStore()
 const { add } = useNotifications()
+const { push } = useRouter()
 
 const onSubmit = handleSubmit(async (values) => {
   await loginUser({
     email: values.email,
-    password: values.password
+    password: values.password,
   })
 
-  add({ content: translate("feedback.success.login"), variant: 'success' })
+  add({ content: translate('feedback.success.login'), variant: 'success' })
+
+  await push({ path: '/game' })
 })
 </script>
 
@@ -72,13 +76,15 @@ const onSubmit = handleSubmit(async (values) => {
         <template #actions>
           <a-button :disabled="meta.dirty && !meta.valid" type="submit">{{
             translate('form.actions.submit')
-            }}</a-button>
+          }}</a-button>
         </template>
       </a-form>
     </a-card>
 
     <ul>
-      <li><router-link to="Register">{{ translate("links.register") }}</router-link></li>
+      <li>
+        <router-link :to="{ name: 'Register' }">{{ translate('links.register') }}</router-link>
+      </li>
     </ul>
   </a-grid>
 </template>

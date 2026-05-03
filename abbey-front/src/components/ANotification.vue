@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import useNotifications from '@/composables/useNotifications';
-import type { ANotification } from '@/composables/useNotifications';
-import { computed } from 'vue';
+import useNotifications from '@/composables/useNotifications'
+import type { ANotification } from '@/composables/useNotifications'
+import { computed } from 'vue'
 
 const props = defineProps<{ notification: ANotification }>()
 
 const emit = defineEmits<{
-  (event: 'close', id: ANotification["id"]): void
+  (event: 'close', id: ANotification['id']): void
 }>()
 
 const { remove } = useNotifications()
@@ -16,7 +16,7 @@ let timeoutId: number | undefined = undefined
 const classes = computed(() => ({
   success: props.notification.variant === 'success',
   warning: props.notification.variant === 'warning',
-  error: props.notification.variant === 'error'
+  error: props.notification.variant === 'error',
 }))
 
 function handleClose(): void {

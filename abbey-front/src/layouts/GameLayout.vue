@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import TheHeader from '@/components/TheHeader.vue'
+import { onBeforeMount } from 'vue'
+
+import { useGameStore } from '@/stores/gameStore'
+
+const { loadSessionGame } = useGameStore()
+
+onBeforeMount(async () => {
+  await loadSessionGame()
+})
 </script>
 
 <template>
   <a-grid rows class="layout">
-    <the-header />
-
     <a-grid class="content">
       <router-view />
     </a-grid>

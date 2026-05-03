@@ -1,4 +1,4 @@
-import type { AppError } from "@/api";
+import type { AppError } from '@/api'
 
 /**
  * Tests whether the provided object is an AppError.

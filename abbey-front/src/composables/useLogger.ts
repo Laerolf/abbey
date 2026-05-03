@@ -1,14 +1,14 @@
-import { computed, getCurrentInstance } from "vue"
+import { computed, getCurrentInstance } from 'vue'
 
 /**
  * The possible log levels.
  */
-const LOG_LEVELS = ["debug", "info", "warn", "error"] as const
+const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const
 
 /**
  * The level of the log message.
  */
-type LogLevel = typeof LOG_LEVELS[number]
+type LogLevel = (typeof LOG_LEVELS)[number]
 
 /**
  * The options of a log message.
@@ -21,7 +21,7 @@ type LogMessageOptions = {
   /**
    * The content of the log message.
    */
-  message: string,
+  message: string
   /**
    * The context of the log message.
    */
@@ -40,7 +40,7 @@ export default function useLogger(scope?: string) {
       return scope
     }
 
-    return getCurrentInstance()?.type.__file?.replace(/.*\/src\//, '@/') ?? "??"
+    return getCurrentInstance()?.type.__file?.replace(/.*\/src\//, '@/') ?? '??'
   })
 
   /**
@@ -48,22 +48,29 @@ export default function useLogger(scope?: string) {
    * @param options - The options to base the log message on.
    */
   function logMessage(options: LogMessageOptions): void {
-    const computedMessage = [options.level ? `[${options.level}]` : '', computedScope.value, "•", options.message].filter((option) => option.length).join(" ")
+    const computedMessage = [
+      options.level ? `[${options.level}]` : '',
+      computedScope.value,
+      '•',
+      options.message,
+    ]
+      .filter((option) => option.length)
+      .join(' ')
 
     switch (options.level) {
-      case "info":
+      case 'info':
         console.info(computedMessage, ...options.context)
         break
 
-      case "debug":
+      case 'debug':
         console.debug(computedMessage, ...options.context)
         break
 
-      case "warn":
+      case 'warn':
         console.warn(computedMessage, ...options.context)
         break
 
-      case "error":
+      case 'error':
         console.error(computedMessage, ...options.context)
         break
 
@@ -80,31 +87,31 @@ export default function useLogger(scope?: string) {
   }
 
   /**
-  * Logs a message with the info log level.
-  */
+   * Logs a message with the info log level.
+   */
   function info(message: string, ...context: unknown[]): void {
-    logMessage({ message, level: "info", context })
+    logMessage({ message, level: 'info', context })
   }
 
   /**
-  * Logs a message with the debug log level.
-  */
+   * Logs a message with the debug log level.
+   */
   function debug(message: string, ...context: unknown[]): void {
-    logMessage({ message, level: "debug", context })
+    logMessage({ message, level: 'debug', context })
   }
 
   /**
-  * Logs a message with the warn log level.
-  */
+   * Logs a message with the warn log level.
+   */
   function warn(message: string, ...context: unknown[]): void {
-    logMessage({ message, level: "warn", context })
+    logMessage({ message, level: 'warn', context })
   }
 
   /**
-  * Logs a message with the error log level.
-  */
+   * Logs a message with the error log level.
+   */
   function error(message: string, ...context: unknown[]): void {
-    logMessage({ message, level: "error", context })
+    logMessage({ message, level: 'error', context })
   }
 
   return {
@@ -112,6 +119,6 @@ export default function useLogger(scope?: string) {
     info,
     debug,
     warn,
-    error
+    error,
   }
 }

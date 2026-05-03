@@ -26,7 +26,11 @@ const classes = computed(() => ({
       </label>
 
       <select :id="name" :name="name" v-model="value" @blur="handleBlur">
-        <option v-for="([key, label], index) in Object.entries(options)" :key="`${index}-${key}`" :value="key">
+        <option
+          v-for="([key, label], index) in Object.entries(options)"
+          :key="`${index}-${key}`"
+          :value="key"
+        >
           {{ label }}
         </option>
       </select>

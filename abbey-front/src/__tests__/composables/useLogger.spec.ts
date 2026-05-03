@@ -1,18 +1,18 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import useLogger from "@/composables/useLogger";
+import useLogger from '@/composables/useLogger'
 
 const { consoleSpy } = vi.hoisted(() => ({
   consoleSpy: {
-    log: vi.spyOn(console, 'log').mockImplementation(() => { }),
-    debug: vi.spyOn(console, 'debug').mockImplementation(() => { }),
-    info: vi.spyOn(console, 'info').mockImplementation(() => { }),
-    warn: vi.spyOn(console, 'warn').mockImplementation(() => { }),
-    error: vi.spyOn(console, 'error').mockImplementation(() => { }),
-  }
+    log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+    debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
+    info: vi.spyOn(console, 'info').mockImplementation(() => {}),
+    warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+    error: vi.spyOn(console, 'error').mockImplementation(() => {}),
+  },
 }))
 
-describe("@/composables/useLogger", () => {
+describe('@/composables/useLogger', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -21,7 +21,7 @@ describe("@/composables/useLogger", () => {
     vi.restoreAllMocks()
   })
 
-  it("should log a message with an unknown scope and no log level", () => {
+  it('should log a message with an unknown scope and no log level', () => {
     // Given
     const expectedMessage = "It's golden week!"
     const expectedOutput = `?? • ${expectedMessage}`
@@ -33,9 +33,9 @@ describe("@/composables/useLogger", () => {
     expect(consoleSpy.log).toHaveBeenCalledWith(expectedOutput)
   })
 
-  it("should log a message with the provided scope and no log level", () => {
+  it('should log a message with the provided scope and no log level', () => {
     // Given
-    const scope = "Heaven"
+    const scope = 'Heaven'
 
     const expectedMessage = "It's golden week!"
     const expectedOutput = `${scope} • ${expectedMessage}`
@@ -47,9 +47,9 @@ describe("@/composables/useLogger", () => {
     expect(consoleSpy.log).toHaveBeenCalledWith(expectedOutput)
   })
 
-  it("should log a message with the provided scope and a log level", () => {
+  it('should log a message with the provided scope and a log level', () => {
     // Given
-    const scope = "Hell"
+    const scope = 'Hell'
 
     const expectedMessage = "It's golden week!"
     const expectedOutput = `[error] ${scope} • ${expectedMessage}`
@@ -61,7 +61,7 @@ describe("@/composables/useLogger", () => {
     expect(consoleSpy.error).toHaveBeenCalledWith(expectedOutput)
   })
 
-  it("should log a message with an unknown scope and with the info log level", () => {
+  it('should log a message with an unknown scope and with the info log level', () => {
     // Given
     const expectedMessage = "It's golden week!"
     const expectedOutput = `[info] ?? • ${expectedMessage}`
@@ -73,7 +73,7 @@ describe("@/composables/useLogger", () => {
     expect(consoleSpy.info).toHaveBeenCalledWith(expectedOutput)
   })
 
-  it("should log a message with an unknown scope and with the debug log level", () => {
+  it('should log a message with an unknown scope and with the debug log level', () => {
     // Given
     const expectedMessage = "It's golden week!"
     const expectedOutput = `[debug] ?? • ${expectedMessage}`
@@ -85,7 +85,7 @@ describe("@/composables/useLogger", () => {
     expect(consoleSpy.debug).toHaveBeenCalledWith(expectedOutput)
   })
 
-  it("should log a message with an unknown scope and with the warn log level", () => {
+  it('should log a message with an unknown scope and with the warn log level', () => {
     // Given
     const expectedMessage = "It's golden week!"
     const expectedOutput = `[warn] ?? • ${expectedMessage}`
@@ -97,7 +97,7 @@ describe("@/composables/useLogger", () => {
     expect(consoleSpy.warn).toHaveBeenCalledWith(expectedOutput)
   })
 
-  it("should log a message with an unknown scope and with the error log level", () => {
+  it('should log a message with an unknown scope and with the error log level', () => {
     // Given
     const expectedMessage = "It's golden week!"
     const expectedOutput = `[error] ?? • ${expectedMessage}`

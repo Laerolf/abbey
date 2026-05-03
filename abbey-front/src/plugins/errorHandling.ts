@@ -1,13 +1,13 @@
-import { i18n } from "@/plugins/i18n";
+import { i18n } from '@/plugins/i18n'
 
-import useLogger from "@/composables/useLogger";
-import useNotifications from "@/composables/useNotifications";
+import useLogger from '@/composables/useLogger'
+import useNotifications from '@/composables/useNotifications'
 
-import { isAppError } from "@/utils/mapper";
+import { isAppError } from '@/utils/mapper'
 
-import type { Plugin } from "vue";
+import type { Plugin } from 'vue'
 
-const LOG_SCOPE = "@/plugins/errorHandling.ts"
+const LOG_SCOPE = '@/plugins/errorHandling.ts'
 
 export default {
   install(app) {
@@ -19,8 +19,8 @@ export default {
 
         add({ content: i18n.global.t(error.code), variant: 'error' })
       } else {
-        logger.error("Something went terribly wrong!", error)
+        logger.error('Something went terribly wrong!', error)
       }
     }
-  }
+  },
 } as Plugin

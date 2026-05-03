@@ -12,7 +12,7 @@ useHead({
   titleTemplate: computed(() => {
     if (!te('app.title')) return '%s'
     return `%s | ${t('app.title')}`
-  })
+  }),
 })
 </script>
 

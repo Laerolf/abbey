@@ -14,10 +14,10 @@ import { client } from './api/client.gen'
 /// TODO: Improve
 client.setConfig({
   baseUrl: import.meta.env.VITE_API_URL,
-  credentials: 'include'
+  credentials: 'include',
 })
 
-const head = createHead({ init: [{ titleTemplate: "%s | Abbey" }] })
+const head = createHead({ init: [{ titleTemplate: '%s | Abbey' }] })
 
 const app = createApp(App)
 

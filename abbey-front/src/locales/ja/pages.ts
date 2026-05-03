@@ -1,71 +1,75 @@
 export default {
-  "userRegistration": {
-    "title": "ユーザー登録",
-    "form": {
-      "fields": {
-        "email": {
-          "label": "メールアドレス",
-          "validations": {
-            "required": "メールアドレスを入力してください。",
-            "email": "有効なメールアドレスを入力してください。"
-          }
+  userRegistration: {
+    title: 'ユーザー登録',
+    form: {
+      fields: {
+        email: {
+          label: 'メールアドレス',
+          validations: {
+            required: 'メールアドレスを入力してください。',
+            email: '有効なメールアドレスを入力してください。',
+          },
         },
-        "password": {
-          "label": "パスワード",
-          "validations": {
-            "required": "パスワードを入力してください。"
-          }
+        password: {
+          label: 'パスワード',
+          validations: {
+            required: 'パスワードを入力してください。',
+          },
         },
-        "confirmPassword": {
-          "label": "パスワード確認",
-          "validations": {
-            "required": "パスワードを確認してください。",
-            "match": "パスワードが一致しません。"
-          }
-        }
+        confirmPassword: {
+          label: 'パスワード確認',
+          validations: {
+            required: 'パスワードを確認してください。',
+            match: 'パスワードが一致しません。',
+          },
+        },
       },
-      "actions": {
-        "submit": "登録する"
-      }
+      actions: {
+        submit: '登録する',
+      },
     },
-    "links": {
-      "login": "すでにアカウントをお持ちですか？こちらからログイン。"
+    links: {
+      login: 'すでにアカウントをお持ちですか？こちらからログイン。',
     },
     feedback: {
       success: {
-        registration: "登録が完了しました！"
-      }
-    }
+        registration: '登録が完了しました！',
+      },
+    },
   },
-  "userLogin": {
-    "title": "ログイン",
-    "form": {
-      "fields": {
-        "email": {
-          "label": "メールアドレス",
-          "validations": {
-            "required": "メールアドレスを入力してください。",
-            "email": "有効なメールアドレスを入力してください。"
-          }
+  userLogin: {
+    title: 'ログイン',
+    form: {
+      fields: {
+        email: {
+          label: 'メールアドレス',
+          validations: {
+            required: 'メールアドレスを入力してください。',
+            email: '有効なメールアドレスを入力してください。',
+          },
         },
-        "password": {
-          "label": "パスワード",
-          "validations": {
-            "required": "パスワードを入力してください。"
-          }
-        }
+        password: {
+          label: 'パスワード',
+          validations: {
+            required: 'パスワードを入力してください。',
+          },
+        },
       },
-      "actions": {
-        "submit": "ログインする"
-      }
+      actions: {
+        submit: 'ログインする',
+      },
     },
-    "links": {
-      "register": "アカウントをお持ちでないですか？こちらから登録。"
+    links: {
+      register: 'アカウントをお持ちでないですか？こちらから登録。',
     },
     feedback: {
       success: {
-        login: "ようこそ！"
-      }
-    }
-  }
+        login: 'ようこそ！',
+      },
+    },
+  },
+  gameMonastery: {
+    title: '修道院',
+    monks: '修道士',
+  },
 }

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 import { login, register } from '@/api/sdk.gen'
@@ -7,7 +7,7 @@ import useLogger from '@/composables/useLogger'
 
 import type { LoginUserRequest, RegisterUserRequest } from '@/api'
 
-const LOG_SCOPE = "@/stores/authStore.ts"
+const LOG_SCOPE = '@/stores/authStore.ts'
 
 /**
  * Represents the authentication store, responsible for managing user authentication state and actions.
@@ -17,6 +17,11 @@ export const useAuthStore = defineStore('auth', () => {
    * The token to authenticate the user with.
    */
   const sessionToken = ref<string>()
+
+  /**
+   * Is the user authenticated?
+   */
+  const authenticated = computed<boolean>(() => !!sessionToken.value)
 
   /**
    * Registers a new user.
@@ -58,5 +63,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { sessionToken, registerUser, loginUser }
+  return { sessionToken, authenticated, registerUser, loginUser }
 })

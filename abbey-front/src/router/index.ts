@@ -1,4 +1,3 @@
-
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { i18n, loadLocaleMessages } from '@/plugins/i18n'
@@ -11,28 +10,56 @@ import type { SupportedLocale } from '@/plugins/i18n'
  */
 const authRoutes: readonly RouteRecordRaw[] = [
   {
-    path: '/',
+    path: '/auth',
     component: () => import('@/layouts/DefaultLayout.vue'),
     children: [
       {
-        path: "",
-        redirect: { name: 'Login' }
+        path: '',
+        redirect: { name: 'Login' },
       },
       {
-        path: '/login',
         name: 'Login',
+        path: 'login',
         component: () => import('@/pages/LoginPage.vue'),
       },
       {
-        path: '/register',
         name: 'Register',
+        path: 'register',
         component: () => import('@/pages/RegisterPage.vue'),
-      }
+      },
     ],
   },
 ]
 
-const routes: readonly RouteRecordRaw[] = [...authRoutes]
+/**
+ * Game-related routes.
+ */
+const gameRoutes: readonly RouteRecordRaw[] = [
+  {
+    path: '/game',
+    component: () => import('@/layouts/GameLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: { name: 'Monastery' },
+      },
+      {
+        name: 'Monastery',
+        path: 'monastery',
+        component: () => import('@/pages/MonasteryPage.vue'),
+      },
+    ],
+  },
+]
+
+const routes: readonly RouteRecordRaw[] = [
+  {
+    path: '',
+    redirect: { name: 'Login' },
+  },
+  ...authRoutes,
+  ...gameRoutes,
+]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

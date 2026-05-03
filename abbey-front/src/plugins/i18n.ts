@@ -5,7 +5,7 @@ import useLogger from '@/composables/useLogger'
 
 import type { Plugin } from 'vue'
 
-const LOG_SCOPE = "@/plugins/i18n.ts"
+const LOG_SCOPE = '@/plugins/i18n.ts'
 
 /**
  * The list of supported locales in the application.

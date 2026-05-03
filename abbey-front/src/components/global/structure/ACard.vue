@@ -4,7 +4,7 @@
       <slot name="header" />
     </a-grid>
 
-    <a-grid class="a-card-body">
+    <a-grid rows class="a-card-body">
       <slot />
     </a-grid>
 

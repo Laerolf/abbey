@@ -14,7 +14,7 @@ import useNotifications from '@/composables/useNotifications'
 const { translate } = useTranslations('pages.userRegistration')
 
 useHead({
-  title: computed(() => translate("title"))
+  title: computed(() => translate('title')),
 })
 
 const validationSchema = computed(() =>
@@ -65,9 +65,9 @@ const onSubmit = handleSubmit(async (values) => {
     confirmed_password: values.confirmPassword,
   })
 
-  add({ content: translate("feedback.success.registration"), variant: 'success' })
+  add({ content: translate('feedback.success.registration'), variant: 'success' })
 
-  await push({ name: "Login" })
+  await push({ name: 'Login' })
 })
 </script>
 
@@ -100,7 +100,9 @@ const onSubmit = handleSubmit(async (values) => {
     </a-card>
 
     <ul>
-      <li><router-link to="Login">{{ translate("links.login") }}</router-link></li>
+      <li>
+        <router-link :to="{ name: 'Login' }">{{ translate('links.login') }}</router-link>
+      </li>
     </ul>
   </a-grid>
 </template>
