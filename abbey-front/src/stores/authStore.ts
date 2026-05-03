@@ -1,9 +1,11 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-import { login, register } from '@/api/sdk.gen'
+import { login, register, refresh } from '@/api/sdk.gen'
 
 import useLogger from '@/composables/useLogger'
+
+import { isJwtExpired } from '@/utils/jwt'
 
 import type { LoginUserRequest, RegisterUserRequest } from '@/api'
 
@@ -16,12 +18,14 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * The token to authenticate the user with.
    */
-  const sessionToken = ref<string>()
+  const sessionToken = ref<string | null>(null)
 
   /**
    * Is the user authenticated?
    */
-  const authenticated = computed<boolean>(() => !!sessionToken.value)
+  const authenticated = computed<boolean>(
+    () => !!sessionToken.value && !isJwtExpired(sessionToken.value),
+  )
 
   /**
    * Registers a new user.
@@ -63,5 +67,25 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { sessionToken, authenticated, registerUser, loginUser }
+  /**
+   * Refreshes the user's credentials.
+   */
+  async function refreshUser(): Promise<void> {
+    const logger = useLogger(LOG_SCOPE)
+
+    try {
+      const response = await refresh({})
+
+      if (response.error) {
+        throw response.error
+      }
+
+      sessionToken.value = response.data.session_token
+    } catch (error) {
+      logger.error("Failed to refresh the user's credentials:", error)
+      throw error
+    }
+  }
+
+  return { sessionToken, authenticated, registerUser, loginUser, refreshUser }
 })

@@ -1,9 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { i18n, loadLocaleMessages } from '@/plugins/i18n'
+import { authGuard, localeGuard } from '@/middleware/guards'
 
 import type { RouteRecordRaw } from 'vue-router'
-import type { SupportedLocale } from '@/plugins/i18n'
 
 /**
  * Authentication-related routes.
@@ -38,6 +37,9 @@ const gameRoutes: readonly RouteRecordRaw[] = [
   {
     path: '/game',
     component: () => import('@/layouts/GameLayout.vue'),
+    meta: {
+      secure: true,
+    },
     children: [
       {
         path: '',
@@ -47,6 +49,9 @@ const gameRoutes: readonly RouteRecordRaw[] = [
         name: 'Monastery',
         path: 'monastery',
         component: () => import('@/pages/MonasteryPage.vue'),
+        meta: {
+          secure: true,
+        },
       },
     ],
   },
@@ -66,8 +71,7 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach(async () => {
-  await loadLocaleMessages(i18n.global.locale.value as SupportedLocale)
-})
+router.beforeEach(localeGuard)
+router.beforeEach(authGuard)
 
 export default router
