@@ -11,10 +11,10 @@ import { useAuthStore } from '@/stores/authStore'
 import useTranslations from '@/composables/useLocale'
 import useNotifications from '@/composables/useNotifications'
 
-const { translate } = useTranslations('pages.userLogin')
+const { translateInScope } = useTranslations('pages.userLogin')
 
 useHead({
-  title: computed(() => translate('title')),
+  title: computed(() => translateInScope('title')),
 })
 
 const validationSchema = computed(() =>
@@ -24,13 +24,13 @@ const validationSchema = computed(() =>
         email: v.pipe(
           v.optional(v.string(), ''),
           v.string(),
-          v.nonEmpty(translate('form.fields.email.validations.required')),
-          v.email(translate('form.fields.email.validations.email')),
+          v.nonEmpty(translateInScope('form.fields.email.validations.required')),
+          v.email(translateInScope('form.fields.email.validations.email')),
         ),
         password: v.pipe(
           v.optional(v.string(), ''),
           v.string(),
-          v.nonEmpty(translate('form.fields.password.validations.required')),
+          v.nonEmpty(translateInScope('form.fields.password.validations.required')),
         ),
       }),
     ),
@@ -51,7 +51,7 @@ const onSubmit = handleSubmit(async (values) => {
     password: values.password,
   })
 
-  add({ content: translate('feedback.success.login'), variant: 'success' })
+  add({ content: translateInScope('feedback.success.login'), variant: 'success' })
 
   await push({ path: '/game' })
 })
@@ -61,21 +61,21 @@ const onSubmit = handleSubmit(async (values) => {
   <a-grid rows>
     <a-card>
       <template #header>
-        <h2>{{ translate('title') }}</h2>
+        <h2>{{ translateInScope('title') }}</h2>
       </template>
 
       <a-form @submit.prevent="onSubmit">
         <a-text-field name="email">
-          {{ translate('form.fields.email.label') }}
+          {{ translateInScope('form.fields.email.label') }}
         </a-text-field>
 
         <a-text-field secret name="password">
-          {{ translate('form.fields.password.label') }}
+          {{ translateInScope('form.fields.password.label') }}
         </a-text-field>
 
         <template #actions>
           <a-button :disabled="meta.dirty && !meta.valid" type="submit">{{
-            translate('form.actions.submit')
+            translateInScope('form.actions.submit')
           }}</a-button>
         </template>
       </a-form>
@@ -83,7 +83,7 @@ const onSubmit = handleSubmit(async (values) => {
 
     <ul>
       <li>
-        <router-link :to="{ name: 'Register' }">{{ translate('links.register') }}</router-link>
+        <router-link :to="{ name: 'Register' }">{{ translateInScope('links.register') }}</router-link>
       </li>
     </ul>
   </a-grid>

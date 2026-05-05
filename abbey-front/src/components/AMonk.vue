@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia';
+
+import { useCatalogStore } from '@/stores/catalogStore';
 
 import useLocale from '@/composables/useLocale'
 
-import type { MonkDto } from '@/api'
+import type { MonkDto, SkillDto } from '@/api'
+
 
 const props = defineProps<{ monk: MonkDto }>()
 
-const { translate } = useLocale('components.aMonk')
+const catalogStore = useCatalogStore()
 
-const skillIds = computed(() => props.monk.skill_ids)
+const { skills: catalogSkills } = storeToRefs(catalogStore)
+
+const { translate, translateInScope } = useLocale('components.aMonk')
+
+const skills = computed<SkillDto[]>(() => props.monk.skill_ids.map(skillId => catalogSkills.value.find(({ id }) => skillId === id)).filter((skill): skill is SkillDto => skill !== undefined))
 </script>
 
 <template>
@@ -19,10 +27,13 @@ const skillIds = computed(() => props.monk.skill_ids)
     </template>
 
     <a-grid class="skills" rows>
-      <h5>{{ translate('skills') }}</h5>
+      <h5>{{ translateInScope('skills') }}</h5>
 
       <ul>
-        <li v-for="skillId in skillIds" :key="`monk-${monk.id}-skill-${skillId}`">{{ skillId }}</li>
+        <li v-for="skill in skills" :key="`monk-${monk.id}-skill-${skill.id}`">{{
+          translate(`catalog.skills.${skill.name}`)
+        }}
+        </li>
       </ul>
     </a-grid>
   </a-card>

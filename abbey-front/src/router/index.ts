@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { authGuard, localeGuard } from '@/middleware/guards'
+import { authGuard, catalogGuard, localeGuard } from '@/middleware/guards'
 
 import type { RouteRecordRaw } from 'vue-router'
 
@@ -39,6 +39,7 @@ const gameRoutes: readonly RouteRecordRaw[] = [
     component: () => import('@/layouts/GameLayout.vue'),
     meta: {
       secure: true,
+      requiresCatalog: true
     },
     children: [
       {
@@ -51,6 +52,7 @@ const gameRoutes: readonly RouteRecordRaw[] = [
         component: () => import('@/pages/MonasteryPage.vue'),
         meta: {
           secure: true,
+          requiresCatalog: true
         },
       },
     ],
@@ -72,6 +74,7 @@ const router = createRouter({
 })
 
 router.beforeEach(localeGuard)
+router.beforeEach(catalogGuard)
 router.beforeEach(authGuard)
 
 export default router

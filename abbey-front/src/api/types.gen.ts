@@ -198,6 +198,38 @@ export type RegisterUserResponse = {
 };
 
 /**
+ * Represents a Resource.
+ */
+export type ResourceDto = {
+    /**
+     * The category of the Resource.
+     */
+    category: string;
+    /**
+     * The ID of the Resource.
+     */
+    id: number;
+    /**
+     * The name of the Resource.
+     */
+    name: string;
+};
+
+/**
+ * Represents a Skill.
+ */
+export type SkillDto = {
+    /**
+     * The ID of the Skill.
+     */
+    id: number;
+    /**
+     * The name of the Skill.
+     */
+    name: string;
+};
+
+/**
  * Represents a [Source] DTO.
  */
 export type SourceDto = {
@@ -352,6 +384,38 @@ export type RegisterResponses = {
 };
 
 export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
+
+export type GetAllResourcesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/catalog/resources';
+};
+
+export type GetAllResourcesResponses = {
+    /**
+     * The resources were found.
+     */
+    200: Array<ResourceDto>;
+};
+
+export type GetAllResourcesResponse = GetAllResourcesResponses[keyof GetAllResourcesResponses];
+
+export type GetAllSkillsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/catalog/skills';
+};
+
+export type GetAllSkillsResponses = {
+    /**
+     * The skills were found.
+     */
+    200: Array<SkillDto>;
+};
+
+export type GetAllSkillsResponse = GetAllSkillsResponses[keyof GetAllSkillsResponses];
 
 export type AssignData = {
     body: ProcessAssignmentRequest;

@@ -8,13 +8,13 @@ import useLocale from '@/composables/useLocale'
 import type { SupportedLocale } from '@/plugins/i18n'
 
 const { locale } = useI18n()
-const { translate } = useLocale('shared.locales')
+const { translateInScope } = useLocale('shared.locales')
 
 const selectedLocale = ref<SupportedLocale>(locale.value as SupportedLocale)
 
 const localeOptions: Record<SupportedLocale, string> = SUPPORTED_LOCALES.reduce(
   (acc, locale) => {
-    acc[locale] = translate(locale)
+    acc[locale] = translateInScope(locale)
     return acc
   },
   {} as Record<SupportedLocale, string>,

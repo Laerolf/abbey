@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AssignData, AssignErrors, AssignResponses, GetSessionGameData, GetSessionGameErrors, GetSessionGameResponses, GetSessionUserData, GetSessionUserErrors, GetSessionUserResponses, LoginData, LoginErrors, LoginResponses, PauseData, PauseErrors, PauseResponses, RefreshData, RefreshErrors, RefreshResponses, RegisterData, RegisterErrors, RegisterResponses, StartData, StartErrors, StartResponses } from './types.gen';
+import type { AssignData, AssignErrors, AssignResponses, GetAllResourcesData, GetAllResourcesResponses, GetAllSkillsData, GetAllSkillsResponses, GetSessionGameData, GetSessionGameErrors, GetSessionGameResponses, GetSessionUserData, GetSessionUserErrors, GetSessionUserResponses, LoginData, LoginErrors, LoginResponses, PauseData, PauseErrors, PauseResponses, RefreshData, RefreshErrors, RefreshResponses, RegisterData, RegisterErrors, RegisterResponses, StartData, StartErrors, StartResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -46,6 +46,16 @@ export const register = <ThrowOnError extends boolean = false>(options: Options<
         ...options.headers
     }
 });
+
+/**
+ * Gets all existing Resources.
+ */
+export const getAllResources = <ThrowOnError extends boolean = false>(options?: Options<GetAllResourcesData, ThrowOnError>) => (options?.client ?? client).get<GetAllResourcesResponses, unknown, ThrowOnError>({ url: '/api/catalog/resources', ...options });
+
+/**
+ * Gets all existing Skills.
+ */
+export const getAllSkills = <ThrowOnError extends boolean = false>(options?: Options<GetAllSkillsData, ThrowOnError>) => (options?.client ?? client).get<GetAllSkillsResponses, unknown, ThrowOnError>({ url: '/api/catalog/skills', ...options });
 
 /**
  * Assigns a cyclic process to an actor.

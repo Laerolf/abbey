@@ -3,13 +3,13 @@ import LocaleSelector from '@/components/LocaleSelector.vue'
 
 import useTranslations from '@/composables/useLocale'
 
-const { translate } = useTranslations('app')
+const { translateInScope } = useTranslations('app')
 </script>
 
 <template>
   <header id="the-header">
     <a-grid class="content">
-      <h1>{{ translate('title') }}</h1>
+      <h1>{{ translateInScope('title') }}</h1>
 
       <a-grid class="actions">
         <locale-selector />

@@ -1,16 +1,28 @@
 import { i18n, loadLocaleMessages } from '@/plugins/i18n'
 
 import { useAuthStore } from '@/stores/authStore'
+import { useCatalogStore } from '@/stores/catalogStore'
+
+import useLogger from '@/composables/useLogger'
 
 import type { NavigationGuard } from 'vue-router'
 import type { SupportedLocale } from '@/plugins/i18n'
-import useLogger from '@/composables/useLogger'
 
 /**
  * A navigation guard loading the i18n locales.
  */
 export const localeGuard: NavigationGuard = async () => {
   await loadLocaleMessages(i18n.global.locale.value as SupportedLocale)
+}
+
+/**
+ * A navigation guard loading the Catalog.
+ */
+export const catalogGuard: NavigationGuard = async (to) => {
+  if (to.meta.requiresCatalog) {
+    const catalogStore = useCatalogStore()
+    await catalogStore.loadTheCatalog()
+  }
 }
 
 /**

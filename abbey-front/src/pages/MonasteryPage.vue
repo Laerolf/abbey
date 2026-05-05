@@ -11,10 +11,10 @@ import AMonk from '@/components/AMonk.vue'
 
 const gameStore = useGameStore()
 
-const { translate } = useLocale('pages.gameMonastery')
+const { translateInScope } = useLocale('pages.gameMonastery')
 
 useHead({
-  title: computed(() => translate('title')),
+  title: computed(() => translateInScope('title')),
 })
 
 const { monastery } = storeToRefs(gameStore)
@@ -24,10 +24,10 @@ const { monastery } = storeToRefs(gameStore)
   <a-grid rows>
     <a-card>
       <template #header>
-        <h2>{{ translate('title') }}</h2>
+        <h2>{{ translateInScope('title') }}</h2>
       </template>
 
-      <h3>{{ translate('monks') }}</h3>
+      <h3>{{ translateInScope('monks') }}</h3>
 
       <a-grid id="monastery-monks">
         <a-monk v-for="monk in monastery?.monks" :key="`monk-${monk.id}`" :monk="monk" />

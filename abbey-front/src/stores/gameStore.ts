@@ -12,17 +12,35 @@ import type { GameDto, MonasteryDto, PlayerDto } from '@/api'
 const LOGGER_SCOPE = '@/stores/gameStore.ts'
 
 export const useGameStore = defineStore('games', () => {
-  const { sessionToken } = useAuthStore()
+
 
   const logger = useLogger(LOGGER_SCOPE)
 
-  const game = ref<GameDto | undefined>()
+  /**
+   * The current loaded Game.
+   */
+  const game = ref<GameDto | null>(null)
 
+  /**
+   * The Player of the current Game.
+   */
   const player = computed<PlayerDto | undefined>(() => game.value?.player)
+  /**
+   * The Monastery of the current Game.
+   */
   const monastery = computed<MonasteryDto | undefined>(() => game.value?.monastery)
 
+  /**
+   * Loads the current session's Game.
+   */
   async function loadSessionGame() {
+    const { sessionToken } = useAuthStore()
+
     try {
+      if (!sessionToken) {
+        throw new Error("You are not authenticated.")
+      }
+
       const response = await getSessionGame({ auth: sessionToken })
 
       if (response.error) {
@@ -37,7 +55,6 @@ export const useGameStore = defineStore('games', () => {
   }
 
   return {
-    game,
     player,
     monastery,
     loadSessionGame,

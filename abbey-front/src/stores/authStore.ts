@@ -87,5 +87,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { sessionToken, authenticated, registerUser, loginUser, refreshUser }
+  return { sessionToken: computed<string | null>(() => sessionToken.value), authenticated, registerUser, loginUser, refreshUser }
 })
