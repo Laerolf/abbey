@@ -18,6 +18,7 @@ use crate::{
 pub struct SkillRepository;
 
 impl SkillRepository {
+    /// Gets all [`Skills`][Vec<Skill>].
     pub async fn get_all<C: ConnectionTrait>(
         &self,
         db_connection: &C,

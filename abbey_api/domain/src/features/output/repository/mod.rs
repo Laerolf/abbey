@@ -1,6 +1,7 @@
 use entity::resources;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect,
 };
 
 use crate::{
@@ -16,6 +17,24 @@ use crate::{
 pub struct ResourceRepository;
 
 impl ResourceRepository {
+    /// Gets all [`Resource`][Vec<Resource>].
+    pub async fn get_all<C: ConnectionTrait>(
+        &self,
+        db_connection: &C,
+    ) -> Result<Vec<Resource>, DomainError<ResourceErrorKind>> {
+        let all_resources = resources::Entity::find()
+            .distinct()
+            .order_by_asc(resources::Column::Id)
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ResourceErrorKind::GetAll).with_cause(error))?
+            .into_iter()
+            .map(ResourceMapper::to_domain_entity)
+            .collect();
+
+        Ok(all_resources)
+    }
+
     /// Finds a [Resource] by its name.
     pub async fn find_by_name<C: ConnectionTrait>(
         &self,

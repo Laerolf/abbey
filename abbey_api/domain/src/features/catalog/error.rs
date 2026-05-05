@@ -8,6 +8,8 @@ use crate::shared::error::DomainErrorKind;
 pub enum CatalogErrorKind {
     /// Failed to get all Skills.
     GetAllSkills,
+    /// Failed to get all Resources.
+    GetAllResources,
     Unknown,
 }
 
@@ -16,6 +18,7 @@ impl DomainErrorKind for CatalogErrorKind {
     fn code(&self) -> String {
         match self {
             Self::GetAllSkills => "error.catalog.get_all_skills".to_string(),
+            Self::GetAllResources => "error.catalog.get_all_resources".to_string(),
             Self::Unknown => "error.catalog.unknown".to_string(),
         }
     }
@@ -24,6 +27,7 @@ impl DomainErrorKind for CatalogErrorKind {
     fn message(&self) -> String {
         match self {
             Self::GetAllSkills => "Failed to get all Skills.".to_string(),
+            Self::GetAllResources => "Failed to get all Resources.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

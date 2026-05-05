@@ -63,7 +63,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
         let source_service = SourceService::new(source_repository);
         let cyclic_process_service = CyclicProcessService::new(cyclic_process_repository.clone());
         let task_service = TaskService::new(task_repository.clone());
-        let resource_service = ResourceService::new(resource_repository);
+        let resource_service = ResourceService::new(resource_repository.clone());
 
         let process_assignment_service = ProcessAssignmentService::new(
             player_repository,
@@ -86,7 +86,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
             player_service.clone(),
             surroundings_service,
         );
-        let catalog_service = CatalogService::new(skill_repository);
+        let catalog_service = CatalogService::new(skill_repository, resource_repository);
 
         let user_service = UserService::new(user_repository, game_service.clone());
         let authentication_service =

@@ -10,7 +10,7 @@ pub struct SkillDto {
     #[schema(example = 666)]
     pub id: i32,
     /// The name of the Skill.
-    #[schema(example = "Brewing")]
+    #[schema(example = "brewing")]
     pub name: String,
 }
 
