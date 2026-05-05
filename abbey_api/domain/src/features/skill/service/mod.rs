@@ -19,7 +19,7 @@ impl SkillService {
         Self { repository }
     }
 
-    /// Finds many [`Skills`][`Vec<Skill>`] with the provided names or creates them.
+    /// Finds many [`Skills`][Vec<Skill>] with the provided names or creates them.
     pub async fn find_many_by_name_or_create(
         &self,
         names: Vec<impl Into<String>>,

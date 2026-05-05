@@ -4,7 +4,7 @@ use entity::{
 };
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QuerySelect, Statement,
+    QueryOrder, QuerySelect, Statement,
 };
 
 use crate::{
@@ -95,6 +95,7 @@ impl CyclicProcessRepository {
             .inner_join(monk_skills::Entity)
             .filter(monk_skills::Column::MonkId.is_in(all_monk_ids))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(ProcessErrorKind::FindActors).with_cause(error))?

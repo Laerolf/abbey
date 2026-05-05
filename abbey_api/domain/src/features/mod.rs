@@ -1,6 +1,7 @@
 pub mod actor;
 pub mod assignment;
 pub mod auth;
+pub mod catalog;
 pub mod game;
 pub mod monastery;
 pub mod output;

@@ -1,7 +1,7 @@
 use entity::{cyclic_processes, monasteries, monastery_monks, monk_skills, monks, skills};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QuerySelect,
+    QueryOrder, QuerySelect,
 };
 
 use crate::{
@@ -59,6 +59,7 @@ impl MonasteryRepository {
         let all_monk_skills: Vec<Skill> = skills::Entity::find()
             .filter(skills::Column::Id.is_in(all_monk_skill_ids.clone()))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(MonasteryErrorKind::GetAllMonks).with_cause(error))?

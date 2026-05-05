@@ -1,7 +1,7 @@
 use entity::{cyclic_process_resources, cyclic_processes, monk_skills, monks, resources, skills};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QuerySelect, Statement,
+    QueryOrder, QuerySelect, Statement,
 };
 
 use crate::{
@@ -59,6 +59,7 @@ impl ActorRepository {
             .inner_join(monk_skills::Entity)
             .filter(monk_skills::Column::MonkId.eq(monk_model.id))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))?
@@ -137,6 +138,7 @@ impl ActorRepository {
             .inner_join(monk_skills::Entity)
             .filter(monk_skills::Column::MonkId.is_in(all_monk_ids))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))?
@@ -195,6 +197,7 @@ impl MonkRepository {
             .inner_join(monk_skills::Entity)
             .filter(monk_skills::Column::MonkId.eq(monk_model.id))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))?
@@ -231,6 +234,7 @@ impl MonkRepository {
             .inner_join(monk_skills::Entity)
             .filter(monk_skills::Column::MonkId.is_in(ids.to_owned()))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::FindByIds).with_cause(error))?
@@ -316,6 +320,7 @@ impl MonkRepository {
             .inner_join(monk_skills::Entity)
             .filter(monk_skills::Column::MonkId.eq(monk_model.id))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))?

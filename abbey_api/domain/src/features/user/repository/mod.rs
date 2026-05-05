@@ -5,7 +5,7 @@ use entity::{
 };
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QuerySelect, Statement,
+    QueryOrder, QuerySelect, Statement,
 };
 
 use crate::{
@@ -244,6 +244,7 @@ impl UserRepository {
             .inner_join(monk_skills::Entity)
             .filter(monk_skills::Column::MonkId.is_in(all_monastery_monk_ids))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(connection)
             .await
             .map_err(|error| {

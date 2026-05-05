@@ -9,6 +9,7 @@ use domain::{
         },
         assignment::service::ProcessAssignmentService,
         auth::{repository::RefreshTokenRepository, service::AuthenticationService},
+        catalog::service::CatalogService,
         game::{repository::GameRepository, service::GameService},
         monastery::{repository::MonasteryRepository, service::MonasteryService},
         output::{repository::ResourceRepository, service::ResourceService},
@@ -36,6 +37,7 @@ pub struct ApiContext<C: ConnectionTrait> {
     pub cyclic_process_service: CyclicProcessService,
     pub task_service: TaskService,
     pub process_assignment_service: ProcessAssignmentService,
+    pub catalog_service: CatalogService,
 }
 
 impl<C: ConnectionTrait> ApiContext<C> {
@@ -57,7 +59,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
 
         let player_service = PlayerService::new(player_repository.clone());
         let monk_service = MonkService::new(monk_repository.clone());
-        let skill_service = SkillService::new(skill_repository);
+        let skill_service = SkillService::new(skill_repository.clone());
         let source_service = SourceService::new(source_repository);
         let cyclic_process_service = CyclicProcessService::new(cyclic_process_repository.clone());
         let task_service = TaskService::new(task_repository.clone());
@@ -84,6 +86,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
             player_service.clone(),
             surroundings_service,
         );
+        let catalog_service = CatalogService::new(skill_repository);
 
         let user_service = UserService::new(user_repository, game_service.clone());
         let authentication_service =
@@ -97,6 +100,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
             cyclic_process_service,
             task_service,
             process_assignment_service,
+            catalog_service,
         }
     }
 
@@ -154,6 +158,7 @@ impl<C: ConnectionTrait> Clone for ApiContext<C> {
             cyclic_process_service: self.cyclic_process_service.clone(),
             task_service: self.task_service.clone(),
             process_assignment_service: self.process_assignment_service.clone(),
+            catalog_service: self.catalog_service.clone(),
         }
     }
 }

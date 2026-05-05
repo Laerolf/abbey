@@ -4,7 +4,7 @@ use entity::{
 };
 
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect
 };
 
 use crate::{
@@ -142,6 +142,7 @@ async fn get_monastery<C: ConnectionTrait>(
     let monastery_monk_skills: Vec<Skill> = skills::Entity::find()
         .filter(skills::Column::Id.is_in(monastery_monk_skill_ids))
         .distinct()
+        .order_by_asc(skills::Column::Id)
         .all(db_connection)
         .await
         .map_err(|error| DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error))?
@@ -175,13 +176,11 @@ async fn get_monastery<C: ConnectionTrait>(
                 .map(|skill_assignment| skill_assignment.skill_id)
                 .collect();
 
-            let mut monk_skills: Vec<Skill> = monastery_monk_skills
+            let monk_skills: Vec<Skill> = monastery_monk_skills
                 .iter()
                 .filter(|skill| monk_skill_ids.contains(&skill.id().unwrap()))
                 .cloned()
                 .collect();
-
-            monk_skills.sort_by_key(|skill| skill.id().unwrap());
 
             let monk_process = monastery_monk_processes
                 .iter()

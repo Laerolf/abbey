@@ -28,13 +28,11 @@ pub struct MonkDto {
 impl MonkDto {
     /// Creates a [`MonkDto`] based on a [Monk].
     pub fn from(monk: Monk) -> Self {
-        let mut skill_ids: Vec<i32> = monk
+        let skill_ids: Vec<i32> = monk
             .skills()
             .iter()
             .map(|skill| skill.id().unwrap())
             .collect();
-
-        skill_ids.sort();
 
         Self {
             id: monk.id().unwrap(),

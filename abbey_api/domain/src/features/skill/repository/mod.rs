@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use entity::skills;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QuerySelect,
+    QueryOrder, QuerySelect,
 };
 
 use crate::{
@@ -18,6 +18,23 @@ use crate::{
 pub struct SkillRepository;
 
 impl SkillRepository {
+    pub async fn get_all<C: ConnectionTrait>(
+        &self,
+        db_connection: &C,
+    ) -> Result<Vec<Skill>, DomainError<SkillErrorKind>> {
+        let all_skills = skills::Entity::find()
+            .distinct()
+            .order_by_asc(skills::Column::Id)
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(SkillErrorKind::GetAll).with_cause(error))?
+            .into_iter()
+            .map(SkillMapper::to_domain_entity)
+            .collect();
+
+        Ok(all_skills)
+    }
+
     /// Finds a [`Skill`] by its name.
     pub async fn find_by_name<C: ConnectionTrait>(
         &self,
@@ -45,6 +62,7 @@ impl SkillRepository {
         let skills = skills::Entity::find()
             .filter(skills::Column::Name.is_in(names))
             .distinct()
+            .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(SkillErrorKind::FindByNames).with_cause(error))?
