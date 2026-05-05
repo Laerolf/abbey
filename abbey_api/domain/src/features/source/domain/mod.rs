@@ -9,7 +9,7 @@ use crate::{
         },
         source::error::SourceErrorKind,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a source.
@@ -17,6 +17,12 @@ use crate::{
 pub struct Source {
     /// The ID of this [`Source`].
     id: Option<i32>,
+
+    /// The creation date of this [`Source`].
+    created_at: Option<OffsetDateTime>,
+
+    /// The date of the last update of this [`Source`].
+    last_updated_at: Option<OffsetDateTime>,
 
     /// The name of this [`Source`].
     name: String,
@@ -33,6 +39,8 @@ impl Source {
     pub fn new(name: impl Into<String>, process: CyclicProcess) -> Self {
         Self {
             id: None,
+            created_at: None,
+            last_updated_at: None,
             name: name.into(),
             process,
             last_claim_at: None,
@@ -40,18 +48,21 @@ impl Source {
     }
 
     /// Creates a [`Source`] based on the provided parameters.
-    pub fn from(id: i32, name: impl Into<String>, process: CyclicProcess) -> Self {
+    pub fn from(
+        id: i32,
+        created_at: OffsetDateTime,
+        last_updated_at: Option<OffsetDateTime>,
+        name: impl Into<String>,
+        process: CyclicProcess,
+    ) -> Self {
         Self {
             id: Some(id),
+            created_at: Some(created_at),
+            last_updated_at,
             name: name.into(),
             process,
             last_claim_at: None,
         }
-    }
-
-    /// Gets the ID of this [`Source`].
-    pub fn id(&self) -> &Option<i32> {
-        &self.id
     }
 
     /// Gets the name of this [`Source`].
@@ -115,5 +126,23 @@ impl Source {
         (0..completed_cycles)
             .map(|_| self.process.get_yield())
             .collect()
+    }
+}
+
+impl DomainElement<SourceErrorKind> for Source {
+    /// Gets the ID of this [`Source`].
+    fn id(&self) -> Result<i32, DomainError<SourceErrorKind>> {
+        self.id
+            .ok_or(DomainError::from(SourceErrorKind::NotPersistedYet))
+    }
+
+    /// Gets the [creation date][`OffsetDateTime`] of this [`Source`].
+    fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// Gets the [latest update date][`OffsetDateTime`] of this [`Source`].
+    fn last_updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_updated_at
     }
 }

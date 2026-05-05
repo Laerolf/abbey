@@ -1,7 +1,10 @@
 use axum::http::StatusCode;
-use domain::features::{
-    auth::forms::{LoginForm, RegistrationForm},
-    user::dto::UserDto,
+use domain::{
+    features::{
+        auth::forms::{LoginForm, RegistrationForm},
+        user::dto::UserDto,
+    },
+    shared::DomainElement,
 };
 
 use serial_test::serial;

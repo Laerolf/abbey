@@ -4,6 +4,8 @@ use sea_orm_migration::{prelude::*, schema::*};
 pub enum CyclicProcesses {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     Status,
     StartedAt,
     PausedAt,
@@ -23,6 +25,10 @@ impl MigrationTrait for Migration {
                     .table(CyclicProcesses::Table)
                     .if_not_exists()
                     .col(pk_auto(CyclicProcesses::Id))
+                    .col(timestamp_with_time_zone(CyclicProcesses::CreatedAt))
+                    .col(timestamp_with_time_zone_null(
+                        CyclicProcesses::LastUpdatedAt,
+                    ))
                     .col(string(CyclicProcesses::Status))
                     .col(timestamp_with_time_zone_null(CyclicProcesses::StartedAt))
                     .col(timestamp_with_time_zone_null(CyclicProcesses::PausedAt))

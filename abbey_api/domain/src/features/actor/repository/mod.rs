@@ -7,7 +7,7 @@ use sea_orm::{
 use crate::{
     features::{
         actor::{
-            domain::{Actor, ActorKind, monk::Monk},
+            domain::{ActorKind, monk::Monk},
             error::ActorErrorKind,
             forms::MonkCreationForm,
             mapper::MonkMapper,
@@ -20,7 +20,7 @@ use crate::{
             mapper::{MonkSkillMapper, SkillMapper},
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that handles all [`Actor`][ActorKind] database topics.
@@ -122,7 +122,10 @@ impl ActorRepository {
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))?;
 
-        let all_monk_ids: Vec<i32> = all_monk_models.iter().map(|model| model.id).collect();
+        let all_monk_ids: Vec<i32> = all_monk_models
+            .iter()
+            .map(|monk_model| monk_model.id)
+            .collect();
 
         let all_monk_skill_assignments = monk_skills::Entity::find()
             .filter(monk_skills::Column::MonkId.is_in(all_monk_ids.clone()))
@@ -146,13 +149,15 @@ impl ActorRepository {
             .map(|monk_model| {
                 let monk_skill_ids: Vec<i32> = all_monk_skill_assignments
                     .iter()
-                    .filter(|model| model.monk_id == monk_model.id)
-                    .map(|model| model.skill_id)
+                    .filter(|skill_assignment_model| {
+                        skill_assignment_model.monk_id == monk_model.id
+                    })
+                    .map(|skill_assignment_model| skill_assignment_model.skill_id)
                     .collect();
 
                 let monk_skills = all_monk_skills
                     .iter()
-                    .filter(|model| monk_skill_ids.contains(&model.id().unwrap()))
+                    .filter(|skill| monk_skill_ids.contains(&skill.id().unwrap()))
                     .cloned()
                     .collect();
 
@@ -178,7 +183,7 @@ impl MonkRepository {
         id: &i32,
         db_connection: &C,
     ) -> Result<Option<Monk>, DomainError<ActorErrorKind>> {
-        let Some(model) = monks::Entity::find_by_id(*id)
+        let Some(monk_model) = monks::Entity::find_by_id(*id)
             .one(db_connection)
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))?
@@ -188,7 +193,7 @@ impl MonkRepository {
 
         let monk_skills: Vec<Skill> = skills::Entity::find()
             .inner_join(monk_skills::Entity)
-            .filter(monk_skills::Column::MonkId.eq(model.id))
+            .filter(monk_skills::Column::MonkId.eq(monk_model.id))
             .distinct()
             .all(db_connection)
             .await
@@ -198,7 +203,7 @@ impl MonkRepository {
             .collect();
 
         Ok(Some(MonkMapper::to_domain_entity(
-            model,
+            monk_model,
             monk_skills,
             None,
         )?))
@@ -235,10 +240,10 @@ impl MonkRepository {
 
         let monks = all_monk_models
             .into_iter()
-            .map(|model| {
+            .map(|monk_model| {
                 let monk_skill_ids: Vec<i32> = all_monk_skill_assignments
                     .iter()
-                    .filter(|assignment| assignment.monk_id == model.id)
+                    .filter(|assignment_model| assignment_model.monk_id == monk_model.id)
                     .map(|assignment| assignment.skill_id)
                     .collect();
 
@@ -248,7 +253,7 @@ impl MonkRepository {
                     .filter(|skill| monk_skill_ids.contains(&skill.id().unwrap()))
                     .collect();
 
-                MonkMapper::to_domain_entity(model, monk_skills, None).unwrap()
+                MonkMapper::to_domain_entity(monk_model, monk_skills, None).unwrap()
             })
             .collect();
 
@@ -410,7 +415,7 @@ impl MonkRepository {
                 .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))?;
         }
 
-        let monk_ids: Vec<i32> = monk_models.iter().map(|model| model.id).collect();
+        let monk_ids: Vec<i32> = monk_models.iter().map(|monk_model| monk_model.id).collect();
 
         self.find_many_by_ids_with_relations(&monk_ids, db_transaction)
             .await
@@ -426,7 +431,7 @@ impl MonkRepository {
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::Update).with_cause(error))?;
 
-        self.get_by_id_with_relations(&monk.id().unwrap(), db_transaction)
+        self.get_by_id_with_relations(&monk.id()?, db_transaction)
             .await
     }
 }

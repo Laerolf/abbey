@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::features::{source::dto::SourceDto, surroundings::domain::Surroundings};
+use crate::{
+    features::{source::dto::SourceDto, surroundings::domain::Surroundings},
+    shared::DomainElement,
+};
 
 /// Represents a [Surroundings] DTO.
 #[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema)]

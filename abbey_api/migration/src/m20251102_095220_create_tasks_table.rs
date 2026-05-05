@@ -4,6 +4,8 @@ use sea_orm_migration::{prelude::*, schema::*};
 pub enum Tasks {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     Status,
     StartedAt,
     PausedAt,
@@ -23,6 +25,8 @@ impl MigrationTrait for Migration {
                     .table(Tasks::Table)
                     .if_not_exists()
                     .col(pk_auto(Tasks::Id))
+                    .col(timestamp_with_time_zone(Tasks::CreatedAt))
+                    .col(timestamp_with_time_zone_null(Tasks::LastUpdatedAt))
                     .col(string(Tasks::Status))
                     .col(timestamp_with_time_zone_null(Tasks::StartedAt))
                     .col(timestamp_with_time_zone_null(Tasks::PausedAt))

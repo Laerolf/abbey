@@ -7,6 +7,8 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
+    pub created_at: TimeDateTimeWithTimeZone,
+    pub last_updated_at: Option<TimeDateTimeWithTimeZone>,
     pub cylic_process_id: i32,
     pub resource_id: i32,
 }

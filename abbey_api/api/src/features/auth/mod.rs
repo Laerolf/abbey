@@ -1,11 +1,14 @@
 use axum::{Json, Router, extract::State, routing::post};
-use domain::features::auth::{
-    domain::refresh_token::RefreshTokenValue,
-    dto::{
-        LoginUserRequest, LoginUserResponse, RefreshUserResponse, RegisterUserRequest,
-        RegisterUserResponse,
+use domain::{
+    features::auth::{
+        domain::refresh_token::RefreshTokenValue,
+        dto::{
+            LoginUserRequest, LoginUserResponse, RefreshUserResponse, RegisterUserRequest,
+            RegisterUserResponse,
+        },
+        mapper::AuthenticationDtoMapper,
     },
-    mapper::AuthenticationDtoMapper,
+    shared::DomainElement,
 };
 use sea_orm::DatabaseConnection;
 use tracing::error;
@@ -64,7 +67,7 @@ async fn register(
         .await?;
 
     Ok(Json(RegisterUserResponse::new(
-        new_user.id().unwrap(),
+        new_user.id()?,
         new_user.email().to_string(),
     )))
 }

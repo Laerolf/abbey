@@ -10,7 +10,7 @@ use crate::{
             error::ProcessErrorKind,
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 pub mod cyclic_process;
@@ -20,6 +20,15 @@ pub mod task;
 pub enum ProcessKind {
     CyclicProcess(CyclicProcess),
     Task(Task),
+}
+
+impl ProcessKind {
+    pub fn id(&self) -> Result<i32, DomainError<ProcessErrorKind>> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.id(),
+            ProcessKind::Task(task) => task.id(),
+        }
+    }
 }
 
 impl Process for ProcessKind {
@@ -48,13 +57,6 @@ impl Process for ProcessKind {
         match self {
             ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.status(),
             ProcessKind::Task(task) => task.status(),
-        }
-    }
-
-    fn id(&self) -> &Option<i32> {
-        match self {
-            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.id(),
-            ProcessKind::Task(task) => task.id(),
         }
     }
 
@@ -128,9 +130,6 @@ pub trait Process: Send + Any {
 
     /// Gets the [`Status`] of this [`Process`].
     fn status(&self) -> &Status;
-
-    /// Returns the ID of this [Process].
-    fn id(&self) -> &Option<i32>;
 
     /// Returns time when this [Process] was last started.
     fn started_at(&self) -> &Option<OffsetDateTime>;

@@ -20,6 +20,8 @@ pub enum ActorErrorKind {
     Assigned,
     /// The Actor has no Skills.
     NoSkills,
+    /// The Actor has not been persisted yet.
+    NotPersistedYet,
     Unknown,
 }
 
@@ -34,6 +36,7 @@ impl DomainErrorKind for ActorErrorKind {
             Self::FindByIds => "error.actor.find_by_ids".to_string(),
             Self::Assigned => "error.actor.assigned".to_string(),
             Self::NoSkills => "error.actor.no_skills".to_string(),
+            Self::NotPersistedYet => "error.actor.not_persisted_yet".to_string(),
             Self::Unknown => "error.actor.unknown".to_string(),
         }
     }
@@ -48,6 +51,7 @@ impl DomainErrorKind for ActorErrorKind {
             Self::FindByIds => "Failed to find Actors with the provided IDs.".to_string(),
             Self::Assigned => "An Actor can only be assigned to one Process.".to_string(),
             Self::NoSkills => "The Actor has no Skills.".to_string(),
+            Self::NotPersistedYet => "The Actor has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

@@ -30,7 +30,7 @@ use crate::{
             service::UserService,
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 const SESSION_TOKEN_LIFESPAN: Duration = Duration::minutes(15);
@@ -201,7 +201,7 @@ impl AuthenticationService {
             .inspect_err(|error| error!("A refresh token is invalid: '{}'", error))?;
 
         self.refresh_token_repository
-            .delete_by_id(&refresh_token.id().unwrap(), db_transaction)
+            .delete_by_id(&refresh_token.id()?, db_transaction)
             .await
             .map_err(|error| {
                 DomainError::from(AuthenticationErrorKind::Refresh(

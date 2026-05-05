@@ -2,8 +2,9 @@ use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use utoipa::ToSchema;
 
-use crate::features::process::domain::{
-    Process, ProcessKind, cyclic_process::CyclicProcess, task::Task,
+use crate::{
+    features::process::domain::{Process, ProcessKind, cyclic_process::CyclicProcess, task::Task},
+    shared::DomainElement,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]

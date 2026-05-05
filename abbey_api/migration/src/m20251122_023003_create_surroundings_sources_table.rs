@@ -9,6 +9,8 @@ use crate::{
 enum SurroundingsSources {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     SurroundingsId,
     SourceId,
 }
@@ -25,6 +27,10 @@ impl MigrationTrait for Migration {
                     .table(SurroundingsSources::Table)
                     .if_not_exists()
                     .col(pk_auto(SurroundingsSources::Id))
+                    .col(timestamp_with_time_zone(SurroundingsSources::CreatedAt))
+                    .col(timestamp_with_time_zone_null(
+                        SurroundingsSources::LastUpdatedAt,
+                    ))
                     .col(integer(SurroundingsSources::SurroundingsId))
                     .col(integer(SurroundingsSources::SourceId))
                     .foreign_key(

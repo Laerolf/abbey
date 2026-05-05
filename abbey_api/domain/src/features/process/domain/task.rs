@@ -4,11 +4,11 @@ use time::{Duration, OffsetDateTime};
 
 use crate::{
     features::{
-        actor::domain::{Actor, ActorKind},
+        actor::domain::ActorKind,
         output::domain::{Output, resource::Resource},
         process::error::ProcessErrorKind,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 use super::{Process, Status};
@@ -30,6 +30,12 @@ pub struct TaskState {
 pub struct Task {
     /// The ID of this [`Task`].
     id: Option<i32>,
+
+    /// The creation date of this [`Task`].
+    created_at: Option<OffsetDateTime>,
+
+    /// The date of the last update of this [`Task`].
+    last_updated_at: Option<OffsetDateTime>,
 
     /// The [Status] of this [`Task`].
     status: Status,
@@ -71,6 +77,8 @@ impl Task {
 
         Ok(Self {
             id: None,
+            created_at: None,
+            last_updated_at: None,
             status: Status::New,
             input_resources,
             output_resources,
@@ -83,7 +91,12 @@ impl Task {
     }
 
     /// Creates a [`Task`] based on the provided parameters.
-    pub fn restore(id: i32, state: TaskState) -> Result<Self, DomainError<ProcessErrorKind>> {
+    pub fn restore(
+        id: i32,
+        created_at: OffsetDateTime,
+        last_updated_at: Option<OffsetDateTime>,
+        state: TaskState,
+    ) -> Result<Self, DomainError<ProcessErrorKind>> {
         if state.input_resources.is_empty() {
             return Err(DomainError::from(ProcessErrorKind::NoInputResources));
         } else if state.output_resources.is_empty() {
@@ -92,6 +105,8 @@ impl Task {
 
         Ok(Self {
             id: Some(id),
+            created_at: Some(created_at),
+            last_updated_at,
             status: state.status,
             input_resources: state.input_resources,
             output_resources: state.output_resources,
@@ -156,12 +171,7 @@ impl Process for Task {
     /// Unassigns a [Person][`ActorKind`] to this [`Task`].
     fn unassign_person(&mut self, actor_to_unassign: &ActorKind) {
         self.assigned_people
-            .retain(|actor| actor.id() != actor_to_unassign.id());
-    }
-
-    /// Gets the ID of this [`Task`].
-    fn id(&self) -> &Option<i32> {
-        &self.id
+            .retain(|actor| actor.id().unwrap() != actor_to_unassign.id().unwrap());
     }
 
     /// Gets the [Status] of this [`Task`].
@@ -252,5 +262,23 @@ impl Process for Task {
     /// Gets the [Output] of this [`Task`].
     fn get_yield(&self) -> Option<Output> {
         None
+    }
+}
+
+impl DomainElement<ProcessErrorKind> for Task {
+    /// Gets the ID of this [`Task`].
+    fn id(&self) -> Result<i32, DomainError<ProcessErrorKind>> {
+        self.id
+            .ok_or(DomainError::from(ProcessErrorKind::NotPersistedYet))
+    }
+
+    /// Gets the [creation date][`OffsetDateTime`] of this [`Task`].
+    fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// Gets the [latest update date][`OffsetDateTime`] of this [`Task`].
+    fn last_updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_updated_at
     }
 }

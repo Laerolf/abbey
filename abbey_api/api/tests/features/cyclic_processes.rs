@@ -6,13 +6,12 @@ pub mod start_cyclic_process {
         features::{
             assignment::forms::ProcessAssignmentForm,
             auth::forms::{LoginForm, RegistrationForm},
-            process::{
-                domain::{Process, Status},
-                dto::CyclicProcessDto,
-                error::ProcessErrorKind,
-            },
+            process::{domain::Status, dto::CyclicProcessDto, error::ProcessErrorKind},
         },
-        shared::error::{DomainError, DomainErrorKind},
+        shared::{
+            DomainElement,
+            error::{DomainError, DomainErrorKind},
+        },
     };
 
     use serde_json::json;
@@ -298,13 +297,12 @@ pub mod pause_cyclic_process {
         features::{
             assignment::forms::ProcessAssignmentForm,
             auth::forms::{LoginForm, RegistrationForm},
-            process::{
-                domain::{Process, Status},
-                dto::CyclicProcessDto,
-                error::ProcessErrorKind,
-            },
+            process::{domain::Status, dto::CyclicProcessDto, error::ProcessErrorKind},
         },
-        shared::error::{DomainError, DomainErrorKind},
+        shared::{
+            DomainElement,
+            error::{DomainError, DomainErrorKind},
+        },
     };
 
     use serde_json::json;
@@ -563,18 +561,21 @@ pub mod pause_cyclic_process {
 
 pub mod assign_cyclic_process {
     use axum::http::StatusCode;
-    use domain::features::{
-        actor::{
-            domain::{Actor, monk::Monk, person::Person},
-            dto::{ActorDto, MonkDto},
+    use domain::{
+        features::{
+            actor::{
+                domain::{monk::Monk, person::Person},
+                dto::{ActorDto, MonkDto},
+            },
+            assignment::dto::ProcessAssignmentDto,
+            auth::forms::{LoginForm, RegistrationForm},
+            player::dto::PlayerDto,
+            process::{
+                domain::Status,
+                dto::{CyclicProcessDto, ProcessDto},
+            },
         },
-        assignment::dto::ProcessAssignmentDto,
-        auth::forms::{LoginForm, RegistrationForm},
-        player::dto::PlayerDto,
-        process::{
-            domain::{Process, Status},
-            dto::{CyclicProcessDto, ProcessDto},
-        },
+        shared::DomainElement,
     };
     use serde_json::json;
     use serial_test::serial;
@@ -652,7 +653,7 @@ pub mod assign_cyclic_process {
             .body(&json!({
                 "assign_player": true,
                 "actor_ids": first_5_monk_ids,
-                "process_id": first_source_cyclic_process.id()
+                "process_id": first_source_cyclic_process.id().unwrap()
             }))
             .bearer(test_auth_tokens.session_token().to_jwt().unwrap())
             .send()
@@ -762,7 +763,7 @@ pub mod assign_cyclic_process {
             .body(&json!({
                 "assign_player": true,
                 "actor_ids": [],
-                "process_id": first_source_cyclic_process.id()
+                "process_id": first_source_cyclic_process.id().unwrap()
             }))
             .bearer(test_auth_tokens.session_token().to_jwt().unwrap())
             .send()
@@ -859,7 +860,7 @@ pub mod assign_cyclic_process {
             .body(&json!({
                 "assign_player": false,
                 "actor_ids": first_5_monk_ids,
-                "process_id": first_source_cyclic_process.id()
+                "process_id": first_source_cyclic_process.id().unwrap()
             }))
             .bearer(test_auth_tokens.session_token().to_jwt().unwrap())
             .send()
@@ -964,7 +965,7 @@ pub mod assign_cyclic_process {
             .body(&json!({
                 "assign_player": false,
                 "actor_ids": [],
-                "process_id": first_source_cyclic_process.id()
+                "process_id": first_source_cyclic_process.id().unwrap()
             }))
             .bearer(test_auth_tokens.session_token().to_jwt().unwrap())
             .send()

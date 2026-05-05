@@ -15,14 +15,14 @@ use crate::{
         output::{domain::resource::Resource, mapper::ResourceMapper},
         player::{domain::Player, mapper::PlayerMapper},
         process::{
-            domain::{Process, ProcessKind, cyclic_process::CyclicProcess},
+            domain::{ProcessKind, cyclic_process::CyclicProcess},
             mapper::cyclic_process::CyclicProcessMapper,
         },
         skill::{domain::Skill, mapper::SkillMapper},
         source::{domain::Source, mapper::SourceMapper},
         surroundings::{domain::Surroundings, mapper::SurroundingsMapper},
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that handles all [Game][`crate::features::game::domain::Game`] database topics.
@@ -93,7 +93,7 @@ async fn get_player<C: ConnectionTrait>(
         .one(db_connection)
         .await
         .map_err(|error| DomainError::from(GameErrorKind::PlayerNotFound).with_cause(error))?
-        .map(|model| PlayerMapper::to_domain_entity(model, None))
+        .map(|player_model| PlayerMapper::to_domain_entity(player_model, None))
     else {
         return Err(DomainError::from(GameErrorKind::PlayerNotFound));
     };
@@ -125,7 +125,7 @@ async fn get_monastery<C: ConnectionTrait>(
 
     let monastery_monk_ids: Vec<i32> = monastery_monks_models
         .iter()
-        .map(|model| model.id)
+        .map(|monastery_monk_model| monastery_monk_model.id)
         .collect();
 
     let monastery_monk_skill_assignments = monk_skills::Entity::find()
@@ -151,7 +151,7 @@ async fn get_monastery<C: ConnectionTrait>(
 
     let monastery_monk_process_ids: Vec<i32> = monastery_monks_models
         .iter()
-        .filter_map(|model| model.assigned_cyclic_process_id)
+        .filter_map(|monastery_monk_model| monastery_monk_model.assigned_cyclic_process_id)
         .collect();
 
     let monastery_monk_processes: Vec<CyclicProcess> = cyclic_processes::Entity::find()
@@ -160,7 +160,10 @@ async fn get_monastery<C: ConnectionTrait>(
         .await
         .map_err(|error| DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error))?
         .into_iter()
-        .map(|model| CyclicProcessMapper::to_domain_entity(model, Vec::new(), Vec::new()).unwrap())
+        .map(|cyclic_process_model| {
+            CyclicProcessMapper::to_domain_entity(cyclic_process_model, Vec::new(), Vec::new())
+                .unwrap()
+        })
         .collect();
 
     let monastery_monks = monastery_monks_models
@@ -172,16 +175,18 @@ async fn get_monastery<C: ConnectionTrait>(
                 .map(|skill_assignment| skill_assignment.skill_id)
                 .collect();
 
-            let monk_skills: Vec<Skill> = monastery_monk_skills
+            let mut monk_skills: Vec<Skill> = monastery_monk_skills
                 .iter()
                 .filter(|skill| monk_skill_ids.contains(&skill.id().unwrap()))
                 .cloned()
                 .collect();
 
+            monk_skills.sort_by_key(|skill| skill.id().unwrap());
+
             let monk_process = monastery_monk_processes
                 .iter()
                 .find(|cyclic_process| {
-                    *cyclic_process.id() == monk_model.assigned_cyclic_process_id
+                    cyclic_process.id().unwrap() == monk_model.assigned_cyclic_process_id.unwrap()
                 })
                 .map(|cyclic_process| ProcessKind::CyclicProcess(cyclic_process.clone()));
 
@@ -221,7 +226,7 @@ async fn get_surroundings<C: ConnectionTrait>(
 
     let surroundings_source_process_ids: Vec<i32> = surroundings_source_models
         .iter()
-        .map(|model| model.cyclic_process_id)
+        .map(|surroundings_source_model| surroundings_source_model.cyclic_process_id)
         .collect();
 
     let surroundings_source_process_models = cyclic_processes::Entity::find()
@@ -234,7 +239,7 @@ async fn get_surroundings<C: ConnectionTrait>(
 
     let source_process_ids: Vec<i32> = surroundings_source_process_models
         .iter()
-        .map(|model| model.id)
+        .map(|surroundings_source_process_model| surroundings_source_process_model.id)
         .collect();
 
     let all_source_output_resource_assignments = cyclic_process_resources::Entity::find()
@@ -247,7 +252,9 @@ async fn get_surroundings<C: ConnectionTrait>(
 
     let all_source_output_resource_ids: Vec<i32> = all_source_output_resource_assignments
         .iter()
-        .map(|model| model.resource_id)
+        .map(|source_output_resource_assignment_model| {
+            source_output_resource_assignment_model.resource_id
+        })
         .collect();
 
     let all_source_output_resources: Vec<Resource> = resources::Entity::find()
@@ -264,15 +271,21 @@ async fn get_surroundings<C: ConnectionTrait>(
         .map(|source_model| {
             let process_model = surroundings_source_process_models
                 .iter()
-                .find(|model| model.id == source_model.cyclic_process_id)
+                .find(|surroundings_source_process_model| {
+                    surroundings_source_process_model.id == source_model.cyclic_process_id
+                })
                 .ok_or_else(|| DomainError::from(GameErrorKind::SurroundingsNotFound))
                 .unwrap()
                 .clone();
 
             let output_resource_ids: Vec<i32> = all_source_output_resource_assignments
                 .iter()
-                .filter(|model| model.cylic_process_id == process_model.id)
-                .map(|model| model.resource_id)
+                .filter(|source_output_resource_assignment_model| {
+                    source_output_resource_assignment_model.cylic_process_id == process_model.id
+                })
+                .map(|source_output_resource_assignment_model| {
+                    source_output_resource_assignment_model.resource_id
+                })
                 .collect();
 
             let output_resources: Vec<Resource> = all_source_output_resources

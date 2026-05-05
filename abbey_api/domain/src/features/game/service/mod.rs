@@ -9,7 +9,7 @@ use crate::{
         player::service::PlayerService,
         surroundings::service::SurroundingsService,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a service handling the [Game] topic.

@@ -9,7 +9,7 @@ use crate::{
         },
         skill::{domain::Skill, service::SkillService},
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// The default amount of [Monks][`Monk`] in [`Monastery`].

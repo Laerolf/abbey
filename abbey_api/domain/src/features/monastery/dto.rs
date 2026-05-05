@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::features::{actor::dto::MonkDto, monastery::domain::Monastery};
+use crate::{
+    features::{actor::dto::MonkDto, monastery::domain::Monastery},
+    shared::DomainElement,
+};
 
 /// Represents a [Monastery] DTO.
 #[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema)]

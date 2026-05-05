@@ -7,7 +7,7 @@ use sea_orm::{
 use crate::{
     features::{
         actor::{
-            domain::{Actor, monk::Monk},
+            domain::monk::Monk,
             forms::MonasteryMonkCreationForm,
             mapper::{MonasteryMonkMapper, MonkMapper},
         },
@@ -18,7 +18,7 @@ use crate::{
         process::{domain::ProcessKind, mapper::cyclic_process::CyclicProcessMapper},
         skill::{domain::Skill, mapper::SkillMapper},
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that handles all [Monastery][`super::domain::Monastery`] database topics.
@@ -53,7 +53,7 @@ impl MonasteryRepository {
 
         let all_monk_skill_ids: Vec<i32> = all_monk_skill_assignments
             .iter()
-            .map(|model| model.skill_id)
+            .map(|monk_skill_assignment_model| monk_skill_assignment_model.skill_id)
             .collect();
 
         let all_monk_skills: Vec<Skill> = skills::Entity::find()

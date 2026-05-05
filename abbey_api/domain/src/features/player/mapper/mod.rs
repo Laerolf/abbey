@@ -1,9 +1,13 @@
 use entity::players;
 use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
+use time::OffsetDateTime;
 
-use crate::features::{
-    player::{domain::Player, forms::PlayerCreationForm},
-    process::domain::{Process, ProcessKind},
+use crate::{
+    features::{
+        player::{domain::Player, forms::PlayerCreationForm},
+        process::domain::ProcessKind,
+    },
+    shared::DomainElement,
 };
 
 /// Represents an element that maps [`Player`] elements.
@@ -14,6 +18,8 @@ impl PlayerMapper {
     pub fn to_new_active_model(creation_form: PlayerCreationForm) -> players::ActiveModel {
         players::ActiveModel {
             id: NotSet,
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
             assigned_process_id: NotSet,
         }
     }
@@ -22,6 +28,8 @@ impl PlayerMapper {
     pub fn to_update_active_model(player: Player) -> players::ActiveModel {
         players::ActiveModel {
             id: Unchanged(player.id().unwrap()),
+            created_at: Unchanged(player.created_at().unwrap()),
+            last_updated_at: Set(Some(OffsetDateTime::now_utc())),
             assigned_process_id: Set(player
                 .assigned_process()
                 .as_ref()
@@ -34,6 +42,11 @@ impl PlayerMapper {
         model: players::Model,
         assigned_process: Option<ProcessKind>,
     ) -> Player {
-        Player::restore(model.id, assigned_process)
+        Player::restore(
+            model.id,
+            model.created_at,
+            model.last_updated_at,
+            assigned_process,
+        )
     }
 }

@@ -10,10 +10,7 @@ use sea_orm::{
 
 use crate::{
     features::{
-        actor::{
-            domain::{Actor, monk::Monk},
-            mapper::MonkMapper,
-        },
+        actor::{domain::monk::Monk, mapper::MonkMapper},
         game::{
             domain::Game,
             forms::UserGameCreationForm,
@@ -23,15 +20,14 @@ use crate::{
         output::{domain::resource::Resource, mapper::ResourceMapper},
         player::mapper::PlayerMapper,
         process::{
-            domain::{Process, cyclic_process::CyclicProcess},
-            mapper::cyclic_process::CyclicProcessMapper,
+            domain::cyclic_process::CyclicProcess, mapper::cyclic_process::CyclicProcessMapper,
         },
         skill::{domain::Skill, mapper::SkillMapper},
         source::{domain::Source, mapper::SourceMapper},
         surroundings::mapper::SurroundingsMapper,
         user::{domain::User, error::UserErrorKind, forms::UserCreationForm, mapper::UserMapper},
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that handles all [`User`] database topics.
@@ -77,7 +73,7 @@ impl UserRepository {
 
         let all_surroundings_ids: Vec<i32> = all_surroundings_models
             .iter()
-            .map(|model| model.id)
+            .map(|surroundings_model| surroundings_model.id)
             .collect();
 
         let all_surroundings_source_models = sources::Entity::find()
@@ -91,7 +87,7 @@ impl UserRepository {
 
         let all_surroundings_source_process_ids: Vec<i32> = all_surroundings_source_models
             .iter()
-            .map(|model| model.cyclic_process_id)
+            .map(|surroundings_source_model| surroundings_source_model.cyclic_process_id)
             .collect();
 
         let all_surroundings_source_processes_models = cyclic_processes::Entity::find()
@@ -133,12 +129,13 @@ impl UserRepository {
         let all_surroundings_source_processes: Vec<CyclicProcess> =
             all_surroundings_source_processes_models
                 .into_iter()
-                .map(|model| {
+                .map(|surroundings_source_process_model| {
                     let source_output_resource_ids: Vec<i32> =
                         all_surroundings_source_process_output_resource_assignments
                             .iter()
                             .filter(|resource_assignment_model| {
-                                resource_assignment_model.cylic_process_id == model.id
+                                resource_assignment_model.cylic_process_id
+                                    == surroundings_source_process_model.id
                             })
                             .map(|resource_assignment_model| resource_assignment_model.resource_id)
                             .collect();
@@ -152,7 +149,7 @@ impl UserRepository {
                         .collect();
 
                     CyclicProcessMapper::to_domain_entity(
-                        model,
+                        surroundings_source_process_model,
                         source_output_resources,
                         Vec::new(),
                     )
@@ -232,7 +229,7 @@ impl UserRepository {
 
         let all_monastery_monk_ids: Vec<i32> = all_monastery_monks_models
             .iter()
-            .map(|model| model.id)
+            .map(|monk_model| monk_model.id)
             .collect();
 
         let all_monk_skill_assignments = monk_skills::Entity::find()
@@ -340,7 +337,7 @@ impl UserRepository {
         id: &i32,
         connection: &C,
     ) -> Result<Option<User>, DomainError<UserErrorKind>> {
-        let Some(model) = users::Entity::find()
+        let Some(user_model) = users::Entity::find()
             .filter(users::Column::Id.eq(*id))
             .one(connection)
             .await
@@ -354,7 +351,7 @@ impl UserRepository {
             .await
             .map_err(|error| DomainError::from(UserErrorKind::FindById).with_cause(error))?;
 
-        Ok(Some(UserMapper::to_domain_entity(model, user_games)))
+        Ok(Some(UserMapper::to_domain_entity(user_model, user_games)))
     }
 
     /// Finds a [`User`] by its email.
@@ -363,7 +360,7 @@ impl UserRepository {
         email: &String,
         connection: &C,
     ) -> Result<Option<User>, DomainError<UserErrorKind>> {
-        let Some(model) = users::Entity::find()
+        let Some(user_model) = users::Entity::find()
             .filter(users::Column::Email.eq(email))
             .one(connection)
             .await
@@ -373,10 +370,10 @@ impl UserRepository {
         };
 
         let user_games: Vec<Game> = self
-            .get_all_games_by_user_id_with_relations(&model.id, connection)
+            .get_all_games_by_user_id_with_relations(&user_model.id, connection)
             .await?;
 
-        Ok(Some(UserMapper::to_domain_entity(model, user_games)))
+        Ok(Some(UserMapper::to_domain_entity(user_model, user_games)))
     }
 
     /// Creates a new [`User`] and persists it in the database.

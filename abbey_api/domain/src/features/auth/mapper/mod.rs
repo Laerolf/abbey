@@ -11,7 +11,7 @@ use crate::{
         },
         user::domain::User,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that maps authentication elements.
@@ -87,9 +87,10 @@ impl RefreshTokenMapper {
     ) -> refresh_tokens::ActiveModel {
         refresh_tokens::ActiveModel {
             id: NotSet,
+            created_at: Set(creation_form.created_at),
+            last_updated_at: NotSet,
             user_id: Set(creation_form.user_id),
             value: Set(creation_form.value),
-            created_at: Set(creation_form.created_at),
             expires_at: Set(creation_form.expires_at),
         }
     }
@@ -98,9 +99,10 @@ impl RefreshTokenMapper {
     pub fn to_domain_entity(model: refresh_tokens::Model) -> RefreshToken {
         RefreshToken::from(
             model.id,
+            model.created_at,
+            model.last_updated_at,
             model.value,
             model.user_id,
-            model.created_at,
             model.expires_at,
         )
     }

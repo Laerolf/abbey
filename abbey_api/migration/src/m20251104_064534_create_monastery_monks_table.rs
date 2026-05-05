@@ -12,6 +12,8 @@ pub struct Migration;
 enum MonasteryMonks {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     MonasteryId,
     MonkId,
 }
@@ -25,6 +27,8 @@ impl MigrationTrait for Migration {
                     .table(MonasteryMonks::Table)
                     .if_not_exists()
                     .col(pk_auto(MonasteryMonks::Id))
+                    .col(timestamp_with_time_zone(MonasteryMonks::CreatedAt))
+                    .col(timestamp_with_time_zone_null(MonasteryMonks::LastUpdatedAt))
                     .col(integer(MonasteryMonks::MonasteryId))
                     .col(integer(MonasteryMonks::MonkId))
                     .foreign_key(

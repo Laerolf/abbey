@@ -10,7 +10,7 @@ use crate::{
         output::{domain::resource::Resource, mapper::ResourceMapper},
         player::mapper::PlayerMapper,
         process::{
-            domain::{Process, task::Task},
+            domain::task::Task,
             error::ProcessErrorKind,
             forms::task::{
                 TaskCreationForm, TaskInputResourceCreationForm, TaskOutputResourceCreationForm,
@@ -18,7 +18,7 @@ use crate::{
             mapper::task::{TaskInputResourceMapper, TaskMapper, TaskOutputResourceMapper},
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that handles all [Task] database topics.
@@ -280,7 +280,7 @@ impl TaskRepository {
             .await
             .map_err(|error| DomainError::from(ProcessErrorKind::Update).with_cause(error))?;
 
-        self.get_by_id_with_relations(&task.id().unwrap(), db_transaction)
+        self.get_by_id_with_relations(&task.id()?, db_transaction)
             .await
     }
 }

@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::features::{
-    game::domain::Game, monastery::dto::MonasteryDto, player::dto::PlayerDto,
-    surroundings::dto::SurroundingsDto,
+use crate::{
+    features::{
+        game::domain::Game, monastery::dto::MonasteryDto, player::dto::PlayerDto,
+        surroundings::dto::SurroundingsDto,
+    },
+    shared::DomainElement,
 };
 
 /// Represents a [Game] DTO.

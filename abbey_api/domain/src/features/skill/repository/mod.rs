@@ -98,7 +98,7 @@ impl SkillRepository {
         db_transaction: &DatabaseTransaction,
     ) -> Result<Skill, DomainError<SkillErrorKind>> {
         match self.find_by_name(&form.name, db_transaction).await? {
-            Some(model) => Ok(model),
+            Some(skill) => Ok(skill),
             None => self.create(form, db_transaction).await,
         }
     }

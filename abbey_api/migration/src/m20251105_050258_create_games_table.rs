@@ -10,6 +10,8 @@ use crate::{
 pub enum Games {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     PlayerId,
     MonasteryId,
     SurroundingsId,
@@ -27,6 +29,8 @@ impl MigrationTrait for Migration {
                     .table(Games::Table)
                     .if_not_exists()
                     .col(pk_auto(Games::Id))
+                    .col(timestamp_with_time_zone(Games::CreatedAt))
+                    .col(timestamp_with_time_zone_null(Games::LastUpdatedAt))
                     .col(integer(Games::PlayerId))
                     .col(integer(Games::MonasteryId))
                     .col(integer(Games::SurroundingsId))

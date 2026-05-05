@@ -1,10 +1,13 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::features::{
-    actor::domain::{Actor, ActorKind, monk::Monk, person::Person},
-    player::dto::PlayerDto,
-    process::dto::ProcessDto,
+use crate::{
+    features::{
+        actor::domain::{Actor, ActorKind, monk::Monk, person::Person},
+        player::dto::PlayerDto,
+        process::dto::ProcessDto,
+    },
+    shared::DomainElement,
 };
 
 /// Represents a Monk DTO.
@@ -25,14 +28,18 @@ pub struct MonkDto {
 impl MonkDto {
     /// Creates a [`MonkDto`] based on a [Monk].
     pub fn from(monk: Monk) -> Self {
+        let mut skill_ids: Vec<i32> = monk
+            .skills()
+            .iter()
+            .map(|skill| skill.id().unwrap())
+            .collect();
+
+        skill_ids.sort();
+
         Self {
             id: monk.id().unwrap(),
             name: monk.name().to_string(),
-            skill_ids: monk
-                .skills()
-                .iter()
-                .map(|skill| skill.id().unwrap())
-                .collect(),
+            skill_ids,
             assigned_process: monk.assigned_process().clone().map(ProcessDto::from),
         }
     }

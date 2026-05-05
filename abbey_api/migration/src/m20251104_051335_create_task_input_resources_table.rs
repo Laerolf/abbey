@@ -8,6 +8,8 @@ use crate::{
 enum TaskInputResources {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     TaskId,
     ResourceId,
 }
@@ -24,6 +26,10 @@ impl MigrationTrait for Migration {
                     .table(TaskInputResources::Table)
                     .if_not_exists()
                     .col(pk_auto(TaskInputResources::Id))
+                    .col(timestamp_with_time_zone(TaskInputResources::CreatedAt))
+                    .col(timestamp_with_time_zone_null(
+                        TaskInputResources::LastUpdatedAt,
+                    ))
                     .col(integer(TaskInputResources::TaskId))
                     .col(integer(TaskInputResources::ResourceId))
                     .foreign_key(

@@ -12,6 +12,8 @@ pub enum SkillErrorKind {
     FindByName,
     /// Failed to find Skills with the provided names.
     FindByNames,
+    /// The Skill has not been persisted yet.
+    NotPersistedYet,
     Unknown,
 }
 
@@ -22,6 +24,7 @@ impl DomainErrorKind for SkillErrorKind {
             Self::Creation => "error.skill.creation".to_string(),
             Self::FindByName => "error.skill.find_by_name".to_string(),
             Self::FindByNames => "error.skill.find_by_names".to_string(),
+            Self::NotPersistedYet => "error.skill.not_persisted_yet".to_string(),
             Self::Unknown => "error.skill.unknown".to_string(),
         }
     }
@@ -32,6 +35,7 @@ impl DomainErrorKind for SkillErrorKind {
             Self::Creation => "Failed to create a new Skill.".to_string(),
             Self::FindByName => "Failed to find a Skill with the provided name.".to_string(),
             Self::FindByNames => "Failed to find a Skills with the provided names.".to_string(),
+            Self::NotPersistedYet => "The Skill has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

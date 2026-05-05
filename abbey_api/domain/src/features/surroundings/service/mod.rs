@@ -16,7 +16,7 @@ use crate::{
             repository::SurroundingsRepository,
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a service handling the [`Surroundings`] topic.

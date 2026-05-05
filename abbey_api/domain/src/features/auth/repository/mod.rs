@@ -5,7 +5,7 @@ use crate::{
         forms::RefreshTokenCreationForm,
         mapper::RefreshTokenMapper,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 use entity::refresh_tokens;
 use sea_orm::{
@@ -91,11 +91,11 @@ impl RefreshTokenRepository {
         id: &i32,
         db_connection: &C,
     ) -> Result<(), DomainError<AuthenticationErrorKind>> {
-        let Some(model) = self.find_by_id(id, db_connection).await? else {
+        let Some(refresh_token) = self.find_by_id(id, db_connection).await? else {
             return Ok(());
         };
 
-        refresh_tokens::Entity::delete_by_id(model.id().unwrap())
+        refresh_tokens::Entity::delete_by_id(refresh_token.id()?)
             .exec(db_connection)
             .await
             .map_err(|error| {
@@ -122,7 +122,7 @@ impl RefreshTokenRepository {
                     .with_cause(error)
             })?
         {
-            self.delete_by_id(&existing_user_refresh_token.id().unwrap(), db_transaction)
+            self.delete_by_id(&existing_user_refresh_token.id()?, db_transaction)
                 .await?;
         }
 

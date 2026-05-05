@@ -18,6 +18,8 @@ pub enum SourceErrorKind {
     ProcessNotFound,
     /// This [Source][`super::domain::Source`] has no possible [Resources][`crate::features::output::domain::resource`].
     NoPossibleResources,
+    /// The Source has not been persisted yet.
+    NotPersistedYet,
     Unknown,
 }
 
@@ -31,6 +33,7 @@ impl DomainErrorKind for SourceErrorKind {
             Self::FindById => "error.source.find_by_id".to_string(),
             Self::ProcessNotFound => "error.source.process_not_found".to_string(),
             Self::NoPossibleResources => "error.source.no_possible_resources".to_string(),
+            Self::NotPersistedYet => "error.source.not_persisted_yet".to_string(),
             Self::Unknown => "error.source.unknown".to_string(),
         }
     }
@@ -44,6 +47,7 @@ impl DomainErrorKind for SourceErrorKind {
             Self::FindById => "Failed to find a source with the provided ID.".to_string(),
             Self::ProcessNotFound => "Unable to find the process of a source.".to_string(),
             Self::NoPossibleResources => "A source needs possible resources.".to_string(),
+            Self::NotPersistedYet => "The source has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

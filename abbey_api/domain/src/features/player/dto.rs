@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::features::{
-    player::domain::Player,
-    process::{domain::ProcessKind, dto::ProcessDto},
+use crate::{
+    features::{
+        player::domain::Player,
+        process::{domain::ProcessKind, dto::ProcessDto},
+    },
+    shared::DomainElement,
 };
 
 /// Represents a [Player] DTO.

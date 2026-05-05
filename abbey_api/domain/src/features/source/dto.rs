@@ -2,7 +2,10 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use utoipa::ToSchema;
 
-use crate::features::{process::dto::CyclicProcessDto, source::domain::Source};
+use crate::{
+    features::{process::dto::CyclicProcessDto, source::domain::Source},
+    shared::DomainElement,
+};
 
 /// Represents a [Source] DTO.
 #[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema)]

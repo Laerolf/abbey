@@ -34,6 +34,8 @@ pub enum RefreshErrorKind {
     DeleteRefreshToken,
     CreateSessionToken,
     CreateRefreshToken,
+    /// The RefreshToken has not been persisted yet.
+    NotPersistedYet,
     FindById,
 }
 
@@ -128,6 +130,9 @@ impl DomainErrorKind for AuthenticationErrorKind {
                     "error.authentication.refresh.create_refresh_token".to_string()
                 }
                 RefreshErrorKind::FindById => "error.authentication.refresh.find_by_id".to_string(),
+                RefreshErrorKind::NotPersistedYet => {
+                    "error.authentication.refresh.not_persisted_yet".to_string()
+                }
             },
             AuthenticationErrorKind::Authenticate => {
                 "error.authentication.authenticate".to_string()
@@ -202,6 +207,9 @@ impl DomainErrorKind for AuthenticationErrorKind {
                 }
                 RefreshErrorKind::FindById => {
                     "Failed to find a refresh token with the provided ID.".to_string()
+                }
+                RefreshErrorKind::NotPersistedYet => {
+                    "The refresh token has not been persisted yet.".to_string()
                 }
             },
             AuthenticationErrorKind::Authenticate => "Failed to authenticate a user.".to_string(),

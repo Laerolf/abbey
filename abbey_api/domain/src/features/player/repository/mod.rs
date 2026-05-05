@@ -11,7 +11,7 @@ use crate::{
         },
         process::mapper::cyclic_process::CyclicProcessMapper,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that handles all [Player][`crate::features::player::domain::Player`] database topics.

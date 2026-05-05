@@ -11,7 +11,7 @@ use crate::{
             repository::cyclic_process::CyclicProcessRepository,
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a service handling the [`CyclicProcess`] topic.

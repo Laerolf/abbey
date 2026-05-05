@@ -6,9 +6,10 @@ use crate::m20251115_235801_create_users_table::Users;
 enum RefreshTokens {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     UserId,
     Value,
-    CreatedAt,
     ExpiresAt,
 }
 
@@ -24,9 +25,10 @@ impl MigrationTrait for Migration {
                     .table(RefreshTokens::Table)
                     .if_not_exists()
                     .col(pk_auto(RefreshTokens::Id))
+                    .col(timestamp_with_time_zone(RefreshTokens::CreatedAt))
+                    .col(timestamp_with_time_zone_null(RefreshTokens::LastUpdatedAt))
                     .col(integer_uniq(RefreshTokens::UserId))
                     .col(string(RefreshTokens::Value))
-                    .col(timestamp_with_time_zone(RefreshTokens::CreatedAt))
                     .col(timestamp_with_time_zone(RefreshTokens::ExpiresAt))
                     .index(
                         Index::create()

@@ -1,3 +1,5 @@
+use time::OffsetDateTime;
+
 use crate::{
     features::{
         actor::{
@@ -7,7 +9,7 @@ use crate::{
         process::domain::ProcessKind,
         skill::domain::Skill,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a monk.
@@ -15,6 +17,12 @@ use crate::{
 pub struct Monk {
     /// The ID of this [`Monk`].
     id: Option<i32>,
+
+    /// The creation date of this [`Monk`].
+    created_at: Option<OffsetDateTime>,
+
+    /// The date of the last update of this [`Monk`].
+    last_updated_at: Option<OffsetDateTime>,
 
     /// The name of this [`Monk`].
     name: String,
@@ -39,6 +47,8 @@ impl Monk {
 
         Ok(Self {
             id: None,
+            created_at: None,
+            last_updated_at: None,
             name: name.into(),
             skills,
             assigned_process,
@@ -48,6 +58,8 @@ impl Monk {
     /// Creates a [`Monk`]
     pub fn restore(
         id: i32,
+        created_at: OffsetDateTime,
+        last_updated_at: Option<OffsetDateTime>,
         name: impl Into<String>,
         skills: Vec<Skill>,
         assigned_process: Option<ProcessKind>,
@@ -58,6 +70,8 @@ impl Monk {
 
         Ok(Self {
             id: Some(id),
+            created_at: Some(created_at),
+            last_updated_at,
             name: name.into(),
             skills,
             assigned_process,
@@ -77,11 +91,6 @@ impl Person for Monk {
 }
 
 impl Actor for Monk {
-    /// Gets the ID of the [`Monk`].
-    fn id(&self) -> &Option<i32> {
-        &self.id
-    }
-
     /// Gets the [status][`ActorStatus`] of this [`Monk`].
     fn status(&self) -> &ActorStatus {
         if self.assigned_process.is_some() {
@@ -110,5 +119,23 @@ impl Actor for Monk {
     /// Unassigns a [process][`crate::features::process::domain::Process`] from this [`Monk`].
     fn unassign_process(&mut self) {
         self.assigned_process = None;
+    }
+}
+
+impl DomainElement<ActorErrorKind> for Monk {
+    /// Gets the ID of this [`Monk`].
+    fn id(&self) -> Result<i32, DomainError<ActorErrorKind>> {
+        self.id
+            .ok_or(DomainError::from(ActorErrorKind::NotPersistedYet))
+    }
+
+    /// Gets the [creation date][`OffsetDateTime`] of this [`Monk`].
+    fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// Gets the [latest update date][`OffsetDateTime`] of this [`Monk`].
+    fn last_updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_updated_at
     }
 }

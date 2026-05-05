@@ -14,6 +14,8 @@ pub enum MonasteryErrorKind {
     FindById,
     /// Failed to find all Monks for a Monastery.
     GetAllMonks,
+    /// The Monastery has not been persisted yet.
+    NotPersistedYet,
     Unknown,
 }
 
@@ -25,6 +27,7 @@ impl DomainErrorKind for MonasteryErrorKind {
             Self::MissingMonks => "error.monastery.missing_monks".to_string(),
             Self::FindById => "error.monastery.find_by_id".to_string(),
             Self::GetAllMonks => "error.monastery.get_all_monks".to_string(),
+            Self::NotPersistedYet => "error.monastery.not_persisted_yet".to_string(),
             Self::Unknown => "error.monastery.unknown".to_string(),
         }
     }
@@ -36,6 +39,7 @@ impl DomainErrorKind for MonasteryErrorKind {
             Self::MissingMonks => "The Monks of a Monastery are missing.".to_string(),
             Self::FindById => "Failed to find a monastery with the provided ID.".to_string(),
             Self::GetAllMonks => "Failed to find all Monks for a Monastery.".to_string(),
+            Self::NotPersistedYet => "The Monastery has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

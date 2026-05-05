@@ -18,7 +18,7 @@ use crate::{
             repository::{cyclic_process::CyclicProcessRepository, task::TaskRepository},
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a service for process assignments.

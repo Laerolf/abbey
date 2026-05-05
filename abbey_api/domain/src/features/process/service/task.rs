@@ -11,7 +11,7 @@ use crate::{
             repository::task::TaskRepository,
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a service handling the [`Task`] topic.

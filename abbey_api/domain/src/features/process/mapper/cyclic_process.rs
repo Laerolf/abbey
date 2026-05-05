@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use entity::{cyclic_process_resources, cyclic_processes};
 use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
-use time::Duration;
+use time::{Duration, OffsetDateTime};
 
 use crate::{
     features::{
@@ -17,7 +17,7 @@ use crate::{
             forms::cyclic_process::{CyclicProcessCreationForm, CyclicProcessResourceCreationForm},
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that maps [`CyclicProcess`] elements.
@@ -37,6 +37,8 @@ impl CyclicProcessMapper {
 
         cyclic_processes::ActiveModel {
             id: NotSet,
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
             cycle_interval: Set(duration_in_seconds),
             status: Set(Status::New.to_string()),
             started_at: NotSet,
@@ -52,6 +54,8 @@ impl CyclicProcessMapper {
     ) -> cyclic_process_resources::ActiveModel {
         cyclic_process_resources::ActiveModel {
             id: NotSet,
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
             cylic_process_id: Set(cyclic_process.id().unwrap()),
             resource_id: Set(resource.id().unwrap()),
         }
@@ -75,6 +79,8 @@ impl CyclicProcessMapper {
 
         cyclic_processes::ActiveModel {
             id: Unchanged(cyclic_process.id().unwrap()),
+            created_at: Unchanged(cyclic_process.created_at().unwrap()),
+            last_updated_at: Set(Some(OffsetDateTime::now_utc())),
             cycle_interval: Set(duration_in_seconds),
             status: Set(cyclic_process.status().to_string()),
             started_at: Set(*cyclic_process.started_at()),
@@ -91,6 +97,8 @@ impl CyclicProcessMapper {
     ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
         CyclicProcess::restore(
             model.id,
+            model.created_at,
+            model.last_updated_at,
             CyclicProcessState {
                 status: Status::from_str(&model.status)
                     .expect("Failed to find a process status with the provided value."),
@@ -126,6 +134,8 @@ impl CyclicProcessResourceMapper {
     ) -> cyclic_process_resources::ActiveModel {
         cyclic_process_resources::ActiveModel {
             id: NotSet,
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
             cylic_process_id: Set(creation_form.cyclic_process_id),
             resource_id: Set(creation_form.resource_id),
         }

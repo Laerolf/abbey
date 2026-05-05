@@ -8,6 +8,8 @@ use crate::{
 pub enum UserGames {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     UserId,
     GameId,
 }
@@ -24,6 +26,8 @@ impl MigrationTrait for Migration {
                     .table(UserGames::Table)
                     .if_not_exists()
                     .col(pk_auto(UserGames::Id))
+                    .col(timestamp_with_time_zone(UserGames::CreatedAt))
+                    .col(timestamp_with_time_zone_null(UserGames::LastUpdatedAt))
                     .col(integer(UserGames::UserId))
                     .col(integer_uniq(UserGames::GameId))
                     .foreign_key(

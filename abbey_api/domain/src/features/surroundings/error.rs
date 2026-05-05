@@ -14,6 +14,8 @@ pub enum SurroundingsErrorKind {
     FindAllSources,
     /// Failed to find a Surroundings with the provided ID.
     FindById,
+    /// The Surroundings has not been persisted yet.
+    NotPersistedYet,
     Unknown,
 }
 
@@ -25,6 +27,7 @@ impl DomainErrorKind for SurroundingsErrorKind {
             Self::MissingSources => "error.surroundings.missing_sources".to_string(),
             Self::FindAllSources => "error.surroundings.find_all_sources".to_string(),
             Self::FindById => "error.surroundings.find_by_id".to_string(),
+            Self::NotPersistedYet => "error.surroundings.not_persisted_yet".to_string(),
             Self::Unknown => "error.surroundings.unknown".to_string(),
         }
     }
@@ -36,6 +39,7 @@ impl DomainErrorKind for SurroundingsErrorKind {
             Self::MissingSources => "This Surroundings have no Sources.".to_string(),
             Self::FindAllSources => "Failed to find all Sources of a Surroundings.".to_string(),
             Self::FindById => "Failed to find a Surroundings with the provided ID.".to_string(),
+            Self::NotPersistedYet => "The Surroundings has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

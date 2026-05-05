@@ -53,7 +53,7 @@ impl ResourceRepository {
         db_transaction: &DatabaseTransaction,
     ) -> Result<Resource, DomainError<ResourceErrorKind>> {
         match self.find_by_name(&form.name, db_transaction).await? {
-            Some(model) => Ok(model),
+            Some(resource) => Ok(resource),
             None => self.create(form, db_transaction).await,
         }
     }

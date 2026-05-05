@@ -2,13 +2,13 @@ use sea_orm::DatabaseTransaction;
 
 use crate::{
     features::{
-        process::domain::{Process, cyclic_process::CyclicProcess},
+        process::domain::cyclic_process::CyclicProcess,
         source::{
             domain::Source, error::SourceErrorKind, forms::SourceCreationForm,
             repository::SourceRepository,
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a service handling the [`Source`] topic.

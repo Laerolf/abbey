@@ -10,8 +10,7 @@ use crate::{
     features::{
         output::{domain::resource::Resource, mapper::ResourceMapper},
         process::{
-            domain::{Process, cyclic_process::CyclicProcess},
-            mapper::cyclic_process::CyclicProcessMapper,
+            domain::cyclic_process::CyclicProcess, mapper::cyclic_process::CyclicProcessMapper,
         },
         source::mapper::SourceMapper,
         surroundings::{
@@ -21,7 +20,7 @@ use crate::{
             mapper::{SurroundingsMapper, SurroundingsSourceMapper},
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that handles all [Surroundings][`super::domain::Surroundings`] database topics.
@@ -46,7 +45,7 @@ impl SurroundingsRepository {
 
         let source_process_ids: Vec<i32> = source_models
             .iter()
-            .map(|model| model.cyclic_process_id)
+            .map(|source_model| source_model.cyclic_process_id)
             .collect();
 
         let all_source_output_resource_assignments = cyclic_process_resources::Entity::find()
@@ -61,7 +60,9 @@ impl SurroundingsRepository {
 
         let all_source_output_resource_ids: Vec<i32> = all_source_output_resource_assignments
             .iter()
-            .map(|model| model.resource_id)
+            .map(|source_output_resource_assignment_model| {
+                source_output_resource_assignment_model.resource_id
+            })
             .collect();
 
         let all_source_output_resources: Vec<Resource> = resources::Entity::find()
@@ -84,8 +85,13 @@ impl SurroundingsRepository {
             .map(|cyclic_process_model| {
                 let output_resource_ids: Vec<i32> = all_source_output_resource_assignments
                     .iter()
-                    .filter(|model| model.cylic_process_id == cyclic_process_model.id)
-                    .map(|model| model.resource_id)
+                    .filter(|source_output_resource_assignment_model| {
+                        source_output_resource_assignment_model.cylic_process_id
+                            == cyclic_process_model.id
+                    })
+                    .map(|source_output_resource_assignment_model| {
+                        source_output_resource_assignment_model.resource_id
+                    })
                     .collect();
 
                 let output_resources: Vec<Resource> = all_source_output_resources
@@ -108,7 +114,9 @@ impl SurroundingsRepository {
             .map(|source_model| {
                 let process_model = all_source_cyclic_processes
                     .iter()
-                    .find(|model| source_model.cyclic_process_id == model.id().unwrap())
+                    .find(|cyclic_process_model| {
+                        source_model.cyclic_process_id == cyclic_process_model.id().unwrap()
+                    })
                     .ok_or(DomainError::from(SurroundingsErrorKind::FindAllSources))?;
 
                 Ok(SourceMapper::to_domain_entity(

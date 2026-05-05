@@ -38,6 +38,8 @@ pub enum ProcessErrorKind {
     NotComplete,
     /// The [Process][`super::domain::Process`] has no assigned [People][`crate::features::actor::domain::person`].
     NoAssignedPeople,
+    /// The Process has not been persisted yet.
+    NotPersistedYet,
     Unknown,
 }
 
@@ -61,6 +63,7 @@ impl DomainErrorKind for ProcessErrorKind {
             Self::NotPaused => "error.process.not_paused".to_string(),
             Self::NotComplete => "error.process.not_complete".to_string(),
             Self::NoAssignedPeople => "error.process.no_assigned_people".to_string(),
+            Self::NotPersistedYet => "error.process.not_persisted_yet".to_string(),
             Self::Unknown => "error.shared.unknown".to_string(),
         }
     }
@@ -86,6 +89,7 @@ impl DomainErrorKind for ProcessErrorKind {
             Self::NotPaused => "The process is not paused.".to_string(),
             Self::NotComplete => "The process is not complete yet.".to_string(),
             Self::NoAssignedPeople => "A process needs assigned people to be run.".to_string(),
+            Self::NotPersistedYet => "The Process has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

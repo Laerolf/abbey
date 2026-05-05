@@ -1,18 +1,33 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::features::game::domain::Game;
+use time::OffsetDateTime;
+
+use crate::{
+    features::{game::domain::Game, user::error::UserErrorKind},
+    shared::{DomainElement, error::DomainError},
+};
 
 /// Represents a user.
 #[derive(Clone)]
 pub struct User {
     /// The ID of the [`User`].
     id: Option<i32>,
+
+    /// The creation date of this [`User`].
+    created_at: Option<OffsetDateTime>,
+
+    /// The date of the last update of this [`User`].
+    last_updated_at: Option<OffsetDateTime>,
+
     /// The email address of the [`User`].
     email: String,
+
     /// The password of the [`User`].
     password: String,
+
     /// The status of the [`User`].
     status: Status,
+
     /// The [Game]s of the [`User`].
     games: Vec<Game>,
 }
@@ -27,6 +42,8 @@ impl User {
     ) -> Self {
         Self {
             id: None,
+            created_at: None,
+            last_updated_at: None,
             email: email.into(),
             password: password.into(),
             status,
@@ -37,6 +54,8 @@ impl User {
     /// Creates a [`User`].
     pub fn restore(
         id: i32,
+        created_at: OffsetDateTime,
+        last_updated_at: Option<OffsetDateTime>,
         email: impl Into<String>,
         password: impl Into<String>,
         status: Status,
@@ -44,16 +63,13 @@ impl User {
     ) -> Self {
         Self {
             id: Some(id),
+            created_at: Some(created_at),
+            last_updated_at,
             email: email.into(),
             password: password.into(),
             status,
             games,
         }
-    }
-
-    /// Gets the ID of the [`User`].
-    pub fn id(&self) -> &Option<i32> {
-        &self.id
     }
 
     /// Gets the email address of the [`User`].
@@ -74,6 +90,24 @@ impl User {
     /// Gets the [Games][`Vec<Game>`] of the [`User`].
     pub fn games(&self) -> &Vec<Game> {
         &self.games
+    }
+}
+
+impl DomainElement<UserErrorKind> for User {
+    /// Gets the ID of this [`User`].
+    fn id(&self) -> Result<i32, DomainError<UserErrorKind>> {
+        self.id
+            .ok_or(DomainError::from(UserErrorKind::NotPersistedYet))
+    }
+
+    /// Gets the [creation date][`OffsetDateTime`] of this [`User`].
+    fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// Gets the [latest update date][`OffsetDateTime`] of this [`User`].
+    fn last_updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_updated_at
     }
 }
 

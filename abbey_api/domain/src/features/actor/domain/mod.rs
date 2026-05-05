@@ -7,7 +7,7 @@ use crate::{
         player::domain::Player,
         process::domain::ProcessKind,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 pub mod actor_status;
@@ -20,14 +20,16 @@ pub enum ActorKind {
     Player(Player),
 }
 
-impl Actor for ActorKind {
-    fn id(&self) -> &Option<i32> {
+impl ActorKind {
+    pub fn id(&self) -> Result<i32, DomainError<ActorErrorKind>> {
         match self {
             ActorKind::Monk(monk) => monk.id(),
             ActorKind::Player(player) => player.id(),
         }
     }
+}
 
+impl Actor for ActorKind {
     fn status(&self) -> &ActorStatus {
         match self {
             ActorKind::Monk(monk) => monk.status(),
@@ -59,18 +61,15 @@ impl Actor for ActorKind {
 
 /// Represents an actor in the domain of the project.
 pub trait Actor: Send {
-    /// Gets the ID of the [`Actor`].
-    fn id(&self) -> &Option<i32>;
-
-    /// Gets the [status][`:ActorStatus`] of an [`Actor`].
+    /// Gets the [status][ActorStatus] of an [`Actor`].
     fn status(&self) -> &ActorStatus;
 
-    /// Gets the [assigned process][`ProcessKind`] of an [`Actor`].
+    /// Gets the [assigned process][ProcessKind] of an [`Actor`].
     fn assigned_process(&self) -> &Option<ProcessKind>;
 
-    /// Assigns a [Process][`ProcessKind`] to an [`Actor`].
+    /// Assigns a [Process][ProcessKind] to an [`Actor`].
     fn assign_process(&mut self, process: ProcessKind) -> Result<(), DomainError<ActorErrorKind>>;
 
-    /// Unassigns a [Process][`ProcessKind`] from an [`Actor`].
+    /// Unassigns a [Process][ProcessKind] from an [`Actor`].
     fn unassign_process(&mut self);
 }

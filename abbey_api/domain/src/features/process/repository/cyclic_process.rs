@@ -13,14 +13,14 @@ use crate::{
         output::{domain::resource::Resource, mapper::ResourceMapper},
         player::mapper::PlayerMapper,
         process::{
-            domain::{Process, cyclic_process::CyclicProcess},
+            domain::cyclic_process::CyclicProcess,
             error::ProcessErrorKind,
             forms::cyclic_process::{CyclicProcessCreationForm, CyclicProcessResourceCreationForm},
             mapper::cyclic_process::{CyclicProcessMapper, CyclicProcessResourceMapper},
         },
         skill::{domain::Skill, mapper::SkillMapper},
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that handles all [CyclicProcess] database topics.
@@ -80,7 +80,10 @@ impl CyclicProcessRepository {
             .await
             .map_err(|error| DomainError::from(ProcessErrorKind::FindActors).with_cause(error))?;
 
-        let all_monk_ids: Vec<i32> = assigned_monk_models.iter().map(|model| model.id).collect();
+        let all_monk_ids: Vec<i32> = assigned_monk_models
+            .iter()
+            .map(|monk_model| monk_model.id)
+            .collect();
 
         let all_monk_skill_assignments = monk_skills::Entity::find()
             .filter(monk_skills::Column::MonkId.is_in(all_monk_ids.clone()))
@@ -308,7 +311,7 @@ impl CyclicProcessRepository {
         .await
         .map_err(|error| DomainError::from(ProcessErrorKind::Update).with_cause(error))?;
 
-        self.get_by_id_with_relations(&cyclic_process.id().unwrap(), db_transaction)
+        self.get_by_id_with_relations(&cyclic_process.id()?, db_transaction)
             .await
     }
 }

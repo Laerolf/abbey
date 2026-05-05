@@ -15,7 +15,7 @@ use axum::{
 use sea_orm::{ConnectOptions, Database};
 use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tracing::{Level, info};
 use utoipa_swagger_ui::SwaggerUi;
 

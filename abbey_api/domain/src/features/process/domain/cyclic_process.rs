@@ -5,11 +5,11 @@ use time::{Duration, OffsetDateTime};
 
 use crate::{
     features::{
-        actor::domain::{Actor, ActorKind},
+        actor::domain::ActorKind,
         output::domain::{Output, resource::Resource},
         process::error::ProcessErrorKind,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 use super::{Process, Status};
@@ -30,6 +30,12 @@ pub struct CyclicProcessState {
 pub struct CyclicProcess {
     /// The ID of this [`CyclicProcess`].
     id: Option<i32>,
+
+    /// The creation date of this [`CyclicProcess`].
+    created_at: Option<OffsetDateTime>,
+
+    /// The date of the last update of this [`CyclicProcess`].
+    last_updated_at: Option<OffsetDateTime>,
 
     /// The [Status] of this [`CyclicProcess`].
     status: Status,
@@ -65,6 +71,8 @@ impl CyclicProcess {
 
         Ok(Self {
             id: None,
+            created_at: None,
+            last_updated_at: None,
             status: Status::New,
             output_resources,
             started_at: None,
@@ -78,6 +86,8 @@ impl CyclicProcess {
     /// Creates a [`CyclicProcess`] based on the provided parameters.
     pub fn restore(
         id: i32,
+        created_at: OffsetDateTime,
+        last_updated_at: Option<OffsetDateTime>,
         state: CyclicProcessState,
     ) -> Result<Self, DomainError<ProcessErrorKind>> {
         if state.output_resources.is_empty() {
@@ -86,6 +96,8 @@ impl CyclicProcess {
 
         Ok(Self {
             id: Some(id),
+            created_at: Some(created_at),
+            last_updated_at,
             status: state.status,
             output_resources: state.output_resources,
             started_at: state.started_at,
@@ -134,12 +146,7 @@ impl Process for CyclicProcess {
     /// Unassigns a [Person][`ActorKind`] to this [`CyclicProcess`].
     fn unassign_person(&mut self, actor_to_unassign: &ActorKind) {
         self.assigned_people
-            .retain(|actor| actor.id() != actor_to_unassign.id());
-    }
-
-    /// Gets the ID of this [`CyclicProcess`].
-    fn id(&self) -> &Option<i32> {
-        &self.id
+            .retain(|actor| actor.id().unwrap() != actor_to_unassign.id().unwrap());
     }
 
     /// Gets the [Status] of this [`CyclicProcess`].
@@ -224,5 +231,23 @@ impl Process for CyclicProcess {
         } else {
             None
         }
+    }
+}
+
+impl DomainElement<ProcessErrorKind> for CyclicProcess {
+    /// Gets the ID of this [`CyclicProcess`].
+    fn id(&self) -> Result<i32, DomainError<ProcessErrorKind>> {
+        self.id
+            .ok_or(DomainError::from(ProcessErrorKind::NotPersistedYet))
+    }
+
+    /// Gets the [creation date][`OffsetDateTime`] of this [`CyclicProcess`].
+    fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// Gets the [latest update date][`OffsetDateTime`] of this [`CyclicProcess`].
+    fn last_updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_updated_at
     }
 }

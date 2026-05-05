@@ -11,7 +11,7 @@ use crate::{
             repository::UserRepository,
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a service handling the [`User`] topic.
@@ -107,7 +107,7 @@ impl UserService {
 
         new_user = self
             .assign_game(
-                UserGameCreationForm::new(new_user.id().unwrap(), new_game.id().unwrap()),
+                UserGameCreationForm::new(new_user.id()?, new_game.id().unwrap()),
                 db_transaction,
             )
             .await

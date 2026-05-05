@@ -8,6 +8,8 @@ use crate::{
 enum MonkSkills {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     MonkId,
     SkillId,
 }
@@ -24,6 +26,8 @@ impl MigrationTrait for Migration {
                     .table(MonkSkills::Table)
                     .if_not_exists()
                     .col(pk_auto(MonkSkills::Id))
+                    .col(timestamp_with_time_zone(MonkSkills::CreatedAt))
+                    .col(timestamp_with_time_zone_null(MonkSkills::LastUpdatedAt))
                     .col(integer(MonkSkills::MonkId))
                     .col(integer(MonkSkills::SkillId))
                     .foreign_key(

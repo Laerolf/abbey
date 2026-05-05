@@ -6,7 +6,7 @@ use crate::{
         game::domain::Game,
         user::domain::User,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a session of a [User].
