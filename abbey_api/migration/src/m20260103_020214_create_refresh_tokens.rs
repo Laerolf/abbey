@@ -27,7 +27,7 @@ impl MigrationTrait for Migration {
                     .col(pk_auto(RefreshTokens::Id))
                     .col(timestamp_with_time_zone(RefreshTokens::CreatedAt))
                     .col(timestamp_with_time_zone_null(RefreshTokens::LastUpdatedAt))
-                    .col(integer_uniq(RefreshTokens::UserId))
+                    .col(integer(RefreshTokens::UserId))
                     .col(string(RefreshTokens::Value))
                     .col(timestamp_with_time_zone(RefreshTokens::ExpiresAt))
                     .index(

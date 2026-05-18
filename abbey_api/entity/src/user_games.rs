@@ -10,7 +10,6 @@ pub struct Model {
     pub created_at: TimeDateTimeWithTimeZone,
     pub last_updated_at: Option<TimeDateTimeWithTimeZone>,
     pub user_id: i32,
-    #[sea_orm(unique)]
     pub game_id: i32,
 }
 

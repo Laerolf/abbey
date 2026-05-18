@@ -5,13 +5,12 @@ use crate::{
     features::{
         actor::domain::{Actor, ActorKind, monk::Monk, person::Person},
         player::dto::PlayerDto,
-        process::dto::ProcessDto,
     },
     shared::DomainElement,
 };
 
 /// Represents a Monk DTO.
-#[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema, Clone)]
 pub struct MonkDto {
     /// The ID of the Monk.
     #[schema(example = 666)]
@@ -21,8 +20,8 @@ pub struct MonkDto {
     pub name: String,
     /// The IDs  of the Monk skills.
     pub skill_ids: Vec<i32>,
-    /// The assigned Process of the Monk.
-    pub assigned_process: Option<ProcessDto>,
+    /// The assigned Process ID of the Monk.
+    pub assigned_process_id: Option<i32>,
 }
 
 impl MonkDto {
@@ -38,12 +37,15 @@ impl MonkDto {
             id: monk.id().unwrap(),
             name: monk.name().to_string(),
             skill_ids,
-            assigned_process: monk.assigned_process().clone().map(ProcessDto::from),
+            assigned_process_id: monk
+                .assigned_process()
+                .as_ref()
+                .map(|process| process.id().unwrap()),
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema, Clone)]
 #[serde(tag = "type")]
 pub enum ActorDto {
     /// The [Player] [`PlayerDto`] variant.
@@ -58,6 +60,13 @@ impl ActorDto {
         match actor {
             ActorKind::Player(player) => ActorDto::Player(PlayerDto::from(player.clone())),
             ActorKind::Monk(monk) => ActorDto::Monk(MonkDto::from(monk)),
+        }
+    }
+
+    pub fn id(&self) -> i32 {
+        match self {
+            ActorDto::Player(player_dto) => player_dto.id,
+            ActorDto::Monk(monk_dto) => monk_dto.id,
         }
     }
 }

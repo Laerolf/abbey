@@ -14,8 +14,10 @@ pub enum ActorErrorKind {
     FindById,
     /// Failed to get an Actor with the provided ID.
     GetById,
-    /// Failed to find Actors with the provided IDs.
-    FindByIds,
+    /// Failed to get Actors with the provided IDs.
+    GetByIds,
+    /// Failed to get Actors with the provided CyclicProcess IDs.
+    GetByCyclicProcessIds,
     /// The [`Actor`][`super::domain::Actor`] is not available.
     Assigned,
     /// The Actor has no Skills.
@@ -33,7 +35,8 @@ impl DomainErrorKind for ActorErrorKind {
             Self::Update => "error.actor.update".to_string(),
             Self::FindById => "error.actor.find_by_id".to_string(),
             Self::GetById => "error.actor.find_by_id".to_string(),
-            Self::FindByIds => "error.actor.find_by_ids".to_string(),
+            Self::GetByIds => "error.actor.find_by_ids".to_string(),
+            Self::GetByCyclicProcessIds => "error.actor.find_by_cyclic_process_ids".to_string(),
             Self::Assigned => "error.actor.assigned".to_string(),
             Self::NoSkills => "error.actor.no_skills".to_string(),
             Self::NotPersistedYet => "error.actor.not_persisted_yet".to_string(),
@@ -48,7 +51,10 @@ impl DomainErrorKind for ActorErrorKind {
             Self::Update => "Failed to update an Actor.".to_string(),
             Self::FindById => "Failed to find an Actor with the provided ID.".to_string(),
             Self::GetById => "Failed to get an Actor with the provided ID.".to_string(),
-            Self::FindByIds => "Failed to find Actors with the provided IDs.".to_string(),
+            Self::GetByIds => "Failed to find Actors with the provided IDs.".to_string(),
+            Self::GetByCyclicProcessIds => {
+                "Failed to find Actors with the provided CyclicProcess IDs.".to_string()
+            }
             Self::Assigned => "An Actor can only be assigned to one Process.".to_string(),
             Self::NoSkills => "The Actor has no Skills.".to_string(),
             Self::NotPersistedYet => "The Actor has not been persisted yet.".to_string(),
@@ -60,7 +66,7 @@ impl DomainErrorKind for ActorErrorKind {
         match self {
             Self::FindById => StatusCode::NOT_FOUND,
             Self::GetById => StatusCode::NOT_FOUND,
-            Self::FindByIds => StatusCode::NOT_FOUND,
+            Self::GetByIds => StatusCode::NOT_FOUND,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }

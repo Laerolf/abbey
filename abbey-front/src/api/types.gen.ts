@@ -4,6 +4,12 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:8000' | (string & {});
 };
 
+export type ActorDto = (PlayerDto & {
+    type: 'Player';
+}) | (MonkDto & {
+    type: 'Monk';
+});
+
 export type AppError = {
     /**
      * The message code of the error.
@@ -26,13 +32,17 @@ export type AppError = {
  */
 export type CyclicProcessDto = {
     /**
+     * The assigned Actors to this CyclicProcess.
+     */
+    assigned_actors: Array<ActorDto>;
+    /**
      * The cycle duration of the CyclicProcess.
      */
-    cycle_interval: string;
+    cycle_interval: DurationDto;
     /**
      * The time that has elapsed since the CyclicProcess was started.
      */
-    elapsed: string;
+    elapsed: DurationDto;
     /**
      * The ID of the CyclicProcess.
      */
@@ -48,7 +58,21 @@ export type CyclicProcessDto = {
     /**
      * The status of the CyclicProcess.
      */
-    status: string;
+    status: ProcessStatusDto;
+};
+
+/**
+ * Represents a duration.
+ */
+export type DurationDto = {
+    /**
+     * The nanoseconds of the duration.
+     */
+    nanoseconds: number;
+    /**
+     * The seconds of the duration.
+     */
+    seconds: number;
 };
 
 /**
@@ -115,7 +139,10 @@ export type MonasteryDto = {
  * Represents a Monk DTO.
  */
 export type MonkDto = {
-    assigned_process?: null | ProcessDto;
+    /**
+     * The assigned Process ID of the Monk.
+     */
+    assigned_process_id?: number | null;
     /**
      * The ID of the Monk.
      */
@@ -135,10 +162,21 @@ export type MonkDto = {
  */
 export type PlayerDto = {
     /**
+     * The assigned Process ID of the Player.
+     */
+    assigned_process_id?: number | null;
+    /**
      * The ID of the Player.
      */
     id: number;
-    process?: null | ProcessDto;
+};
+
+export type ProcessAssignmentDto = {
+    /**
+     * The [Actors][Vec<ActorDto>] of the [`ProcessAssignment`][ProcessAssignmentDto].
+     */
+    actors: Array<ActorDto>;
+    process: ProcessDto;
 };
 
 /**
@@ -164,6 +202,21 @@ export type ProcessDto = (CyclicProcessDto & {
 }) | (TaskDto & {
     type: 'Task';
 });
+
+/**
+ * Represents the Status of a Process.
+ */
+export type ProcessStatusDto = 'New' | 'InProgress' | 'Paused' | 'Completed';
+
+/**
+ * Represents the response used when a user refresh its session token.
+ */
+export type RefreshUserResponse = {
+    /**
+     * The session token.
+     */
+    session_token: string;
+};
 
 /**
  * Represents the payload used to register a new user.
@@ -269,11 +322,11 @@ export type TaskDto = {
     /**
      * The duration of this Task.
      */
-    duration: string;
+    duration: DurationDto;
     /**
      * The time that has elapsed since the Task was started.
      */
-    elapsed: string;
+    elapsed: DurationDto;
     /**
      * The ID of the Task.
      */
@@ -289,7 +342,7 @@ export type TaskDto = {
     /**
      * The status of the Task.
      */
-    status: string;
+    status: ProcessStatusDto;
 };
 
 /**
@@ -355,7 +408,7 @@ export type RefreshResponses = {
     /**
      * The refresh attempt was successful.
      */
-    200: LoginUserResponse;
+    200: RefreshUserResponse;
 };
 
 export type RefreshResponse = RefreshResponses[keyof RefreshResponses];
@@ -445,7 +498,7 @@ export type AssignResponses = {
     /**
      * The cyclic process has been assigned to an actor.
      */
-    200: CyclicProcessDto;
+    200: ProcessAssignmentDto;
 };
 
 export type AssignResponse = AssignResponses[keyof AssignResponses];
@@ -480,7 +533,7 @@ export type PauseResponses = {
     /**
      * The cyclic process has been paused.
      */
-    200: CyclicProcessDto;
+    200: ProcessDto;
 };
 
 export type PauseResponse = PauseResponses[keyof PauseResponses];
@@ -515,7 +568,7 @@ export type StartResponses = {
     /**
      * The cyclic process has started.
      */
-    200: CyclicProcessDto;
+    200: ProcessDto;
 };
 
 export type StartResponse = StartResponses[keyof StartResponses];

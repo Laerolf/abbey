@@ -37,7 +37,7 @@ impl CyclicProcessRepository {
     ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
         let process_resources: Vec<Resource> = resources::Entity::find()
             .inner_join(cyclic_process_resources::Entity)
-            .filter(cyclic_process_resources::Column::CylicProcessId.eq(process_model.id))
+            .filter(cyclic_process_resources::Column::CyclicProcessId.eq(process_model.id))
             .all(db_connection)
             .await
             .map_err(|error| {
@@ -137,7 +137,7 @@ impl CyclicProcessRepository {
     ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
         let process_resources: Vec<Resource> = resources::Entity::find()
             .inner_join(cyclic_process_resources::Entity)
-            .filter(cyclic_process_resources::Column::CylicProcessId.eq(process_model.id))
+            .filter(cyclic_process_resources::Column::CyclicProcessId.eq(process_model.id))
             .all(db_connection)
             .await
             .map_err(|error| {

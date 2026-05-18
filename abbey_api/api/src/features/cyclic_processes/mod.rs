@@ -11,7 +11,7 @@ use domain::{
             forms::ProcessAssignmentForm,
         },
         auth::domain::session_token::SessionToken,
-        process::dto::{CyclicProcessDto, ProcessDto},
+        process::dto::ProcessDto,
     },
     shared::error::DomainError,
 };
@@ -48,7 +48,7 @@ pub struct CyclicProcessesApiDoc;
     post,
     path = "/api/cyclic-processes/assign",
     responses(
-        (status = 200, description = "The cyclic process has been assigned to an actor.", body = CyclicProcessDto),
+        (status = 200, description = "The cyclic process has been assigned to an actor.", body = ProcessAssignmentDto),
         (status = 401, description = "The cyclic process was not able to be assigned due to you being anonymous.", body = AppError),
         (status = 404, description = "The cyclic process was not found.", body = AppError),
         (status = 500, description = "The cyclic process was not able to be assigned due to an error.", body = AppError),
@@ -93,7 +93,7 @@ async fn assign(
     post,
     path = "/api/cyclic-processes/{process_id}/start",
     responses(
-        (status = 200, description = "The cyclic process has started.", body = CyclicProcessDto),
+        (status = 200, description = "The cyclic process has started.", body = ProcessDto),
         (status = 401, description = "The cyclic process was not able to start due to you being anonymous.", body = AppError),
         (status = 404, description = "The cyclic process was not found.", body = AppError),
         (status = 500, description = "The cyclic process was not able to start due to an error.", body = AppError),
@@ -132,7 +132,7 @@ async fn start(
     post,
     path = "/api/cyclic-processes/{process_id}/pause",
     responses(
-        (status = 200, description = "The cyclic process has been paused.", body = CyclicProcessDto),
+        (status = 200, description = "The cyclic process has been paused.", body = ProcessDto),
         (status = 401, description = "The cyclic process was not able to pause due to you being anonymous.", body = AppError),
         (status = 404, description = "The cyclic process was not found.", body = AppError),
         (status = 500, description = "The cyclic process was not able to pause due to an error.", body = AppError),

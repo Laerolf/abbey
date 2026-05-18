@@ -1,5 +1,5 @@
 export default {
-  userRegistration: {
+  registration: {
     title: 'ユーザー登録',
     form: {
       fields: {
@@ -37,7 +37,7 @@ export default {
       },
     },
   },
-  userLogin: {
+  login: {
     title: 'ログイン',
     form: {
       fields: {
@@ -68,7 +68,7 @@ export default {
       },
     },
   },
-  gameMonastery: {
+  monastery: {
     title: '修道院',
     monks: '修道士',
   },

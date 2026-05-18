@@ -11,7 +11,7 @@ import AMonk from '@/components/AMonk.vue'
 
 const gameStore = useGameStore()
 
-const { translateInScope } = useLocale('pages.gameMonastery')
+const { translateInScope } = useLocale('pages.monastery')
 
 useHead({
   title: computed(() => translateInScope('title')),

@@ -56,7 +56,7 @@ impl CyclicProcessMapper {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            cylic_process_id: Set(cyclic_process.id().unwrap()),
+            cyclic_process_id: Set(cyclic_process.id().unwrap()),
             resource_id: Set(resource.id().unwrap()),
         }
     }
@@ -136,7 +136,7 @@ impl CyclicProcessResourceMapper {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            cylic_process_id: Set(creation_form.cyclic_process_id),
+            cyclic_process_id: Set(creation_form.cyclic_process_id),
             resource_id: Set(creation_form.resource_id),
         }
     }

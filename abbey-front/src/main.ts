@@ -8,6 +8,8 @@ import router from '@/router'
 import i18n from '@/plugins/i18n'
 import errorHandling from '@/plugins/errorHandling'
 
+import { useAuthStore } from '@/stores/authStore'
+
 import '@/assets/styling/main.css'
 import { client } from './api/client.gen'
 
@@ -15,6 +17,16 @@ import { client } from './api/client.gen'
 client.setConfig({
   baseUrl: import.meta.env.VITE_API_URL,
   credentials: 'include',
+})
+
+client.interceptors.request.use((request) => {
+  const authStore = useAuthStore()
+
+  if (authStore.sessionToken) {
+    request.headers.set('Authorization', `Bearer ${authStore.sessionToken}`)
+  }
+
+  return request
 })
 
 const head = createHead({ init: [{ titleTemplate: '%s | Abbey' }] })

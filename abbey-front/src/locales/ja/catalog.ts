@@ -1,6 +1,6 @@
 export default {
   skills: {
-    cooking: "Cooking",
-    brewing: "Brewing"
-  }
+    cooking: 'Cooking',
+    brewing: 'Brewing',
+  },
 }

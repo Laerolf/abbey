@@ -36,7 +36,7 @@ impl PlayerRepository {
 
         let process_output_resources = resources::Entity::find()
             .inner_join(cyclic_process_resources::Entity)
-            .filter(cyclic_process_resources::Column::CylicProcessId.eq(process_model.id))
+            .filter(cyclic_process_resources::Column::CyclicProcessId.eq(process_model.id))
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))?

@@ -11,7 +11,7 @@ import { useAuthStore } from '@/stores/authStore'
 import useTranslations from '@/composables/useLocale'
 import useNotifications from '@/composables/useNotifications'
 
-const { translateInScope } = useTranslations('pages.userLogin')
+const { translateInScope } = useTranslations('pages.login')
 
 useHead({
   title: computed(() => translateInScope('title')),
@@ -83,7 +83,9 @@ const onSubmit = handleSubmit(async (values) => {
 
     <ul>
       <li>
-        <router-link :to="{ name: 'Register' }">{{ translateInScope('links.register') }}</router-link>
+        <router-link :to="{ name: 'Register' }">{{
+          translateInScope('links.register')
+        }}</router-link>
       </li>
     </ul>
   </a-grid>

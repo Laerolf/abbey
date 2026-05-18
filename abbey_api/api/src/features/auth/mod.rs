@@ -116,7 +116,7 @@ async fn login(
     post,
     path = "/api/auth/refresh",
     responses(
-        (status = 200, description = "The refresh attempt was successful.", body = LoginUserResponse),
+        (status = 200, description = "The refresh attempt was successful.", body = RefreshUserResponse),
         (status = 500, description = "The refresh attempt failed due to an error.", body = AppError)
     ),
     params(

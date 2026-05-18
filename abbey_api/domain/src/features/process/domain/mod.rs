@@ -81,6 +81,13 @@ impl Process for ProcessKind {
         }
     }
 
+    fn assigned_actors(&self) -> &Vec<ActorKind> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.assigned_actors(),
+            ProcessKind::Task(task) => task.assigned_actors(),
+        }
+    }
+
     fn start(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
         match self {
             ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.start(now),
@@ -131,14 +138,17 @@ pub trait Process: Send + Any {
     /// Gets the [`Status`] of this [`Process`].
     fn status(&self) -> &Status;
 
-    /// Returns time when this [Process] was last started.
+    /// Returns the time when this [Process] was last started.
     fn started_at(&self) -> &Option<OffsetDateTime>;
 
-    /// Returns time when this [Process] was last paused.
+    /// Returns the time when this [Process] was last paused.
     fn paused_at(&self) -> &Option<OffsetDateTime>;
 
     /// Returns the time this [Process] ran.
     fn elapsed(&self) -> &Duration;
+
+    /// Returns the [Actors][Vec<ActorKind>] assigned to this [Process].
+    fn assigned_actors(&self) -> &Vec<ActorKind>;
 
     /// Starts this [`Process`].
     fn start(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>>;

@@ -11,7 +11,7 @@ enum CyclicProcessResources {
     Id,
     CreatedAt,
     LastUpdatedAt,
-    CylicProcessId,
+    CyclicProcessId,
     ResourceId,
 }
 
@@ -31,14 +31,14 @@ impl MigrationTrait for Migration {
                     .col(timestamp_with_time_zone_null(
                         CyclicProcessResources::LastUpdatedAt,
                     ))
-                    .col(integer(CyclicProcessResources::CylicProcessId))
+                    .col(integer(CyclicProcessResources::CyclicProcessId))
                     .col(integer(CyclicProcessResources::ResourceId))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-cyclic-process-resources-cyclic-process")
                             .from(
                                 CyclicProcessResources::Table,
-                                CyclicProcessResources::CylicProcessId,
+                                CyclicProcessResources::CyclicProcessId,
                             )
                             .to(CyclicProcesses::Table, CyclicProcesses::Id)
                             .on_delete(ForeignKeyAction::Cascade)

@@ -19,12 +19,12 @@ const authRoutes: readonly RouteRecordRaw[] = [
       {
         name: 'Login',
         path: 'login',
-        component: () => import('@/pages/LoginPage.vue'),
+        component: () => import('@/pages/authentication/LoginPage.vue'),
       },
       {
         name: 'Register',
         path: 'register',
-        component: () => import('@/pages/RegisterPage.vue'),
+        component: () => import('@/pages/authentication/RegisterPage.vue'),
       },
     ],
   },
@@ -39,20 +39,28 @@ const gameRoutes: readonly RouteRecordRaw[] = [
     component: () => import('@/layouts/GameLayout.vue'),
     meta: {
       secure: true,
-      requiresCatalog: true
+      requiresCatalog: true,
     },
     children: [
       {
         path: '',
-        redirect: { name: 'Monastery' },
+        redirect: { name: 'Surroundings' },
       },
       {
         name: 'Monastery',
         path: 'monastery',
-        component: () => import('@/pages/MonasteryPage.vue'),
+        component: () => import('@/pages/game/MonasteryPage.vue'),
         meta: {
           secure: true,
-          requiresCatalog: true
+          requiresCatalog: true,
+        },
+      },
+      {
+        name: 'Surroundings',
+        path: 'surroundings',
+        component: () => import('@/pages/game/SurroundingsPage.vue'),
+        meta: {
+          secure: true,
         },
       },
     ],

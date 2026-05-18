@@ -35,7 +35,7 @@ impl SourceRepository {
 
         let source_process_output_resources: Vec<Resource> = resources::Entity::find()
             .inner_join(cyclic_process_resources::Entity)
-            .filter(cyclic_process_resources::Column::CylicProcessId.eq(source_process_model.id))
+            .filter(cyclic_process_resources::Column::CyclicProcessId.eq(source_process_model.id))
             .all(db_connection)
             .await
             .map_err(|error| {

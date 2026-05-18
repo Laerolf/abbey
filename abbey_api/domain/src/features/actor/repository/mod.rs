@@ -222,13 +222,13 @@ impl MonkRepository {
             .filter(monks::Column::Id.is_in(ids.to_owned()))
             .all(db_connection)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::FindByIds).with_cause(error))?;
+            .map_err(|error| DomainError::from(ActorErrorKind::GetByIds).with_cause(error))?;
 
         let all_monk_skill_assignments = monk_skills::Entity::find()
             .filter(monk_skills::Column::MonkId.is_in(ids.to_owned()))
             .all(db_connection)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::FindByIds).with_cause(error))?;
+            .map_err(|error| DomainError::from(ActorErrorKind::GetByIds).with_cause(error))?;
 
         let all_monk_skills: Vec<Skill> = skills::Entity::find()
             .inner_join(monk_skills::Entity)
@@ -237,7 +237,7 @@ impl MonkRepository {
             .order_by_asc(skills::Column::Id)
             .all(db_connection)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::FindByIds).with_cause(error))?
+            .map_err(|error| DomainError::from(ActorErrorKind::GetByIds).with_cause(error))?
             .into_iter()
             .map(SkillMapper::to_domain_entity)
             .collect();
@@ -282,7 +282,7 @@ impl MonkRepository {
         let assigned_cyclic_process_output_resources = resources::Entity::find()
             .inner_join(cyclic_process_resources::Entity)
             .filter(
-                cyclic_process_resources::Column::CylicProcessId
+                cyclic_process_resources::Column::CyclicProcessId
                     .eq(assigned_cyclic_process_model.id),
             )
             .all(db_connection)

@@ -101,7 +101,7 @@ impl UserRepository {
         let all_surroundings_source_process_output_resource_assignments =
             cyclic_process_resources::Entity::find()
                 .filter(
-                    cyclic_process_resources::Column::CylicProcessId
+                    cyclic_process_resources::Column::CyclicProcessId
                         .is_in(all_surroundings_source_process_ids.clone()),
                 )
                 .all(connection)
@@ -114,7 +114,7 @@ impl UserRepository {
             resources::Entity::find()
                 .inner_join(cyclic_process_resources::Entity)
                 .filter(
-                    cyclic_process_resources::Column::CylicProcessId
+                    cyclic_process_resources::Column::CyclicProcessId
                         .is_in(all_surroundings_source_process_ids),
                 )
                 .all(connection)
@@ -134,7 +134,7 @@ impl UserRepository {
                         all_surroundings_source_process_output_resource_assignments
                             .iter()
                             .filter(|resource_assignment_model| {
-                                resource_assignment_model.cylic_process_id
+                                resource_assignment_model.cyclic_process_id
                                     == surroundings_source_process_model.id
                             })
                             .map(|resource_assignment_model| resource_assignment_model.resource_id)

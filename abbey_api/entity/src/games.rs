@@ -40,7 +40,7 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Surroundings,
-    #[sea_orm(has_one = "super::user_games::Entity")]
+    #[sea_orm(has_many = "super::user_games::Entity")]
     UserGames,
 }
 

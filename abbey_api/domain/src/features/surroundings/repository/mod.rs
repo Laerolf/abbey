@@ -50,7 +50,7 @@ impl SurroundingsRepository {
 
         let all_source_output_resource_assignments = cyclic_process_resources::Entity::find()
             .filter(
-                cyclic_process_resources::Column::CylicProcessId.is_in(source_process_ids.clone()),
+                cyclic_process_resources::Column::CyclicProcessId.is_in(source_process_ids.clone()),
             )
             .all(db_connection)
             .await
@@ -86,7 +86,7 @@ impl SurroundingsRepository {
                 let output_resource_ids: Vec<i32> = all_source_output_resource_assignments
                     .iter()
                     .filter(|source_output_resource_assignment_model| {
-                        source_output_resource_assignment_model.cylic_process_id
+                        source_output_resource_assignment_model.cyclic_process_id
                             == cyclic_process_model.id
                     })
                     .map(|source_output_resource_assignment_model| {

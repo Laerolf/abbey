@@ -17,8 +17,6 @@ export default function useLocale(namespace?: string) {
     return t(`${namespace ? `${namespace}.` : ''}${key}`, context || {})
   }
 
-
-
   return {
     translate: t,
     translateInScope,

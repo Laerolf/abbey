@@ -169,6 +169,11 @@ impl Process for CyclicProcess {
         &self.elapsed
     }
 
+    /// Returns the [Actors][Vec<ActorKind>] that was assigned to this [`CyclicProcess`].
+    fn assigned_actors(&self) -> &Vec<ActorKind> {
+        &self.assigned_people
+    }
+
     /// Starts this [`CyclicProcess`].
     fn start(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {
         if self.status != Status::New {

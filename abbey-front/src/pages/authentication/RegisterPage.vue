@@ -11,7 +11,7 @@ import { useAuthStore } from '@/stores/authStore'
 import useTranslations from '@/composables/useLocale'
 import useNotifications from '@/composables/useNotifications'
 
-const { translateInScope } = useTranslations('pages.userRegistration')
+const { translateInScope } = useTranslations('pages.registration')
 
 useHead({
   title: computed(() => translateInScope('title')),
