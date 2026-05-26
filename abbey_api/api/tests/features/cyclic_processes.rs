@@ -77,8 +77,8 @@ pub mod start_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -257,8 +257,8 @@ pub mod start_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -381,8 +381,8 @@ pub mod pause_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -523,8 +523,8 @@ pub mod pause_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -653,8 +653,8 @@ pub mod assign_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -791,8 +791,8 @@ pub mod assign_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -888,8 +888,8 @@ pub mod assign_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -998,8 +998,8 @@ pub mod assign_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 

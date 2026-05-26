@@ -3,11 +3,12 @@ use sea_orm::{ConnectionTrait, DatabaseTransaction};
 use crate::{
     features::{
         game::{
-            domain::Game, error::GameErrorKind, forms::GameCreationForm, repository::GameRepository,
+            domain::Game, error::GameErrorKind, forms::GameCreationForm, mapper::GameMapper,
+            repository::GameRepository,
         },
-        monastery::service::MonasteryService,
-        player::service::PlayerService,
-        surroundings::service::SurroundingsService,
+        monastery::service::{MonasteryQueryService, MonasteryService},
+        player::service::{PlayerQueryService, PlayerService},
+        surroundings::service::{SurroundingsQueryService, SurroundingsService},
     },
     shared::{DomainElement, error::DomainError},
 };
@@ -103,5 +104,73 @@ impl GameService {
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
         Ok(related_game)
+    }
+}
+
+/// Represents a query service for [`Games`][Game].
+#[derive(Clone)]
+pub struct GameQueryService {
+    repository: GameRepository,
+    player_query_service: PlayerQueryService,
+    monastery_query_service: MonasteryQueryService,
+    surroundings_query_service: SurroundingsQueryService,
+}
+
+impl GameQueryService {
+    /// Creates a new [`GameQueryService`].
+    pub fn new(
+        repository: GameRepository,
+        player_query_service: PlayerQueryService,
+        monastery_query_service: MonasteryQueryService,
+        surroundings_query_service: SurroundingsQueryService,
+    ) -> Self {
+        Self {
+            repository,
+            player_query_service,
+            monastery_query_service,
+            surroundings_query_service,
+        }
+    }
+
+    /// Gets a [`Game`] for the provided ID.
+    pub async fn get_by_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Game, DomainError<GameErrorKind>> {
+        let model = self
+            .repository
+            .find_by_id(id, db_connection)
+            .await?
+            .ok_or_else(|| DomainError::from(GameErrorKind::GetById))?;
+
+        let player = self
+            .player_query_service
+            .get_by_id(&model.player_id, db_connection)
+            .await
+            .map_err(|error| DomainError::from(GameErrorKind::PlayerNotFound).with_cause(error))?;
+
+        let monastery = self
+            .monastery_query_service
+            .get_by_id(&model.monastery_id, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error)
+            })?;
+
+        let surroundings = self
+            .surroundings_query_service
+            .get_by_id(&model.surroundings_id, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(GameErrorKind::SurroundingsNotFound).with_cause(error)
+            })?;
+
+        Ok(GameMapper::to_domain_entity(
+            model,
+            player,
+            monastery,
+            surroundings,
+        ))
     }
 }

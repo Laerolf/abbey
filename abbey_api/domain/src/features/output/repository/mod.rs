@@ -35,6 +35,21 @@ impl ResourceRepository {
         Ok(all_resources)
     }
 
+    /// Gets the [`Resources`][Vec<resources::Model>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: Vec<i32>,
+        db_connection: &C,
+    ) -> Result<Vec<resources::Model>, DomainError<ResourceErrorKind>> {
+        resources::Entity::find()
+            .filter(resources::Column::Id.is_in(ids))
+            .distinct()
+            .order_by_asc(resources::Column::Id)
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ResourceErrorKind::GetByIds).with_cause(error))
+    }
+
     /// Finds a [Resource] by its name.
     pub async fn find_by_name<C: ConnectionTrait>(
         &self,

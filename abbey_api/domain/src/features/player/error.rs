@@ -6,13 +6,13 @@ use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
 pub enum PlayerErrorKind {
-    /// Failed to create a new [Player][`crate::features::player::domain::Player`].
+    /// Failed to create a new Player.
     Creation,
-    /// Failed to find a [Player][`crate::features::player::domain::Player`] by its ID.
+    /// Failed to find a Player by its ID.
     FindById,
-    /// Failed to get a [Player][`crate::features::player::domain::Player`] by its ID.
+    /// Failed to get a Player by its ID.
     GetById,
-    /// Failed to update a [Player][`crate::features::player::domain::Player`].
+    /// Failed to update a Player.
     Update,
     Unknown,
 }

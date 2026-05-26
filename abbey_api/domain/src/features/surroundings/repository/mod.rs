@@ -40,7 +40,7 @@ impl SurroundingsRepository {
             .all(db_connection)
             .await
             .map_err(|error| {
-                DomainError::from(SurroundingsErrorKind::FindAllSources).with_cause(error)
+                DomainError::from(SurroundingsErrorKind::GetAllSources).with_cause(error)
             })?;
 
         let source_process_ids: Vec<i32> = source_models
@@ -79,7 +79,7 @@ impl SurroundingsRepository {
             .all(db_connection)
             .await
             .map_err(|error| {
-                DomainError::from(SurroundingsErrorKind::FindAllSources).with_cause(error)
+                DomainError::from(SurroundingsErrorKind::GetAllSources).with_cause(error)
             })?
             .into_iter()
             .map(|cyclic_process_model| {
@@ -117,7 +117,7 @@ impl SurroundingsRepository {
                     .find(|cyclic_process_model| {
                         source_model.cyclic_process_id == cyclic_process_model.id().unwrap()
                     })
-                    .ok_or(DomainError::from(SurroundingsErrorKind::FindAllSources))?;
+                    .ok_or(DomainError::from(SurroundingsErrorKind::GetAllSources))?;
 
                 Ok(SourceMapper::to_domain_entity(
                     source_model,
@@ -127,8 +127,35 @@ impl SurroundingsRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         SurroundingsMapper::to_domain_entity(surroundings_model, sources).map_err(|error| {
-            DomainError::from(SurroundingsErrorKind::FindAllSources).with_cause(error)
+            DomainError::from(SurroundingsErrorKind::GetAllSources).with_cause(error)
         })
+    }
+
+    /// Finds a [Surroundings][`surroundings::Model`] by its ID.
+    pub async fn find_by_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<surroundings::Model>, DomainError<SurroundingsErrorKind>> {
+        surroundings::Entity::find_by_id(*id)
+            .one(db_connection)
+            .await
+            .map_err(|error| DomainError::from(SurroundingsErrorKind::FindById).with_cause(error))
+    }
+
+    /// Get all [Sources][Vec<>] for a Surroundings ID.
+    pub async fn get_all_sources_by_surroundings_id<C: ConnectionTrait>(
+        &self,
+        surroundings_id: &i32,
+        db_connection: &C,
+    ) -> Result<Vec<surroundings_sources::Model>, DomainError<SurroundingsErrorKind>> {
+        surroundings_sources::Entity::find()
+            .filter(surroundings_sources::Column::SurroundingsId.eq(*surroundings_id))
+            .all(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(SurroundingsErrorKind::GetAllSources).with_cause(error)
+            })
     }
 
     /// Finds a [Surroundings] by its ID and with all its related entities.

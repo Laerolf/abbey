@@ -6,12 +6,16 @@ use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
 pub enum MonasteryErrorKind {
-    /// Failed to create a new [Monastery][`crate::features::monastery::domain::Monastery`].
+    /// Failed to create a new Monastery.
     Creation,
+    /// Failed to restore a Monastery.
+    Restore,
     /// The Monks of a Monastery are missing.
     MissingMonks,
-    /// Failed to find a [Monastery][`crate::features::monastery::domain::Monastery`] with the provided ID.
+    /// Failed to find a Monastery with the provided ID.
     FindById,
+    /// Failed to get a Monastery with the provided ID.
+    GetById,
     /// Failed to find all Monks for a Monastery.
     GetAllMonks,
     /// The Monastery has not been persisted yet.
@@ -20,24 +24,28 @@ pub enum MonasteryErrorKind {
 }
 
 impl DomainErrorKind for MonasteryErrorKind {
-    /// Gets the locale code of a [`MonasteryError`].
+    /// Gets the locale code of a [`MonasteryErrorKind`].
     fn code(&self) -> String {
         match self {
             Self::Creation => "error.monastery.creation".to_string(),
+            Self::Restore => "error.monastery.restore".to_string(),
             Self::MissingMonks => "error.monastery.missing_monks".to_string(),
             Self::FindById => "error.monastery.find_by_id".to_string(),
+            Self::GetById => "error.monastery.get_by_id".to_string(),
             Self::GetAllMonks => "error.monastery.get_all_monks".to_string(),
             Self::NotPersistedYet => "error.monastery.not_persisted_yet".to_string(),
             Self::Unknown => "error.monastery.unknown".to_string(),
         }
     }
 
-    /// Gets the message of a [`MonasteryError`].
+    /// Gets the message of a [`MonasteryErrorKind`].
     fn message(&self) -> String {
         match self {
-            Self::Creation => "Failed to create a new monastery.".to_string(),
+            Self::Creation => "Failed to create a new Monastery.".to_string(),
+            Self::Restore => "Failed to create a Monastery.".to_string(),
             Self::MissingMonks => "The Monks of a Monastery are missing.".to_string(),
-            Self::FindById => "Failed to find a monastery with the provided ID.".to_string(),
+            Self::FindById => "Failed to find a Monastery with the provided ID.".to_string(),
+            Self::GetById => "Failed to get a Monastery with the provided ID.".to_string(),
             Self::GetAllMonks => "Failed to find all Monks for a Monastery.".to_string(),
             Self::NotPersistedYet => "The Monastery has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),

@@ -69,6 +69,18 @@ impl GameRepository {
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))
     }
 
+    /// Finds a [`Game`][games::Model] by its ID.
+    pub async fn find_by_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<games::Model>, DomainError<GameErrorKind>> {
+        games::Entity::find_by_id(*id)
+            .one(db_connection)
+            .await
+            .map_err(|error| DomainError::from(GameErrorKind::FindById).with_cause(error))
+    }
+
     /// Finds a [Game] by its ID and with all its related entities.
     pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,

@@ -10,6 +10,8 @@ pub enum ResourceErrorKind {
     Creation,
     /// Failed to get all Resources.
     GetAll,
+    /// Failed to get Resources with the provided IDs.
+    GetByIds,
     /// Failed to find a Resource by its name.
     FindByName,
     /// The Resource has not been persisted yet.
@@ -23,6 +25,7 @@ impl DomainErrorKind for ResourceErrorKind {
         match self {
             Self::Creation => "error.resource.creation".to_string(),
             Self::GetAll => "error.resource.get_all".to_string(),
+            Self::GetByIds => "error.resource.get_by_ids".to_string(),
             Self::FindByName => "error.resource.find_by_name".to_string(),
             Self::NotPersistedYet => "error.resource.not_persisted_yet".to_string(),
             Self::Unknown => "error.resource.unknown".to_string(),
@@ -34,6 +37,7 @@ impl DomainErrorKind for ResourceErrorKind {
         match self {
             Self::Creation => "Failed to create a new Resource.".to_string(),
             Self::GetAll => "Failed to get all Resources.".to_string(),
+            Self::GetByIds => "Failed to get Resources with the provided IDs.".to_string(),
             Self::FindByName => "Failed to find a Resource by its name.".to_string(),
             Self::NotPersistedYet => "The Resource has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),

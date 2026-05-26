@@ -150,25 +150,29 @@ impl CyclicProcessRepository {
         CyclicProcessMapper::to_domain_entity(process_model, process_resources, Vec::new())
     }
 
-    /// Finds a [`CyclicProcess`] by its ID.
+    /// Finds a [`CyclicProcess`][cyclic_processes::Model] by its ID.
     pub async fn find_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
         db_connection: &C,
-    ) -> Result<Option<CyclicProcess>, DomainError<ProcessErrorKind>> {
-        let Some(process_model) = cyclic_processes::Entity::find_by_id(*id)
+    ) -> Result<Option<cyclic_processes::Model>, DomainError<ProcessErrorKind>> {
+        cyclic_processes::Entity::find_by_id(*id)
             .one(db_connection)
             .await
-            .map_err(|error| DomainError::from(ProcessErrorKind::FindById).with_cause(error))?
-        else {
-            return Ok(None);
-        };
+            .map_err(|error| DomainError::from(ProcessErrorKind::FindById).with_cause(error))
+    }
 
-        Ok(Some(CyclicProcessMapper::to_domain_entity(
-            process_model,
-            Vec::new(),
-            Vec::new(),
-        )?))
+    /// Gets the [`CyclicProcesses`][Vec<cyclic_processes::Model>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<cyclic_processes::Model>, DomainError<ProcessErrorKind>> {
+        cyclic_processes::Entity::find()
+            .filter(cyclic_processes::Column::Id.is_in(ids.to_vec()))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::GetByIds).with_cause(error))
     }
 
     /// Gets a [`CyclicProcess`] with all its related elements for the provided ID.
@@ -251,6 +255,32 @@ impl CyclicProcessRepository {
             self.get_relations_for_game(cyclic_process_model, game_id, db_connection)
                 .await?,
         ))
+    }
+
+    /// Gets the [`Resource Assignments`][Vec<cyclic_process_resources::Model>] for the provided CyclicProcess ID.
+    pub async fn get_resource_assignments_by_cyclic_process_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Vec<cyclic_process_resources::Model>, DomainError<ProcessErrorKind>> {
+        cyclic_process_resources::Entity::find()
+            .filter(cyclic_process_resources::Column::CyclicProcessId.eq(*id))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::GetAllResources).with_cause(error))
+    }
+
+    /// Gets the [`Resource Assignments`][Vec<cyclic_process_resources::Model>] for the provided CyclicProcess IDs.
+    pub async fn get_resource_assignments_by_cyclic_process_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<cyclic_process_resources::Model>, DomainError<ProcessErrorKind>> {
+        cyclic_process_resources::Entity::find()
+            .filter(cyclic_process_resources::Column::CyclicProcessId.is_in(ids.to_vec()))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::GetAllResources).with_cause(error))
     }
 
     /// Gets a [`CyclicProcess`] with its related entities for the provided ID and Game ID.

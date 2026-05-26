@@ -64,8 +64,8 @@ async fn get_session_game(
     session_token: SessionToken,
 ) -> Result<Json<GameDto>, AppError> {
     let game = context
-        .game_service
-        .get_by_id_with_relations(
+        .game_query_service
+        .get_by_id(
             &session_token
                 .game_id()
                 .ok_or(DomainError::from(GameErrorKind::GetById))?,

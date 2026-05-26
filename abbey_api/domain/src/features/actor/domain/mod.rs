@@ -73,3 +73,24 @@ pub trait Actor: Send {
     /// Unassigns a [Process][ProcessKind] from an [`Actor`].
     fn unassign_process(&mut self);
 }
+
+/// Represents a link between a [`Process`][ProcessKind] and an [`Actor`][ActorKind].
+pub struct ProcessActorLink {
+    process_id: i32,
+    actor: ActorKind,
+}
+
+impl ProcessActorLink {
+    /// Creates a [`ProcessActorLink`] from the provided Process ID and Actor.
+    pub fn from(process_id: i32, actor: ActorKind) -> Self {
+        Self { process_id, actor }
+    }
+
+    pub fn process_id(&self) -> &i32 {
+        &self.process_id
+    }
+
+    pub fn actor(&self) -> &ActorKind {
+        &self.actor
+    }
+}

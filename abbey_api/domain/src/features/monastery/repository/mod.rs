@@ -117,6 +117,18 @@ impl MonasteryRepository {
             .map_err(|error| DomainError::from(MonasteryErrorKind::GetAllMonks).with_cause(error))
     }
 
+    /// Finds a [`Monastery`][monasteries::Model] by its ID.
+    pub async fn find_by_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<monasteries::Model>, DomainError<MonasteryErrorKind>> {
+        monasteries::Entity::find_by_id(*id)
+            .one(db_connection)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::FindById).with_cause(error))
+    }
+
     /// Finds a [`Monastery`] by its ID.
     pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,

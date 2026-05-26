@@ -18,6 +18,8 @@ pub enum ProcessErrorKind {
     FindById,
     /// Failed to get a Process with the provided ID.
     GetById,
+    /// Failed to get the Processes with the provided IDs.
+    GetByIds,
     /// Failed to find a Process with the provided ID and Game ID.
     FindByIdForGame,
     /// Failed to find the Actors of a Process.
@@ -53,6 +55,7 @@ impl DomainErrorKind for ProcessErrorKind {
             Self::GetAllResources => "error.process.get_all_resources".to_string(),
             Self::FindById => "error.process.find_by_id".to_string(),
             Self::GetById => "error.process.get_by_id".to_string(),
+            Self::GetByIds => "error.process.get_by_ids".to_string(),
             Self::FindByIdForGame => "error.process.find_by_id_for_game".to_string(),
             Self::FindActors => "error.process.find_actors".to_string(),
             Self::NotFound => "error.process.not_found".to_string(),
@@ -77,6 +80,7 @@ impl DomainErrorKind for ProcessErrorKind {
             Self::GetAllResources => "Failed to get all the resources of a process.".to_string(),
             Self::FindById => "Failed to find a process with the provided ID.".to_string(),
             Self::GetById => "Failed to get a process with the provided ID.".to_string(),
+            Self::GetByIds => "Failed to get the processes with the provided IDs.".to_string(),
             Self::FindByIdForGame => {
                 "Failed to find a process with the provided ID and Game ID.".to_string()
             }

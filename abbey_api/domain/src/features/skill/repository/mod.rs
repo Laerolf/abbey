@@ -54,6 +54,21 @@ impl SkillRepository {
         Ok(Some(SkillMapper::to_domain_entity(skill_model)))
     }
 
+    /// Gets all [`Skills`][Vec<skills::Model>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: Vec<i32>,
+        db_connection: &C,
+    ) -> Result<Vec<skills::Model>, DomainError<SkillErrorKind>> {
+        skills::Entity::find()
+            .filter(skills::Column::Id.is_in(ids))
+            .distinct()
+            .order_by_asc(skills::Column::Id)
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(SkillErrorKind::GetByIds).with_cause(error))
+    }
+
     /// Finds [`Skills`][Vec<Skill>] by their names.
     pub async fn find_many_by_name<C: ConnectionTrait>(
         &self,

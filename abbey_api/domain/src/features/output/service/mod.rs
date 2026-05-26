@@ -1,10 +1,11 @@
-use sea_orm::DatabaseTransaction;
+use sea_orm::{ConnectionTrait, DatabaseTransaction};
 
 use crate::{
     features::output::{
         domain::resource::{Category, Resource},
         error::ResourceErrorKind,
         forms::ResourceCreationForm,
+        mapper::ResourceMapper,
         repository::ResourceRepository,
     },
     shared::error::DomainError,
@@ -50,5 +51,33 @@ impl ResourceService {
             .create(creation_form, db_transaction)
             .await
             .map_err(|error| DomainError::from(ResourceErrorKind::Creation).with_cause(error))
+    }
+}
+
+/// Represents a query service for [`Resources`][Resource].
+#[derive(Clone)]
+pub struct ResourceQueryService {
+    repository: ResourceRepository,
+}
+
+impl ResourceQueryService {
+    /// Creates a new [``].
+    pub fn new(repository: ResourceRepository) -> Self {
+        Self { repository }
+    }
+
+    /// Gets the [`Resources`][Vec<Resource>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: Vec<i32>,
+        db_connection: &C,
+    ) -> Result<Vec<Resource>, DomainError<ResourceErrorKind>> {
+        Ok(self
+            .repository
+            .get_by_ids(ids, db_connection)
+            .await?
+            .into_iter()
+            .map(ResourceMapper::to_domain_entity)
+            .collect())
     }
 }

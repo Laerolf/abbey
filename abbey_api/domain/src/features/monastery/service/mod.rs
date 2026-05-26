@@ -1,11 +1,15 @@
-use sea_orm::DatabaseTransaction;
+use sea_orm::{ConnectionTrait, DatabaseTransaction};
 
 use crate::{
     features::{
-        actor::{domain::monk::Monk, forms::MonkCreationForm, service::MonkService},
+        actor::{
+            domain::monk::Monk,
+            forms::MonkCreationForm,
+            service::{MonkQueryService, MonkService},
+        },
         monastery::{
             domain::Monastery, error::MonasteryErrorKind, forms::MonasteryCreationForm,
-            repository::MonasteryRepository,
+            mapper::MonasteryMapper, repository::MonasteryRepository,
         },
         skill::{domain::Skill, service::SkillService},
     },
@@ -73,5 +77,46 @@ impl MonasteryService {
             .create(MonasteryCreationForm::new(monks), db_transaction)
             .await
             .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))
+    }
+}
+
+/// Represents a query service for [`Monasteries`][Monastery].
+#[derive(Clone)]
+pub struct MonasteryQueryService {
+    repository: MonasteryRepository,
+    monk_query_service: MonkQueryService,
+}
+
+impl MonasteryQueryService {
+    /// Creates a new [`MonasteryQueryService`].
+    pub fn new(repository: MonasteryRepository, monk_query_service: MonkQueryService) -> Self {
+        Self {
+            repository,
+            monk_query_service,
+        }
+    }
+
+    /// Finds a [`Monastery`] with the provided ID.
+    pub async fn get_by_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Monastery, DomainError<MonasteryErrorKind>> {
+        let model = self
+            .repository
+            .find_by_id(id, db_connection)
+            .await?
+            .ok_or_else(|| DomainError::from(MonasteryErrorKind::GetById))?;
+
+        let monks = self
+            .monk_query_service
+            .get_all_by_monastery_id(&model.id, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(MonasteryErrorKind::GetAllMonks).with_cause(error)
+            })?;
+
+        MonasteryMapper::to_domain_entity(model, monks)
+            .map_err(|error| DomainError::from(MonasteryErrorKind::Restore).with_cause(error))
     }
 }

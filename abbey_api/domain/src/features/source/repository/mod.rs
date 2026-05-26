@@ -1,6 +1,7 @@
 use entity::{cyclic_process_resources, cyclic_processes, resources, sources};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
+    QueryOrder,
 };
 
 use crate::{
@@ -53,6 +54,20 @@ impl SourceRepository {
         .map_err(|error| DomainError::from(SourceErrorKind::ProcessNotFound).with_cause(error))?;
 
         Ok(SourceMapper::to_domain_entity(source_model, source_process))
+    }
+
+    /// Gets [`Sources`][Vec<sources::Model>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<sources::Model>, DomainError<SourceErrorKind>> {
+        sources::Entity::find()
+            .filter(sources::Column::Id.is_in(ids.to_vec()))
+            .order_by_asc(sources::Column::Id)
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(SourceErrorKind::GetByIds).with_cause(error))
     }
 
     /// Finds a [`Source`] by its ID.

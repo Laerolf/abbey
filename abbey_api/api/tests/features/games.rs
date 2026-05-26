@@ -16,7 +16,6 @@ use domain::{
 use serde_json::json;
 use serial_test::serial;
 use tower_cookies::cookie::time::Duration;
-use tracing::debug;
 
 use crate::shared::{
     TestApp,
@@ -147,8 +146,8 @@ pub async fn test_get_session_game_returns_200_after_a_process_was_assigned_to_a
 
     let game = app
         .context
-        .game_service
-        .get_by_id_with_relations(&game_id, db_connection)
+        .game_query_service
+        .get_by_id(&game_id, db_connection)
         .await
         .expect("Failed to get the test game.");
 
@@ -201,8 +200,6 @@ pub async fn test_get_session_game_returns_200_after_a_process_was_assigned_to_a
         .iter()
         .map(|actor_dto| actor_dto.id())
         .collect();
-
-    debug!("TEST\n{:?}", first_source_cyclic_process_dto);
 
     assert_eq!(first_5_monk_ids, actual_assigned_monk_ids);
 }

@@ -5,6 +5,7 @@ use sea_orm::{
 
 use crate::{
     features::{
+        actor::error::ActorErrorKind,
         output::mapper::ResourceMapper,
         player::{
             domain::Player, error::PlayerErrorKind, forms::PlayerCreationForm, mapper::PlayerMapper,
@@ -58,21 +59,29 @@ impl PlayerRepository {
         ))
     }
 
-    /// Finds a [`Player`] by its ID.
+    /// Finds a [`Player`][players::Model] for the provided ID.
     pub async fn find_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
         db_connection: &C,
-    ) -> Result<Option<Player>, DomainError<PlayerErrorKind>> {
-        let Some(player_model) = players::Entity::find_by_id(*id)
+    ) -> Result<Option<players::Model>, DomainError<PlayerErrorKind>> {
+        players::Entity::find_by_id(*id)
             .one(db_connection)
             .await
-            .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))?
-        else {
-            return Ok(None);
-        };
+            .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))
+    }
 
-        Ok(Some(PlayerMapper::to_domain_entity(player_model, None)))
+    /// Finds [`Players`][Vec<players::Model>] for the provided Process IDs.
+    pub async fn find_by_process_ids<C: ConnectionTrait>(
+        &self,
+        process_ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<players::Model>, DomainError<ActorErrorKind>> {
+        players::Entity::find()
+            .filter(players::Column::AssignedProcessId.is_in(process_ids.to_vec()))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::FindByProcessIds).with_cause(error))
     }
 
     /// Finds a [`Player`] by its ID and with all its related assigned process.
