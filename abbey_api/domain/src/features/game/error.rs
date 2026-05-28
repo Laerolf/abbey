@@ -6,7 +6,7 @@ use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
 pub enum GameErrorKind {
-    /// Failed to create a new [Game][`crate::features::game::domain::Game`].
+    /// Failed to create a new Game.
     Creation,
     /// Failed to find the Player of a Game.
     PlayerNotFound,
@@ -14,17 +14,19 @@ pub enum GameErrorKind {
     MonasteryNotFound,
     /// Failed to find the Surroundings of a Game.
     SurroundingsNotFound,
-    /// Failed to find a [Game][`crate::features::game::domain::Game`] by its ID.
+    /// Failed to find a Game by its ID.
     FindById,
-    /// Failed to get a [Game][`crate::features::game::domain::Game`] by its ID.
+    /// Failed to get a Game by its ID.
     GetById,
+    /// Failed to get the Games for the provided IDs.
+    GetByIds,
     /// The Game has not been persisted yet.
     NotPersistedYet,
     Unknown,
 }
 
 impl DomainErrorKind for GameErrorKind {
-    /// Gets the locale code of a [`GameError`].
+    /// Gets the locale code of a [`GameErrorKind`].
     fn code(&self) -> String {
         match self {
             Self::Creation => "error.game.creation".to_string(),
@@ -33,20 +35,22 @@ impl DomainErrorKind for GameErrorKind {
             Self::SurroundingsNotFound => "error.game.surroundings_not_found".to_string(),
             Self::FindById => "error.game.find_by_id".to_string(),
             Self::GetById => "error.game.get_by_id".to_string(),
+            Self::GetByIds => "error.game.get_by_ids".to_string(),
             Self::NotPersistedYet => "error.game.not_persisted_yet".to_string(),
             Self::Unknown => "error.game.unknown".to_string(),
         }
     }
 
-    /// Gets the message of a [`GameError`].
+    /// Gets the message of a [`GameErrorKind`].
     fn message(&self) -> String {
         match self {
-            Self::Creation => "Failed to create a new game.".to_string(),
-            Self::PlayerNotFound => "Failed to find the player of a game.".to_string(),
-            Self::MonasteryNotFound => "Failed to find the monastery of a game.".to_string(),
-            Self::SurroundingsNotFound => "Failed to find the surroundings of a game.".to_string(),
-            Self::FindById => "Failed to find a game by its ID.".to_string(),
-            Self::GetById => "Failed to get a game by its ID.".to_string(),
+            Self::Creation => "Failed to create a new Game.".to_string(),
+            Self::PlayerNotFound => "Failed to find the Player of a Game.".to_string(),
+            Self::MonasteryNotFound => "Failed to find the Monastery of a Game.".to_string(),
+            Self::SurroundingsNotFound => "Failed to find the Surroundings of a Game.".to_string(),
+            Self::FindById => "Failed to find a Game by its ID.".to_string(),
+            Self::GetById => "Failed to get a Game by its ID.".to_string(),
+            Self::GetByIds => "Failed to get the Games for the provided IDs.".to_string(),
             Self::NotPersistedYet => "The Game has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }

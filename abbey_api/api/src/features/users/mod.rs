@@ -49,8 +49,8 @@ async fn get_session_user(
     session_token: SessionToken,
 ) -> Result<Json<UserDto>, AppError> {
     let user = context
-        .user_service
-        .get_by_id_with_relations(session_token.user_id(), context.db_connection())
+        .user_query_service
+        .get_by_id(session_token.user_id(), context.db_connection())
         .await
         .inspect_err(|error| {
             error!(?error);

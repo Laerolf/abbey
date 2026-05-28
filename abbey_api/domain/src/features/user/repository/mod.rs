@@ -332,6 +332,34 @@ impl UserRepository {
         Ok(result)
     }
 
+    /// Finds a [`User`][users::Model] by its ID.
+    pub async fn find_by_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<users::Model>, DomainError<UserErrorKind>> {
+        users::Entity::find()
+            .filter(users::Column::Id.eq(*id))
+            .one(db_connection)
+            .await
+            .map_err(|error| DomainError::from(UserErrorKind::FindById).with_cause(error))
+    }
+
+    /// Gets the [`User Games`][user_games::Model] for the provided User ID.
+    pub async fn get_user_games_by_user_id<C: ConnectionTrait>(
+        &self,
+        user_id: &i32,
+        db_connection: &C,
+    ) -> Result<Vec<user_games::Model>, DomainError<UserErrorKind>> {
+        user_games::Entity::find()
+            .filter(user_games::Column::UserId.eq(*user_id))
+            .all(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(UserErrorKind::GetAllGamesByUserId).with_cause(error)
+            })
+    }
+
     /// Finds a [`User`] by its ID.
     pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,

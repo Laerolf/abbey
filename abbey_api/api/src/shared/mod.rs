@@ -45,7 +45,10 @@ use domain::{
             repository::SurroundingsRepository,
             service::{SurroundingsQueryService, SurroundingsService},
         },
-        user::{repository::UserRepository, service::UserService},
+        user::{
+            repository::UserRepository,
+            service::{UserQueryService, UserService},
+        },
     },
     shared::error::{DomainError, DomainErrorKind},
 };
@@ -64,6 +67,7 @@ pub struct ApiContext<C: ConnectionTrait> {
     pub catalog_service: CatalogService,
 
     pub game_query_service: GameQueryService,
+    pub user_query_service: UserQueryService,
 }
 
 impl<C: ConnectionTrait> ApiContext<C> {
@@ -115,7 +119,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
         let catalog_service =
             CatalogService::new(skill_repository.clone(), resource_repository.clone());
 
-        let user_service = UserService::new(user_repository, game_service.clone());
+        let user_service = UserService::new(user_repository.clone(), game_service.clone());
         let authentication_service =
             AuthenticationService::new(refresh_token_repository, user_service.clone());
 
@@ -155,6 +159,8 @@ impl<C: ConnectionTrait> ApiContext<C> {
             surroundings_query_service,
         );
 
+        let user_query_service = UserQueryService::new(user_repository, game_query_service.clone());
+
         Self {
             db_connection,
             authentication_service,
@@ -165,6 +171,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
             process_assignment_service,
             catalog_service,
             game_query_service,
+            user_query_service,
         }
     }
 
@@ -224,6 +231,7 @@ impl<C: ConnectionTrait> Clone for ApiContext<C> {
             process_assignment_service: self.process_assignment_service.clone(),
             catalog_service: self.catalog_service.clone(),
             game_query_service: self.game_query_service.clone(),
+            user_query_service: self.user_query_service.clone(),
         }
     }
 }

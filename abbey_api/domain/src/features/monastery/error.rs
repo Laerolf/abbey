@@ -16,6 +16,8 @@ pub enum MonasteryErrorKind {
     FindById,
     /// Failed to get a Monastery with the provided ID.
     GetById,
+    /// Failed to get the Monasteries with the provided IDs.
+    GetByIds,
     /// Failed to find all Monks for a Monastery.
     GetAllMonks,
     /// The Monastery has not been persisted yet.
@@ -32,6 +34,7 @@ impl DomainErrorKind for MonasteryErrorKind {
             Self::MissingMonks => "error.monastery.missing_monks".to_string(),
             Self::FindById => "error.monastery.find_by_id".to_string(),
             Self::GetById => "error.monastery.get_by_id".to_string(),
+            Self::GetByIds => "error.monastery.get_by_ids".to_string(),
             Self::GetAllMonks => "error.monastery.get_all_monks".to_string(),
             Self::NotPersistedYet => "error.monastery.not_persisted_yet".to_string(),
             Self::Unknown => "error.monastery.unknown".to_string(),
@@ -46,6 +49,7 @@ impl DomainErrorKind for MonasteryErrorKind {
             Self::MissingMonks => "The Monks of a Monastery are missing.".to_string(),
             Self::FindById => "Failed to find a Monastery with the provided ID.".to_string(),
             Self::GetById => "Failed to get a Monastery with the provided ID.".to_string(),
+            Self::GetByIds => "Failed to get the Monasteries with the provided IDs.".to_string(),
             Self::GetAllMonks => "Failed to find all Monks for a Monastery.".to_string(),
             Self::NotPersistedYet => "The Monastery has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),

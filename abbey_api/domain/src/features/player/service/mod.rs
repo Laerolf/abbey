@@ -8,7 +8,7 @@ use crate::{
         },
         process::{domain::ProcessKind, service::cyclic_process::CyclicProcessQueryService},
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents a service handling the [`Player`] topic.
@@ -89,5 +89,40 @@ impl PlayerQueryService {
         };
 
         Ok(PlayerMapper::to_domain_entity(model, process))
+    }
+
+    /// Gets the [`Player`][Vec<Player>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<Player>, DomainError<PlayerErrorKind>> {
+        let models = self.repository.get_by_ids(ids, db_connection).await?;
+
+        let process_ids: Vec<i32> = models
+            .iter()
+            .filter_map(|player| player.assigned_process_id)
+            .collect();
+
+        let processes = self
+            .cyclic_process_query_service
+            .get_by_ids(&process_ids, db_connection)
+            .await
+            .map_err(|error| DomainError::from(PlayerErrorKind::GetByIds).with_cause(error))?;
+
+        let players = models
+            .into_iter()
+            .map(|player_model| {
+                let assigned_process: Option<ProcessKind> = processes
+                    .iter()
+                    .find(|process| process.id().ok() == player_model.assigned_process_id)
+                    .cloned()
+                    .map(ProcessKind::CyclicProcess);
+
+                PlayerMapper::to_domain_entity(player_model, assigned_process)
+            })
+            .collect();
+
+        Ok(players)
     }
 }

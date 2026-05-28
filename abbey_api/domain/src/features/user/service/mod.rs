@@ -3,11 +3,15 @@ use tracing::info;
 
 use crate::{
     features::{
-        game::{forms::UserGameCreationForm, service::GameService},
+        game::{
+            forms::UserGameCreationForm,
+            service::{GameQueryService, GameService},
+        },
         user::{
             domain::User,
             error::{UserCreationErrorKind, UserErrorKind},
             forms::UserCreationForm,
+            mapper::UserMapper,
             repository::UserRepository,
         },
     },
@@ -134,5 +138,53 @@ impl UserService {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::AssignGame))
                     .with_cause(error)
             })
+    }
+}
+
+/// Represents a query service for [`Users`][User].
+#[derive(Clone)]
+pub struct UserQueryService {
+    repository: UserRepository,
+    game_query_service: GameQueryService,
+}
+
+impl UserQueryService {
+    /// Creates a new [`UserQueryService`].
+    pub fn new(repository: UserRepository, game_query_service: GameQueryService) -> Self {
+        Self {
+            repository,
+            game_query_service,
+        }
+    }
+
+    /// Gets a [`User`] with the provided ID.
+    pub async fn get_by_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<User, DomainError<UserErrorKind>> {
+        let model = self
+            .repository
+            .find_by_id(id, db_connection)
+            .await?
+            .ok_or_else(|| DomainError::from(UserErrorKind::FindById))?;
+
+        let user_game_ids: Vec<i32> = self
+            .repository
+            .get_user_games_by_user_id(&model.id, db_connection)
+            .await?
+            .into_iter()
+            .map(|model| model.game_id)
+            .collect();
+
+        let games = self
+            .game_query_service
+            .get_by_ids(&user_game_ids, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(UserErrorKind::GetAllGamesByUserId).with_cause(error)
+            })?;
+
+        Ok(UserMapper::to_domain_entity(model, games))
     }
 }

@@ -129,6 +129,45 @@ impl MonasteryRepository {
             .map_err(|error| DomainError::from(MonasteryErrorKind::FindById).with_cause(error))
     }
 
+    /// Gets the [`Monasteries`][Vec<monasteries::Model>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<monasteries::Model>, DomainError<MonasteryErrorKind>> {
+        monasteries::Entity::find()
+            .filter(monasteries::Column::Id.is_in(ids.to_vec()))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::GetByIds).with_cause(error))
+    }
+
+    /// Gets all [`Monastery Monks`][Vec<monastery_monks::Model>] for the provided Monastery ID.
+    pub async fn get_monastery_monks_by_monastery_id<C: ConnectionTrait>(
+        &self,
+        monastery_id: &i32,
+        db_connection: &C,
+    ) -> Result<Vec<monastery_monks::Model>, DomainError<MonasteryErrorKind>> {
+        monastery_monks::Entity::find()
+            .filter(monastery_monks::Column::MonasteryId.eq(*monastery_id))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::GetAllMonks).with_cause(error))
+    }
+
+    /// Gets all [`Monastery Monks`][Vec<monastery_monks::Model>] for the provided Monastery IDs.
+    pub async fn get_monastery_monks_by_monastery_ids<C: ConnectionTrait>(
+        &self,
+        monastery_ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<monastery_monks::Model>, DomainError<MonasteryErrorKind>> {
+        monastery_monks::Entity::find()
+            .filter(monastery_monks::Column::MonasteryId.is_in(monastery_ids.to_vec()))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::GetAllMonks).with_cause(error))
+    }
+
     /// Finds a [`Monastery`] by its ID.
     pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,

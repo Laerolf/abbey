@@ -108,9 +108,17 @@ impl MonasteryQueryService {
             .await?
             .ok_or_else(|| DomainError::from(MonasteryErrorKind::GetById))?;
 
+        let monk_ids: Vec<i32> = self
+            .repository
+            .get_monastery_monks_by_monastery_id(&model.id, db_connection)
+            .await?
+            .into_iter()
+            .map(|model| model.monk_id)
+            .collect();
+
         let monks = self
             .monk_query_service
-            .get_all_by_monastery_id(&model.id, db_connection)
+            .get_by_ids(&monk_ids, db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(MonasteryErrorKind::GetAllMonks).with_cause(error)
@@ -118,5 +126,56 @@ impl MonasteryQueryService {
 
         MonasteryMapper::to_domain_entity(model, monks)
             .map_err(|error| DomainError::from(MonasteryErrorKind::Restore).with_cause(error))
+    }
+
+    /// Gets the [`Monasteries`][Vec<Monastery>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<Monastery>, DomainError<MonasteryErrorKind>> {
+        let models = self.repository.get_by_ids(ids, db_connection).await?;
+
+        let ids: Vec<i32> = models.iter().map(|model| model.id).collect();
+
+        let all_monastery_monks = self
+            .repository
+            .get_monastery_monks_by_monastery_ids(&ids, db_connection)
+            .await?;
+
+        let monk_ids: Vec<i32> = all_monastery_monks
+            .iter()
+            .map(|model| model.monk_id)
+            .collect();
+
+        let all_monks = self
+            .monk_query_service
+            .get_by_ids(&monk_ids, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(MonasteryErrorKind::GetAllMonks).with_cause(error)
+            })?;
+
+        models
+            .into_iter()
+            .map(|monastery_model| {
+                let monk_ids: Vec<i32> = all_monastery_monks
+                    .iter()
+                    .filter(|model| model.monastery_id == monastery_model.id)
+                    .map(|model| &model.monk_id)
+                    .cloned()
+                    .collect();
+
+                let monks = all_monks
+                    .iter()
+                    .filter(|monk| monk.id().is_ok_and(|monk_id| monk_ids.contains(&monk_id)))
+                    .cloned()
+                    .collect();
+
+                MonasteryMapper::to_domain_entity(monastery_model, monks).map_err(|error| {
+                    DomainError::from(MonasteryErrorKind::Restore).with_cause(error)
+                })
+            })
+            .collect::<Result<Vec<Monastery>, DomainError<MonasteryErrorKind>>>()
     }
 }

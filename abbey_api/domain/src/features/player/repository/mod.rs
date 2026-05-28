@@ -71,6 +71,19 @@ impl PlayerRepository {
             .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))
     }
 
+    /// Finds [`Players`][Vec<players::Model>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<players::Model>, DomainError<PlayerErrorKind>> {
+        players::Entity::find()
+            .filter(players::Column::Id.is_in(ids.to_vec()))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(PlayerErrorKind::GetByIds).with_cause(error))
+    }
+
     /// Finds [`Players`][Vec<players::Model>] for the provided Process IDs.
     pub async fn find_by_process_ids<C: ConnectionTrait>(
         &self,

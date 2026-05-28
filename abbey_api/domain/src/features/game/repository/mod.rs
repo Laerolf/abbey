@@ -81,6 +81,19 @@ impl GameRepository {
             .map_err(|error| DomainError::from(GameErrorKind::FindById).with_cause(error))
     }
 
+    /// Gets the [`Games`][Vec<games::Model>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<games::Model>, DomainError<GameErrorKind>> {
+        games::Entity::find()
+            .filter(games::Column::Id.is_in(ids.to_vec()))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(GameErrorKind::GetById).with_cause(error))
+    }
+
     /// Finds a [Game] by its ID and with all its related entities.
     pub async fn find_by_id_with_relations<C: ConnectionTrait>(
         &self,

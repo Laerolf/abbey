@@ -147,4 +147,58 @@ impl SurroundingsQueryService {
         SurroundingsMapper::to_domain_entity(model, sources)
             .map_err(|error| DomainError::from(SurroundingsErrorKind::GetById).with_cause(error))
     }
+
+    /// Gets a all the [`Surroundings`][Vec<Surroundings>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<Surroundings>, DomainError<SurroundingsErrorKind>> {
+        let models = self.repository.get_by_ids(ids, db_connection).await?;
+
+        let ids: Vec<i32> = models.iter().map(|model| model.id).collect();
+
+        let surrounding_sources = self
+            .repository
+            .get_all_sources_by_surroundings_ids(&ids, db_connection)
+            .await?;
+
+        let all_source_ids: Vec<i32> = surrounding_sources
+            .iter()
+            .map(|source_model| source_model.id)
+            .collect();
+
+        let all_sources = self
+            .source_query_service
+            .get_by_ids(&all_source_ids, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(SurroundingsErrorKind::GetAllSources).with_cause(error)
+            })?;
+
+        models
+            .into_iter()
+            .map(|surroundings_model| {
+                let source_ids: Vec<i32> = surrounding_sources
+                    .iter()
+                    .filter(|model| model.surroundings_id == surroundings_model.id)
+                    .map(|model| model.source_id)
+                    .collect();
+
+                let sources = all_sources
+                    .iter()
+                    .filter(|source| {
+                        source
+                            .id()
+                            .is_ok_and(|source_id| source_ids.contains(&source_id))
+                    })
+                    .cloned()
+                    .collect();
+
+                SurroundingsMapper::to_domain_entity(surroundings_model, sources).map_err(|error| {
+                    DomainError::from(SurroundingsErrorKind::GetById).with_cause(error)
+                })
+            })
+            .collect::<Result<Vec<Surroundings>, DomainError<SurroundingsErrorKind>>>()
+    }
 }

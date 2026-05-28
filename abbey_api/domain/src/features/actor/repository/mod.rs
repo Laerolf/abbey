@@ -1,7 +1,4 @@
-use entity::{
-    cyclic_process_resources, cyclic_processes, monastery_monks, monk_skills, monks, resources,
-    skills,
-};
+use entity::{cyclic_process_resources, cyclic_processes, monk_skills, monks, resources, skills};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
     QueryOrder, QuerySelect, Statement,
@@ -11,7 +8,7 @@ use crate::{
     features::{
         actor::{
             domain::{ActorKind, monk::Monk},
-            error::{ActorErrorKind, MonkErrorKind},
+            error::ActorErrorKind,
             forms::MonkCreationForm,
             mapper::MonkMapper,
         },
@@ -215,21 +212,17 @@ impl MonkRepository {
         )?))
     }
 
-    /// Gets all [`Monk models`][Vec<monks::Model>] for the provided Monastery ID.
-    pub async fn get_all_by_monastery_id<C: ConnectionTrait>(
+    /// Gets the [`Monks`][Vec<monks::Model>] for the provided Monk IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
-        monastery_id: &i32,
+        ids: &[i32],
         db_connection: &C,
     ) -> Result<Vec<monks::Model>, DomainError<ActorErrorKind>> {
         monks::Entity::find()
-            .inner_join(monastery_monks::Entity)
-            .filter(monastery_monks::Column::MonasteryId.eq(*monastery_id))
+            .filter(monks::Column::Id.is_in(ids.to_vec()))
             .all(db_connection)
             .await
-            .map_err(|error| {
-                DomainError::from(ActorErrorKind::Monks(MonkErrorKind::GetAllByMonasteryId))
-                    .with_cause(error)
-            })
+            .map_err(|error| DomainError::from(ActorErrorKind::GetByIds).with_cause(error))
     }
 
     /// Gets all [`Monk skills`][Vec<monk_skills::Model>] for the provided Monk IDs.

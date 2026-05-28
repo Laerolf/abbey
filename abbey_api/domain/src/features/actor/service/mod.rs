@@ -79,25 +79,17 @@ impl MonkQueryService {
         }
     }
 
-    /// Gets all [`Monks`][Vec<Monk>] for the provided Monastery ID.
-    pub async fn get_all_by_monastery_id<C: ConnectionTrait>(
+    /// Gets the [`Monks`][Vec<Monk>] for the IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
-        monastery_id: &i32,
+        ids: &[i32],
         db_connection: &C,
     ) -> Result<Vec<Monk>, DomainError<ActorErrorKind>> {
-        let models = self
-            .repository
-            .get_all_by_monastery_id(monastery_id, db_connection)
-            .await?;
-
-        let ids: Vec<i32> = models
-            .iter()
-            .map(|monastery_monk_model| monastery_monk_model.id)
-            .collect();
+        let models = self.repository.get_by_ids(ids, db_connection).await?;
 
         let skill_assignments = self
             .repository
-            .get_skill_assignments_by_monk_ids(&ids, db_connection)
+            .get_skill_assignments_by_monk_ids(ids, db_connection)
             .await?;
 
         let skill_ids: Vec<i32> = skill_assignments

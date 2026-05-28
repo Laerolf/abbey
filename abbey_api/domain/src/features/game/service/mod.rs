@@ -173,4 +173,83 @@ impl GameQueryService {
             surroundings,
         ))
     }
+
+    /// Gets the [`Games`][Vec<Game>] for the provided IDs.
+    pub async fn get_by_ids<C: ConnectionTrait>(
+        &self,
+        ids: &[i32],
+        db_connection: &C,
+    ) -> Result<Vec<Game>, DomainError<GameErrorKind>> {
+        let models = self.repository.get_by_ids(ids, db_connection).await?;
+
+        let player_ids: Vec<i32> = models.iter().map(|model| model.player_id).collect();
+
+        let players = self
+            .player_query_service
+            .get_by_ids(&player_ids, db_connection)
+            .await
+            .map_err(|error| DomainError::from(GameErrorKind::PlayerNotFound).with_cause(error))?;
+
+        let monastery_ids: Vec<i32> = models.iter().map(|model| model.monastery_id).collect();
+
+        let monasteries = self
+            .monastery_query_service
+            .get_by_ids(&monastery_ids, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(GameErrorKind::MonasteryNotFound).with_cause(error)
+            })?;
+
+        let surroundings_ids: Vec<i32> = models.iter().map(|model| model.surroundings_id).collect();
+
+        let all_surroundings = self
+            .surroundings_query_service
+            .get_by_ids(&surroundings_ids, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(GameErrorKind::SurroundingsNotFound).with_cause(error)
+            })?;
+
+        models
+            .into_iter()
+            .map(|game_model| {
+                let player = players
+                    .iter()
+                    .find(|model| {
+                        model
+                            .id()
+                            .is_ok_and(|player_id| game_model.player_id == player_id)
+                    })
+                    .cloned()
+                    .ok_or_else(|| DomainError::from(GameErrorKind::PlayerNotFound))?;
+
+                let monastery = monasteries
+                    .iter()
+                    .find(|model| {
+                        model
+                            .id()
+                            .is_ok_and(|monastery_id| game_model.monastery_id == monastery_id)
+                    })
+                    .cloned()
+                    .ok_or_else(|| DomainError::from(GameErrorKind::MonasteryNotFound))?;
+
+                let surroundings = all_surroundings
+                    .iter()
+                    .find(|model| {
+                        model.id().is_ok_and(|surroundings_id| {
+                            game_model.surroundings_id == surroundings_id
+                        })
+                    })
+                    .cloned()
+                    .ok_or_else(|| DomainError::from(GameErrorKind::SurroundingsNotFound))?;
+
+                Ok(GameMapper::to_domain_entity(
+                    game_model,
+                    player,
+                    monastery,
+                    surroundings,
+                ))
+            })
+            .collect::<Result<Vec<Game>, DomainError<GameErrorKind>>>()
+    }
 }
