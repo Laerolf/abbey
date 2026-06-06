@@ -1,24 +1,20 @@
 use entity::{cyclic_process_resources, cyclic_processes, monk_skills, monks, resources, skills};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QueryOrder, QuerySelect, Statement,
+    ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Statement,
 };
+use tracing::warn;
 
 use crate::{
     features::{
         actor::{
             domain::{ActorKind, monk::Monk},
             error::ActorErrorKind,
-            forms::MonkCreationForm,
             mapper::MonkMapper,
         },
         output::mapper::ResourceMapper,
         process::{domain::ProcessKind, mapper::cyclic_process::CyclicProcessMapper},
-        skill::{
-            domain::Skill,
-            forms::MonkSkillCreationForm,
-            mapper::{MonkSkillMapper, SkillMapper},
-        },
+        skill::{domain::Skill, mapper::SkillMapper},
     },
     shared::{DomainElement, error::DomainError},
 };
@@ -253,6 +249,23 @@ impl MonkRepository {
             .map_err(|error| DomainError::from(ActorErrorKind::FindByProcessIds).with_cause(error))
     }
 
+    /// Assigns Skills to Monks.
+    pub async fn assign_skills<C: ConnectionTrait>(
+        &self,
+        models: Vec<monk_skills::ActiveModel>,
+        db_connection: &C,
+    ) -> Result<Vec<monk_skills::Model>, DomainError<ActorErrorKind>> {
+        if models.is_empty() {
+            warn!("Skipping this insertion because no models were provided.");
+            return Ok(vec![]);
+        }
+
+        monk_skills::Entity::insert_many(models)
+            .exec_with_returning_many(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))
+    }
+
     /// Finds [`Monks`][Monk] by their ID.
     pub async fn find_many_by_ids_with_relations<C: ConnectionTrait>(
         &self,
@@ -391,80 +404,21 @@ impl MonkRepository {
             .ok_or_else(|| DomainError::from(ActorErrorKind::GetById))
     }
 
-    /// Creates a new [`Monk`] and persists it in the database.
-    pub async fn create(
+    /// Creates many [`Monk`][`Vec<monks::Model>`]s and persists them in the database.
+    pub async fn create_many<C: ConnectionTrait>(
         &self,
-        form: MonkCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Monk, DomainError<ActorErrorKind>> {
-        let monk_model: monks::Model = MonkMapper::to_new_active_model(form.clone())
-            .insert(db_transaction)
-            .await
-            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))?;
-
-        if !form.skill_ids.is_empty() {
-            let skill_active_models: Vec<monk_skills::ActiveModel> = form
-                .skill_ids
-                .into_iter()
-                .map(|skill_id| {
-                    MonkSkillMapper::to_new_active_model(MonkSkillCreationForm::new(
-                        monk_model.id,
-                        skill_id,
-                    ))
-                })
-                .collect();
-
-            monk_skills::Entity::insert_many(skill_active_models)
-                .exec(db_transaction)
-                .await
-                .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))?;
+        models: Vec<monks::ActiveModel>,
+        db_connection: &C,
+    ) -> Result<Vec<monks::Model>, DomainError<ActorErrorKind>> {
+        if models.is_empty() {
+            warn!("Skipping this insertion because no models were provided.");
+            return Ok(vec![]);
         }
 
-        self.find_by_id_with_relations(&monk_model.id, db_transaction)
-            .await?
-            .ok_or(DomainError::from(ActorErrorKind::Creation))
-    }
-
-    /// Creates many [`Monk`][`Vec<Monk>`]s and persists them in the database.
-    pub async fn create_many(
-        &self,
-        forms: Vec<MonkCreationForm>,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Vec<Monk>, DomainError<ActorErrorKind>> {
-        let new_monk_active_models: Vec<monks::ActiveModel> = forms
-            .clone()
-            .into_iter()
-            .map(MonkMapper::to_new_active_model)
-            .collect();
-
-        let monk_models = monks::Entity::insert_many(new_monk_active_models)
-            .exec_with_returning_many(db_transaction)
+        monks::Entity::insert_many(models)
+            .exec_with_returning_many(db_connection)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))?;
-
-        let new_active_skill_models: Vec<monk_skills::ActiveModel> = monk_models
-            .iter()
-            .zip(forms)
-            .flat_map(|(monk, form)| {
-                form.skill_ids.into_iter().map(|skill_id| {
-                    MonkSkillMapper::to_new_active_model(MonkSkillCreationForm::new(
-                        monk.id, skill_id,
-                    ))
-                })
-            })
-            .collect();
-
-        if !new_active_skill_models.is_empty() {
-            monk_skills::Entity::insert_many(new_active_skill_models)
-                .exec(db_transaction)
-                .await
-                .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))?;
-        }
-
-        let monk_ids: Vec<i32> = monk_models.iter().map(|monk_model| monk_model.id).collect();
-
-        self.find_many_by_ids_with_relations(&monk_ids, db_transaction)
-            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))
     }
 
     pub async fn update(

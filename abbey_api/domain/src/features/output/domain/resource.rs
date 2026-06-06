@@ -16,7 +16,7 @@ pub enum Category {
 
 impl Category {
     /// Returns a string representing the [Category].
-    fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Self::Material => "material",
         }

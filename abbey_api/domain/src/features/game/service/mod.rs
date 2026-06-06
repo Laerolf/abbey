@@ -1,4 +1,5 @@
-use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use sea_orm::ConnectionTrait;
+use time::Duration;
 
 use crate::{
     features::{
@@ -6,88 +7,85 @@ use crate::{
             domain::Game, error::GameErrorKind, forms::GameCreationForm, mapper::GameMapper,
             repository::GameRepository,
         },
-        monastery::service::{MonasteryQueryService, MonasteryService},
-        player::service::{PlayerQueryService, PlayerService},
-        surroundings::service::{SurroundingsQueryService, SurroundingsService},
+        monastery::service::{MonasteryCommandService, MonasteryQueryService},
+        output::{domain::resource::Category, forms::ResourceBlueprint},
+        player::{
+            forms::PlayerCreationForm,
+            service::{PlayerCommandService, PlayerQueryService},
+        },
+        surroundings::{
+            forms::{
+                SurroundingsBlueprint, SurroundingsCyclicProcessSourceBlueprint,
+                SurroundingsSourceBlueprint,
+            },
+            service::{SurroundingsCommandService, SurroundingsQueryService},
+        },
     },
     shared::{DomainElement, error::DomainError},
 };
 
-/// Represents a service handling the [Game] topic.
+/// Represents a command service for [`Games`][Game].
 #[derive(Clone)]
-pub struct GameService {
+pub struct GameCommandService {
     repository: GameRepository,
-    monastery_service: MonasteryService,
-    player_service: PlayerService,
-    surroundings_service: SurroundingsService,
+    game_query_service: GameQueryService,
+    monastery_command_service: MonasteryCommandService,
+    player_command_service: PlayerCommandService,
+    surroundings_command_service: SurroundingsCommandService,
 }
 
-impl GameService {
-    /// Creates a new [`GameService`].
+impl GameCommandService {
+    /// Creates a new [`GameCommandService`].
     pub fn new(
         repository: GameRepository,
-        monastery_service: MonasteryService,
-        player_service: PlayerService,
-        surroundings_service: SurroundingsService,
+        game_query_service: GameQueryService,
+        monastery_command_service: MonasteryCommandService,
+        player_command_service: PlayerCommandService,
+        surroundings_command_service: SurroundingsCommandService,
     ) -> Self {
         Self {
             repository,
-            monastery_service,
-            player_service,
-            surroundings_service,
+            game_query_service,
+            monastery_command_service,
+            player_command_service,
+            surroundings_command_service,
         }
     }
 
-    /// Finds a [`Game`] by its ID.
-    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
-        &self,
-        id: &i32,
-        db_connection: &C,
-    ) -> Result<Option<Game>, DomainError<GameErrorKind>> {
-        let game = self
-            .repository
-            .find_by_id_with_relations(id, db_connection)
-            .await
-            .map_err(|error| {
-                DomainError::from(GameErrorKind::FindById)
-                    .with_cause(error)
-                    .with_context("ID", id.to_string())
-            })?;
-
-        Ok(game)
-    }
-
-    /// Gets a [`Game`] by its ID.
-    pub async fn get_by_id_with_relations<C: ConnectionTrait>(
-        &self,
-        id: &i32,
-        db_connection: &C,
-    ) -> Result<Game, DomainError<GameErrorKind>> {
-        self.find_by_id_with_relations(id, db_connection)
-            .await?
-            .ok_or(DomainError::from(GameErrorKind::GetById))
-    }
-
     /// Creates a new [Game].
-    pub async fn create_game(
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        db_transaction: &DatabaseTransaction,
+        db_connection: &C,
     ) -> Result<Game, DomainError<GameErrorKind>> {
         let monastery = self
-            .monastery_service
-            .create_monastery(db_transaction)
+            .monastery_command_service
+            .create(db_connection)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
+
+        let player_creation_form = PlayerCreationForm::new();
 
         let player = self
-            .player_service
-            .create_player(db_transaction)
+            .player_command_service
+            .create(player_creation_form, db_connection)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
+        let surroundings_blueprint =
+            SurroundingsBlueprint::new(vec![SurroundingsSourceBlueprint::new(
+                "the_beach",
+                SurroundingsCyclicProcessSourceBlueprint::new(
+                    vec![
+                        ResourceBlueprint::new("sand", Category::Material),
+                        ResourceBlueprint::new("seaweed", Category::Material),
+                    ],
+                    Duration::minutes(1),
+                ),
+            )]);
+
         let surroundings = self
-            .surroundings_service
-            .create_surroundings(db_transaction)
+            .surroundings_command_service
+            .create(surroundings_blueprint, db_connection)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
@@ -97,13 +95,18 @@ impl GameService {
             surroundings.id().unwrap(),
         );
 
-        let related_game = self
+        let new_model = self
             .repository
-            .create(creation_form, db_transaction)
+            .create(
+                GameMapper::to_new_active_model(creation_form),
+                db_connection,
+            )
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
-        Ok(related_game)
+        self.game_query_service
+            .get_by_id(&new_model.id, db_connection)
+            .await
     }
 }
 

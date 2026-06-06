@@ -1,11 +1,13 @@
-use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use entity::users;
+use sea_orm::ConnectionTrait;
 use tracing::info;
 
 use crate::{
     features::{
         game::{
             forms::UserGameCreationForm,
-            service::{GameQueryService, GameService},
+            mapper::UserGameMapper,
+            service::{GameCommandService, GameQueryService},
         },
         user::{
             domain::User,
@@ -18,101 +20,38 @@ use crate::{
     shared::{DomainElement, error::DomainError},
 };
 
-/// Represents a service handling the [`User`] topic.
+/// Represents a command service for [`Users`][User].
 #[derive(Clone)]
-pub struct UserService {
+pub struct UserCommandService {
     repository: UserRepository,
-    game_service: GameService,
+    user_query_service: UserQueryService,
+    game_command_service: GameCommandService,
 }
 
-impl UserService {
-    pub fn new(repository: UserRepository, game_service: GameService) -> Self {
+impl UserCommandService {
+    /// Creates a new [`UserCommandService`].
+    pub fn new(
+        repository: UserRepository,
+        user_query_service: UserQueryService,
+        game_command_service: GameCommandService,
+    ) -> Self {
         Self {
             repository,
-            game_service,
+            user_query_service,
+            game_command_service,
         }
     }
 
-    /// Finds a [`User`] by its ID.
-    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
+    /// Assigns a Game to a [`User`].
+    pub async fn assign_game<C: ConnectionTrait>(
         &self,
-        id: &i32,
+        creation_form: UserGameCreationForm,
         db_connection: &C,
-    ) -> Result<Option<User>, DomainError<UserErrorKind>> {
+    ) -> Result<(), DomainError<UserErrorKind>> {
         self.repository
-            .find_by_id_with_relations(id, db_connection)
-            .await
-            .map_err(|error| DomainError::from(UserErrorKind::FindById).with_cause(error))
-    }
-
-    /// Get a [`User`] by its ID.
-    pub async fn get_by_id_with_relations<C: ConnectionTrait>(
-        &self,
-        id: &i32,
-        db_connection: &C,
-    ) -> Result<User, DomainError<UserErrorKind>> {
-        self.repository
-            .find_by_id_with_relations(id, db_connection)
-            .await
-            .map_err(|error| DomainError::from(UserErrorKind::FindById).with_cause(error))?
-            .ok_or_else(|| DomainError::from(UserErrorKind::GetById))
-    }
-
-    /// Finds a [`User`] by its email.
-    pub async fn find_by_email<C: ConnectionTrait>(
-        &self,
-        email: impl Into<&String>,
-        db_connection: &C,
-    ) -> Result<Option<User>, DomainError<UserErrorKind>> {
-        self.repository
-            .find_by_email_with_relations(email.into(), db_connection)
-            .await
-            .map_err(|error| DomainError::from(UserErrorKind::FindByEmail).with_cause(error))
-    }
-
-    /// Creates a new [`User`].
-    pub async fn create_user(
-        &self,
-        creation_form: UserCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<User, DomainError<UserErrorKind>> {
-        if (self
-            .repository
-            .find_by_email_with_relations(&creation_form.email, db_transaction)
-            .await
-            .map_err(|error| {
-                DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
-                    .with_cause(error)
-            })?)
-        .is_some()
-        {
-            return Err(DomainError::from(UserErrorKind::Creation(
-                UserCreationErrorKind::EmailAlreadyExists(creation_form.email),
-            )));
-        }
-
-        let mut new_user = self
-            .repository
-            .create(creation_form, db_transaction)
-            .await
-            .map_err(|error| {
-                DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
-                    .with_cause(error)
-            })?;
-
-        let new_game = self
-            .game_service
-            .create_game(db_transaction)
-            .await
-            .map_err(|error| {
-                DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::CreateGame))
-                    .with_cause(error)
-            })?;
-
-        new_user = self
             .assign_game(
-                UserGameCreationForm::new(new_user.id()?, new_game.id().unwrap()),
-                db_transaction,
+                UserGameMapper::to_new_active_model(creation_form),
+                db_connection,
             )
             .await
             .map_err(|error| {
@@ -120,24 +59,65 @@ impl UserService {
                     .with_cause(error)
             })?;
 
-        info!("Created a new user.");
-
-        Ok(new_user)
+        Ok(())
     }
 
-    /// Assigns a Game to a [`User`].
-    pub async fn assign_game(
+    /// Creates a new [`User`].
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        creation_form: UserGameCreationForm,
-        db_transaction: &DatabaseTransaction,
+        creation_form: UserCreationForm,
+        db_connection: &C,
     ) -> Result<User, DomainError<UserErrorKind>> {
-        self.repository
-            .assign_game(creation_form, db_transaction)
+        if self
+            .user_query_service
+            .exists_by_email(&creation_form.email, db_connection)
             .await
             .map_err(|error| {
-                DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::AssignGame))
+                DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
                     .with_cause(error)
-            })
+            })?
+        {
+            return Err(DomainError::from(UserErrorKind::Creation(
+                UserCreationErrorKind::EmailAlreadyExists(creation_form.email),
+            )));
+        }
+
+        let new_model = self
+            .repository
+            .create(
+                UserMapper::to_new_active_model(creation_form),
+                db_connection,
+            )
+            .await
+            .map_err(|error| {
+                DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
+                    .with_cause(error)
+            })?;
+
+        let new_game = self
+            .game_command_service
+            .create(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::CreateGame))
+                    .with_cause(error)
+            })?;
+
+        self.assign_game(
+            UserGameCreationForm::new(new_model.id, new_game.id().unwrap()),
+            db_connection,
+        )
+        .await
+        .map_err(|error| {
+            DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::AssignGame))
+                .with_cause(error)
+        })?;
+
+        info!("Created a new user.");
+
+        self.user_query_service
+            .get_by_id(&new_model.id, db_connection)
+            .await
     }
 }
 
@@ -169,6 +149,43 @@ impl UserQueryService {
             .await?
             .ok_or_else(|| DomainError::from(UserErrorKind::FindById))?;
 
+        self.assemble(model, db_connection).await
+    }
+
+    /// Gets a [`User`] with the provided ID.
+    pub async fn get_by_email<C: ConnectionTrait>(
+        &self,
+        email: &String,
+        db_connection: &C,
+    ) -> Result<User, DomainError<UserErrorKind>> {
+        let model = self
+            .repository
+            .find_by_email(email, db_connection)
+            .await?
+            .ok_or_else(|| DomainError::from(UserErrorKind::FindById))?;
+
+        self.assemble(model, db_connection).await
+    }
+
+    /// Tests whether a [`User`] with the provided email exists.
+    pub async fn exists_by_email<C: ConnectionTrait>(
+        &self,
+        email: &String,
+        db_connection: &C,
+    ) -> Result<bool, DomainError<UserErrorKind>> {
+        Ok(self
+            .repository
+            .find_by_email(email, db_connection)
+            .await?
+            .is_some())
+    }
+
+    /// Puts a [`User`] together.
+    async fn assemble<C: ConnectionTrait>(
+        &self,
+        model: users::Model,
+        db_connection: &C,
+    ) -> Result<User, DomainError<UserErrorKind>> {
         let user_game_ids: Vec<i32> = self
             .repository
             .get_user_games_by_user_id(&model.id, db_connection)

@@ -61,8 +61,8 @@ async fn assign(
     Json(payload): Json<ProcessAssignmentRequest>,
 ) -> Result<Json<ProcessAssignmentDto>, AppError> {
     let game = context
-        .authentication_service
-        .get_user_session(&session_token, context.db_connection())
+        .user_session_query_service
+        .get_by_session_token(&session_token, context.db_connection())
         .await?
         .game()
         .clone()
@@ -106,8 +106,8 @@ async fn start(
     session_token: SessionToken,
 ) -> Result<Json<ProcessDto>, AppError> {
     let game_id = context
-        .authentication_service
-        .get_user_session(&session_token, context.db_connection())
+        .user_session_query_service
+        .get_by_session_token(&session_token, context.db_connection())
         .await?
         .get_game_id()?;
 
@@ -145,8 +145,8 @@ async fn pause(
     session_token: SessionToken,
 ) -> Result<Json<ProcessDto>, AppError> {
     let game_id = context
-        .authentication_service
-        .get_user_session(&session_token, context.db_connection())
+        .user_session_query_service
+        .get_by_session_token(&session_token, context.db_connection())
         .await?
         .get_game_id()?;
 

@@ -12,16 +12,16 @@ impl SkillCreationForm {
     }
 }
 
-/// Represents a [`Skill for a Monk`][entity::monk_skills::ActiveModel] creation form.
-pub struct MonkSkillCreationForm {
+/// Represents a form to assign Skills to Monks.
+pub struct MonkSkillAssignmentForm {
     /// The ID of the Monk.
     pub monk_id: i32,
     /// The ID of the Skill.
     pub skill_id: i32,
 }
 
-impl MonkSkillCreationForm {
-    /// Creates a new [`MonkSkillCreationForm`].
+impl MonkSkillAssignmentForm {
+    /// Creates a new [`MonkSkillAssignmentForm`].
     pub fn new(monk_id: i32, skill_id: i32) -> Self {
         Self { monk_id, skill_id }
     }

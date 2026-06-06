@@ -40,7 +40,7 @@ async fn get_all_skills(
     State(context): State<ApiContext<DatabaseConnection>>,
 ) -> Result<Json<Vec<SkillDto>>, AppError> {
     let all_skills = context
-        .catalog_service
+        .catalog_query_service
         .get_all_skills(context.db_connection())
         .await
         .inspect_err(|error| {
@@ -64,7 +64,7 @@ async fn get_all_resources(
     State(context): State<ApiContext<DatabaseConnection>>,
 ) -> Result<Json<Vec<ResourceDto>>, AppError> {
     let all_resources = context
-        .catalog_service
+        .catalog_query_service
         .get_all_resources(context.db_connection())
         .await
         .inspect_err(|error| {

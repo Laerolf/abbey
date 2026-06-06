@@ -1,4 +1,7 @@
-use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use std::collections::HashSet;
+
+use entity::skills;
+use sea_orm::ConnectionTrait;
 
 use crate::{
     features::skill::{
@@ -8,32 +11,69 @@ use crate::{
     shared::error::DomainError,
 };
 
-/// Represents a service handling the [`Skill`] topic.
+/// Represents a command service for [`Skills`][Skill].
 #[derive(Clone)]
-pub struct SkillService {
+pub struct SkillCommandService {
     repository: SkillRepository,
 }
 
-impl SkillService {
-    /// Creates a new [`SkillService`].
+impl SkillCommandService {
+    /// Creates a new [`SkillCommandService`].
     pub fn new(repository: SkillRepository) -> Self {
         Self { repository }
     }
 
-    /// Finds many [`Skills`][Vec<Skill>] with the provided names or creates them.
-    pub async fn find_many_by_name_or_create(
+    /// Creates many [`Skills`][Vec<Skills>].
+    pub async fn create_many<C: ConnectionTrait>(
         &self,
-        names: Vec<impl Into<String>>,
-        db_transaction: &DatabaseTransaction,
+        forms: Vec<SkillCreationForm>,
+        db_connection: &C,
     ) -> Result<Vec<Skill>, DomainError<SkillErrorKind>> {
-        let creation_forms = names
+        let model_plans: Vec<skills::ActiveModel> = forms
             .into_iter()
-            .map(|skill_name| SkillCreationForm::new(skill_name.into()))
+            .map(SkillMapper::to_new_active_model)
             .collect();
 
-        self.repository
-            .find_by_name_or_create_many(creation_forms, db_transaction)
-            .await
+        let models = self
+            .repository
+            .create_many(model_plans, db_connection)
+            .await?;
+
+        Ok(models
+            .into_iter()
+            .map(SkillMapper::to_domain_entity)
+            .collect())
+    }
+
+    /// Gets [`Skills`][Vec<Skill>] with the provided names or creates them.
+    pub async fn get_by_names_or_create<C: ConnectionTrait>(
+        &self,
+        names: &[String],
+        db_connection: &C,
+    ) -> Result<Vec<Skill>, DomainError<SkillErrorKind>> {
+        let creation_forms: Vec<SkillCreationForm> =
+            names.iter().map(SkillCreationForm::new).collect();
+
+        let existing_models = self.repository.get_by_names(names, db_connection).await?;
+
+        let found_skill_names: HashSet<String> = existing_models
+            .clone()
+            .into_iter()
+            .map(|skill| skill.name)
+            .collect();
+
+        let missing_models: Vec<SkillCreationForm> = creation_forms
+            .into_iter()
+            .filter(|form| !found_skill_names.contains(&form.name))
+            .collect();
+
+        let created_models = self.create_many(missing_models, db_connection).await?;
+
+        Ok(existing_models
+            .into_iter()
+            .map(SkillMapper::to_domain_entity)
+            .chain(created_models)
+            .collect())
     }
 }
 

@@ -1,18 +1,18 @@
-/// Represents a [`Monk`][`super::domain::monk`] creation form.
+/// Represents a Monk creation form.
 #[derive(Clone)]
 pub struct MonkCreationForm {
-    /// The name of this [`Monk`][`super::domain::monk`].
+    /// The name of the Monk to create.
     pub name: String,
-    /// The IDs of the [skills][`crate::features::skill::domain::Skill`] of this [`Monk`][`super::domain::monk`].
-    pub skill_ids: Vec<i32>,
+    /// The names of the Skills of the Monk to create.
+    pub skill_names: Vec<String>,
 }
 
 impl MonkCreationForm {
     /// Creates a new [`MonkCreationForm`].
-    pub fn new(name: impl Into<String>, skill_ids: Vec<i32>) -> Self {
+    pub fn new(name: impl Into<String>, skill_names: Vec<impl Into<String>>) -> Self {
         Self {
             name: name.into(),
-            skill_ids,
+            skill_names: skill_names.into_iter().map(|name| name.into()).collect(),
         }
     }
 }

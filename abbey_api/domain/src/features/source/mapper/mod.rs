@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 use crate::{
     features::{
         process::domain::cyclic_process::CyclicProcess,
-        source::{domain::Source, forms::SourceCreationForm},
+        source::{domain::Source, forms::SourceBlueprint},
     },
     shared::DomainElement,
 };
@@ -14,14 +14,14 @@ use crate::{
 pub struct SourceMapper;
 
 impl SourceMapper {
-    /// Maps a [`SourceCreationForm`] to a [model][`sources::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: SourceCreationForm) -> sources::ActiveModel {
+    /// Maps a [`SourceBlueprint`] to a [model][`sources::ActiveModel`] to create.
+    pub fn to_new_active_model(blueprint: SourceBlueprint) -> sources::ActiveModel {
         sources::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            name: Set(creation_form.name),
-            cyclic_process_id: Set(creation_form.process_id),
+            name: Set(blueprint.name),
+            cyclic_process_id: Set(blueprint.cyclic_process_id),
             last_claim_at: Set(None),
         }
     }

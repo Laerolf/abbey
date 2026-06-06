@@ -7,7 +7,7 @@ use time::OffsetDateTime;
 use crate::{
     features::output::{
         domain::resource::{Category, Resource},
-        forms::ResourceCreationForm,
+        forms::ResourceBlueprint,
     },
     shared::DomainElement,
 };
@@ -16,14 +16,14 @@ use crate::{
 pub struct ResourceMapper;
 
 impl ResourceMapper {
-    /// Maps a [`ResourceCreationForm`] to a [model][`resources::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: ResourceCreationForm) -> resources::ActiveModel {
+    /// Maps a [`ResourceBlueprint`] to a [model][`resources::ActiveModel`] to create.
+    pub fn to_new_active_model(blueprint: ResourceBlueprint) -> resources::ActiveModel {
         resources::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            name: Set(creation_form.name),
-            category: Set(creation_form.category_name),
+            name: Set(blueprint.name),
+            category: Set(blueprint.category.to_string()),
         }
     }
 

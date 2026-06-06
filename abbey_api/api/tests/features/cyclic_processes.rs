@@ -60,8 +60,8 @@ pub mod start_cyclic_process {
 
         let user_session = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.");
 
@@ -248,8 +248,8 @@ pub mod start_cyclic_process {
 
         let game_id: i32 = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.")
             .get_game_id()
@@ -364,8 +364,8 @@ pub mod pause_cyclic_process {
 
         let user_session = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.");
 
@@ -514,8 +514,8 @@ pub mod pause_cyclic_process {
 
         let game_id: i32 = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.")
             .get_game_id()
@@ -642,8 +642,8 @@ pub mod assign_cyclic_process {
 
         let user_session = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.");
 
@@ -780,8 +780,8 @@ pub mod assign_cyclic_process {
 
         let user_session = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.");
 
@@ -879,8 +879,8 @@ pub mod assign_cyclic_process {
 
         let game_id: i32 = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.")
             .get_game_id()
@@ -989,8 +989,8 @@ pub mod assign_cyclic_process {
 
         let game_id: i32 = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.")
             .get_game_id()

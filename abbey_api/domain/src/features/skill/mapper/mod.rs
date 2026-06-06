@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 use crate::{
     features::skill::{
         domain::Skill,
-        forms::{MonkSkillCreationForm, SkillCreationForm},
+        forms::{MonkSkillAssignmentForm, SkillCreationForm},
     },
     shared::DomainElement,
 };
@@ -50,7 +50,7 @@ pub struct MonkSkillMapper;
 
 impl MonkSkillMapper {
     /// Maps a [MonkSkillCreationForm] to a [`model`][monk_skills::ActiveModel].
-    pub fn to_new_active_model(creation_form: MonkSkillCreationForm) -> monk_skills::ActiveModel {
+    pub fn to_new_active_model(creation_form: MonkSkillAssignmentForm) -> monk_skills::ActiveModel {
         monk_skills::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),

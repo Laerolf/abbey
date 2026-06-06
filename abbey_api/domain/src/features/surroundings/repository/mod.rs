@@ -2,9 +2,8 @@ use entity::{
     cyclic_process_resources, cyclic_processes, resources, sources, surroundings,
     surroundings_sources,
 };
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
+use tracing::warn;
 
 use crate::{
     features::{
@@ -14,10 +13,7 @@ use crate::{
         },
         source::mapper::SourceMapper,
         surroundings::{
-            domain::Surroundings,
-            error::SurroundingsErrorKind,
-            forms::{SurroundingSourceCreationForm, SurroundingsCreationForm},
-            mapper::{SurroundingsMapper, SurroundingsSourceMapper},
+            domain::Surroundings, error::SurroundingsErrorKind, mapper::SurroundingsMapper,
         },
     },
     shared::{DomainElement, error::DomainError},
@@ -209,39 +205,31 @@ impl SurroundingsRepository {
     }
 
     /// Creates a new [`Surroundings`] and persists it in the database.
-    pub async fn create(
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        creation_form: SurroundingsCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Surroundings, DomainError<SurroundingsErrorKind>> {
-        let new_surroundings_model: surroundings::Model = SurroundingsMapper::to_new_active_model()
-            .insert(db_transaction)
+        model: surroundings::ActiveModel,
+        db_connection: &C,
+    ) -> Result<surroundings::Model, DomainError<SurroundingsErrorKind>> {
+        surroundings::Entity::insert(model)
+            .exec_with_returning(db_connection)
             .await
-            .map_err(|error| {
-                DomainError::from(SurroundingsErrorKind::Creation).with_cause(error)
-            })?;
+            .map_err(|error| DomainError::from(SurroundingsErrorKind::Creation).with_cause(error))
+    }
 
-        if !creation_form.source_ids.is_empty() {
-            let surroundings_sources: Vec<surroundings_sources::ActiveModel> = creation_form
-                .source_ids
-                .iter()
-                .map(|source_id| {
-                    SurroundingsSourceMapper::to_new_active_model(
-                        SurroundingSourceCreationForm::new(new_surroundings_model.id, *source_id),
-                    )
-                })
-                .collect();
-
-            surroundings_sources::Entity::insert_many(surroundings_sources)
-                .exec(db_transaction)
-                .await
-                .map_err(|error| {
-                    DomainError::from(SurroundingsErrorKind::Creation).with_cause(error)
-                })?;
+    /// Assigns Sources to a [`Surroundings`].
+    pub async fn assign_sources_to_surroundings<C: ConnectionTrait>(
+        &self,
+        models: Vec<surroundings_sources::ActiveModel>,
+        db_connection: &C,
+    ) -> Result<Vec<surroundings_sources::Model>, DomainError<SurroundingsErrorKind>> {
+        if models.is_empty() {
+            warn!("Skipping this insertion because no models were provided.");
+            return Ok(vec![]);
         }
 
-        self.find_by_id_with_relations(&new_surroundings_model.id, db_transaction)
-            .await?
-            .ok_or(DomainError::from(SurroundingsErrorKind::Creation))
+        surroundings_sources::Entity::insert_many(models)
+            .exec_with_returning_many(db_connection)
+            .await
+            .map_err(|error| DomainError::from(SurroundingsErrorKind::Creation).with_cause(error))
     }
 }

@@ -1,16 +1,12 @@
 use entity::{cyclic_process_resources, cyclic_processes, resources, sources};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QueryOrder,
-};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QueryOrder};
+use tracing::warn;
 
 use crate::{
     features::{
         output::{domain::resource::Resource, mapper::ResourceMapper},
         process::mapper::cyclic_process::CyclicProcessMapper,
-        source::{
-            domain::Source, error::SourceErrorKind, forms::SourceCreationForm, mapper::SourceMapper,
-        },
+        source::{domain::Source, error::SourceErrorKind, mapper::SourceMapper},
     },
     shared::error::DomainError,
 };
@@ -87,19 +83,20 @@ impl SourceRepository {
         Ok(Some(self.get_relations(source_model, db_connection).await?))
     }
 
-    /// Creates a [`Source`] and persists it in the database.
-    pub async fn create(
+    /// Creates [`Sources`][`Vec<sources::Model>`] and persists them in the database.
+    pub async fn create_many<C: ConnectionTrait>(
         &self,
-        creation_form: SourceCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Source, DomainError<SourceErrorKind>> {
-        let new_source_model: sources::Model = SourceMapper::to_new_active_model(creation_form)
-            .insert(db_transaction)
-            .await
-            .map_err(|error| DomainError::from(SourceErrorKind::Creation).with_cause(error))?;
+        models: Vec<sources::ActiveModel>,
+        db_connection: &C,
+    ) -> Result<Vec<sources::Model>, DomainError<SourceErrorKind>> {
+        if models.is_empty() {
+            warn!("Skipping this insertion because no models were provided.");
+            return Ok(vec![]);
+        }
 
-        self.find_by_id_with_relations(&new_source_model.id, db_transaction)
-            .await?
-            .ok_or(DomainError::from(SourceErrorKind::Creation))
+        sources::Entity::insert_many(models)
+            .exec_with_returning_many(db_connection)
+            .await
+            .map_err(|error| DomainError::from(SourceErrorKind::Creation).with_cause(error))
     }
 }

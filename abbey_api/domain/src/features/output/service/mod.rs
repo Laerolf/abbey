@@ -1,56 +1,92 @@
-use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use sea_orm::ConnectionTrait;
+use tracing::info;
 
 use crate::{
     features::output::{
-        domain::resource::{Category, Resource},
-        error::ResourceErrorKind,
-        forms::ResourceCreationForm,
-        mapper::ResourceMapper,
-        repository::ResourceRepository,
+        domain::resource::Resource, error::ResourceErrorKind, forms::ResourceBlueprint,
+        mapper::ResourceMapper, repository::ResourceRepository,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
-/// Represents a service handling the [`Resource`] topic.
+/// Represents a command service for [`Resources`][Resource].
 #[derive(Clone)]
-pub struct ResourceService {
+pub struct ResourceCommandService {
     repository: ResourceRepository,
+    resource_query_service: ResourceQueryService,
 }
 
-impl ResourceService {
-    /// Creates a new [`ResourceService`].
-    pub fn new(repository: ResourceRepository) -> Self {
-        Self { repository }
+impl ResourceCommandService {
+    /// Creates a new [`ResourceCommandService`].
+    pub fn new(
+        repository: ResourceRepository,
+        resource_query_service: ResourceQueryService,
+    ) -> Self {
+        Self {
+            repository,
+            resource_query_service,
+        }
     }
 
-    /// Finds a [`Resource`] by its name, if not found, the resource will be created.
-    pub async fn find_by_name_or_create(
+    /// Creates new [`Resources`][Vec<Resource>].
+    async fn create_resources<C: ConnectionTrait>(
         &self,
-        name: impl Into<String>,
-        category: Category,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Resource, DomainError<ResourceErrorKind>> {
-        let creation_form = ResourceCreationForm::new(name, category.to_string());
+        blueprints: Vec<ResourceBlueprint>,
+        db_connection: &C,
+    ) -> Result<Vec<Resource>, DomainError<ResourceErrorKind>> {
+        let active_models = blueprints
+            .into_iter()
+            .map(ResourceMapper::to_new_active_model)
+            .collect();
 
-        self.repository
-            .find_by_name_or_create(creation_form, db_transaction)
-            .await
-            .map_err(|error| DomainError::from(ResourceErrorKind::Creation).with_cause(error))
+        let models = self
+            .repository
+            .create_many(active_models, db_connection)
+            .await?;
+
+        info!("Created {:?} new Resources", models.len());
+
+        Ok(models
+            .into_iter()
+            .map(ResourceMapper::to_domain_entity)
+            .collect())
     }
 
-    /// Creates a new [`Resource`].
-    pub async fn create_resource(
+    /// Gets [`Resources`][Vec<Resource>] with the provided names, if not found, the resources will be created.
+    pub async fn get_or_create_many<C: ConnectionTrait>(
         &self,
-        name: impl Into<String>,
-        category: Category,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Resource, DomainError<ResourceErrorKind>> {
-        let creation_form = ResourceCreationForm::new(name, category.to_string());
+        blueprints: Vec<ResourceBlueprint>,
+        db_connection: &C,
+    ) -> Result<Vec<Resource>, DomainError<ResourceErrorKind>> {
+        let names: Vec<String> = blueprints
+            .clone()
+            .into_iter()
+            .map(|blueprint| blueprint.name)
+            .collect();
 
-        self.repository
-            .create(creation_form, db_transaction)
-            .await
-            .map_err(|error| DomainError::from(ResourceErrorKind::Creation).with_cause(error))
+        let existing_models = self
+            .resource_query_service
+            .get_by_names(&names, db_connection)
+            .await?;
+
+        let existing_names: Vec<String> = existing_models
+            .iter()
+            .map(|model| model.name().to_string())
+            .collect();
+
+        let missing_model_blueprints: Vec<ResourceBlueprint> = blueprints
+            .into_iter()
+            .filter(|blueprint| !existing_names.contains(&blueprint.name))
+            .collect();
+
+        let new_models = self
+            .create_resources(missing_model_blueprints, db_connection)
+            .await?;
+
+        let mut all_models: Vec<Resource> = existing_models.into_iter().chain(new_models).collect();
+        all_models.sort_by_key(|resource| resource.id().ok());
+
+        Ok(all_models)
     }
 }
 
@@ -61,20 +97,35 @@ pub struct ResourceQueryService {
 }
 
 impl ResourceQueryService {
-    /// Creates a new [``].
+    /// Creates a new [`ResourceQueryService`].
     pub fn new(repository: ResourceRepository) -> Self {
         Self { repository }
     }
 
-    /// Gets the [`Resources`][Vec<Resource>] for the provided IDs.
+    /// Gets the [`Resources`][Vec<Resource>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
-        ids: Vec<i32>,
+        ids: &[i32],
         db_connection: &C,
     ) -> Result<Vec<Resource>, DomainError<ResourceErrorKind>> {
         Ok(self
             .repository
             .get_by_ids(ids, db_connection)
+            .await?
+            .into_iter()
+            .map(ResourceMapper::to_domain_entity)
+            .collect())
+    }
+
+    /// Gets the [`Resources`][Vec<Resource>] with the provided IDs.
+    pub async fn get_by_names<C: ConnectionTrait>(
+        &self,
+        names: &[String],
+        db_connection: &C,
+    ) -> Result<Vec<Resource>, DomainError<ResourceErrorKind>> {
+        Ok(self
+            .repository
+            .get_by_names(names, db_connection)
             .await?
             .into_iter()
             .map(ResourceMapper::to_domain_entity)

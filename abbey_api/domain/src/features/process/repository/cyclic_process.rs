@@ -3,9 +3,10 @@ use entity::{
     skills,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QueryOrder, QuerySelect, Statement,
+    ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Statement,
 };
+use tracing::warn;
 
 use crate::{
     features::{
@@ -13,10 +14,8 @@ use crate::{
         output::{domain::resource::Resource, mapper::ResourceMapper},
         player::mapper::PlayerMapper,
         process::{
-            domain::cyclic_process::CyclicProcess,
-            error::ProcessErrorKind,
-            forms::cyclic_process::{CyclicProcessCreationForm, CyclicProcessResourceCreationForm},
-            mapper::cyclic_process::{CyclicProcessMapper, CyclicProcessResourceMapper},
+            domain::cyclic_process::CyclicProcess, error::ProcessErrorKind,
+            mapper::cyclic_process::CyclicProcessMapper,
         },
         skill::{domain::Skill, mapper::SkillMapper},
     },
@@ -296,37 +295,49 @@ impl CyclicProcessRepository {
     }
 
     /// Creates a [`CyclicProcess`] and persists it in the database.
-    pub async fn create(
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        creation_form: CyclicProcessCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
-        let new_process_model: cyclic_processes::Model =
-            CyclicProcessMapper::to_new_active_model(creation_form.clone())
-                .insert(db_transaction)
-                .await
-                .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))?;
+        model: cyclic_processes::ActiveModel,
+        db_connection: &C,
+    ) -> Result<cyclic_processes::Model, DomainError<ProcessErrorKind>> {
+        cyclic_processes::Entity::insert(model)
+            .exec_with_returning(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))
+    }
 
-        if !creation_form.output_resources_ids.is_empty() {
-            let process_resources: Vec<cyclic_process_resources::ActiveModel> = creation_form
-                .output_resources_ids
-                .iter()
-                .map(|resource_id| {
-                    CyclicProcessResourceMapper::to_new_active_model(
-                        CyclicProcessResourceCreationForm::new(new_process_model.id, *resource_id),
-                    )
-                })
-                .collect();
-
-            cyclic_process_resources::Entity::insert_many(process_resources)
-                .exec(db_transaction)
-                .await
-                .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))?;
+    /// Creates many new [`CyclicProcesses`][Vec<CyclicProcess>] and persists them in the database.
+    pub async fn create_many<C: ConnectionTrait>(
+        &self,
+        models: Vec<cyclic_processes::ActiveModel>,
+        db_connection: &C,
+    ) -> Result<Vec<cyclic_processes::Model>, DomainError<ProcessErrorKind>> {
+        if models.is_empty() {
+            warn!("Skipping this insertion because no models were provided.");
+            return Ok(vec![]);
         }
 
-        self.find_by_id_with_relations(&new_process_model.id, db_transaction)
-            .await?
-            .ok_or(DomainError::from(ProcessErrorKind::Creation))
+        cyclic_processes::Entity::insert_many(models)
+            .exec_with_returning_many(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))
+    }
+
+    /// Assigns Resources to a [`CyclicProcess`].
+    pub async fn assign_resources_to_cyclic_process<C: ConnectionTrait>(
+        &self,
+        models: Vec<cyclic_process_resources::ActiveModel>,
+        db_connection: &C,
+    ) -> Result<Vec<cyclic_process_resources::Model>, DomainError<ProcessErrorKind>> {
+        if models.is_empty() {
+            warn!("Skipping this insertion because no models were provided.");
+            return Ok(vec![]);
+        }
+
+        cyclic_process_resources::Entity::insert_many(models)
+            .exec_with_returning_many(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))
     }
 
     /// Updates a [`CyclicProcess`].

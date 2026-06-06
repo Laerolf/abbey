@@ -1,5 +1,6 @@
+use entity::{cyclic_process_resources, cyclic_processes};
 use sea_orm::{ConnectionTrait, DatabaseTransaction};
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 
 use crate::{
     features::{
@@ -8,8 +9,10 @@ use crate::{
         process::{
             domain::{Process, ProcessKind, cyclic_process::CyclicProcess},
             error::ProcessErrorKind,
-            forms::cyclic_process::CyclicProcessCreationForm,
-            mapper::cyclic_process::CyclicProcessMapper,
+            forms::cyclic_process::{
+                CyclicProcessBlueprint, CyclicProcessOutputResourceAssignmentForm,
+            },
+            mapper::cyclic_process::{CyclicProcessMapper, CyclicProcessResourceMapper},
             repository::cyclic_process::CyclicProcessRepository,
         },
     },
@@ -37,24 +40,6 @@ impl CyclicProcessService {
         self.repository
             .find_by_id_with_relations(id, db_connection)
             .await
-    }
-
-    /// Creates a new [`CyclicProcess`].
-    pub async fn create(
-        &self,
-        output_resources: Vec<Resource>,
-        cycle_interval: Duration,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
-        let creation_form = CyclicProcessCreationForm::new(
-            output_resources
-                .iter()
-                .map(|resource| resource.id().unwrap())
-                .collect(),
-            cycle_interval,
-        );
-
-        self.repository.create(creation_form, db_transaction).await
     }
 
     /// Starts a [`CyclicProcess`].
@@ -120,6 +105,72 @@ impl CyclicProcessService {
     }
 }
 
+/// Represents a command service for [`CyclicProcesses`][CyclicProcess].
+#[derive(Clone)]
+pub struct CyclicProcessCommandService {
+    repository: CyclicProcessRepository,
+    cyclic_process_query_service: CyclicProcessQueryService,
+}
+
+impl CyclicProcessCommandService {
+    /// Creates a new [`CyclicProcessCommandService`].
+    pub fn new(
+        repository: CyclicProcessRepository,
+        cyclic_process_query_service: CyclicProcessQueryService,
+    ) -> Self {
+        Self {
+            repository,
+            cyclic_process_query_service,
+        }
+    }
+
+    /// Creates new [`CyclicProcesses`][Vec<CyclicProcess>].
+    pub async fn create_many<C: ConnectionTrait>(
+        &self,
+        blueprints: Vec<CyclicProcessBlueprint>,
+        db_connection: &C,
+    ) -> Result<Vec<CyclicProcess>, DomainError<ProcessErrorKind>> {
+        let active_models: Vec<cyclic_processes::ActiveModel> = blueprints
+            .clone()
+            .into_iter()
+            .map(CyclicProcessMapper::to_new_active_model)
+            .collect::<Result<Vec<cyclic_processes::ActiveModel>, DomainError<ProcessErrorKind>>>(
+            )?;
+
+        let models = self
+            .repository
+            .create_many(active_models, db_connection)
+            .await?;
+
+        let output_resource_assignments: Vec<cyclic_process_resources::ActiveModel> = blueprints
+            .iter()
+            .zip(models.iter())
+            .flat_map(|(blueprint, model)| {
+                blueprint
+                    .output_resources_ids
+                    .iter()
+                    .map(|resource_id| {
+                        CyclicProcessResourceMapper::to_new_active_model(
+                            CyclicProcessOutputResourceAssignmentForm::new(model.id, *resource_id),
+                        )
+                    })
+                    .collect::<Vec<cyclic_process_resources::ActiveModel>>()
+            })
+            .collect();
+
+        self.repository
+            .assign_resources_to_cyclic_process(output_resource_assignments, db_connection)
+            .await?;
+
+        let ids: Vec<i32> = models.iter().map(|model| model.id).collect();
+
+        self.cyclic_process_query_service
+            .get_by_ids(&ids, db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))
+    }
+}
+
 /// Represents a query service for [`CyclicProcesses`][CyclicProcess].
 #[derive(Clone)]
 pub struct CyclicProcessQueryService {
@@ -169,7 +220,7 @@ impl CyclicProcessQueryService {
 
         let output_resources: Vec<Resource> = self
             .resource_query_service
-            .get_by_ids(output_resource_ids, db_connection)
+            .get_by_ids(&output_resource_ids, db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(ProcessErrorKind::GetAllResources).with_cause(error)
@@ -205,7 +256,7 @@ impl CyclicProcessQueryService {
 
         let output_resources: Vec<Resource> = self
             .resource_query_service
-            .get_by_ids(output_resource_ids, db_connection)
+            .get_by_ids(&output_resource_ids, db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(ProcessErrorKind::GetAllResources).with_cause(error)

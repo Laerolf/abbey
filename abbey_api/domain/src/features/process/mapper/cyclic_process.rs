@@ -14,7 +14,9 @@ use crate::{
                 cyclic_process::{CyclicProcess, CyclicProcessState},
             },
             error::ProcessErrorKind,
-            forms::cyclic_process::{CyclicProcessCreationForm, CyclicProcessResourceCreationForm},
+            forms::cyclic_process::{
+                CyclicProcessBlueprint, CyclicProcessOutputResourceAssignmentForm,
+            },
         },
     },
     shared::{DomainElement, error::DomainError},
@@ -24,18 +26,17 @@ use crate::{
 pub struct CyclicProcessMapper;
 
 impl CyclicProcessMapper {
-    /// Maps a [`CyclicProcessCreationForm`] to a [model][`cyclic_processes::ActiveModel`] to create.
+    /// Maps a [`CyclicProcessBlueprint`] to a [model][cyclic_processes::ActiveModel] to create.
     pub fn to_new_active_model(
-        creation_form: CyclicProcessCreationForm,
-    ) -> cyclic_processes::ActiveModel {
-        let duration_in_seconds: i32 = creation_form
+        blueprint: CyclicProcessBlueprint,
+    ) -> Result<cyclic_processes::ActiveModel, DomainError<ProcessErrorKind>> {
+        let duration_in_seconds: i32 = blueprint
             .cycle_interval
             .whole_seconds()
             .try_into()
-            .map_err(|_| "The duration is too large to fit in i32.")
-            .expect("Failed to convert a cyclic process duration to seconds.");
+            .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))?;
 
-        cyclic_processes::ActiveModel {
+        Ok(cyclic_processes::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
@@ -44,7 +45,7 @@ impl CyclicProcessMapper {
             started_at: NotSet,
             paused_at: NotSet,
             elapsed: Set(0),
-        }
+        })
     }
 
     /// Maps a [`CyclicProcess`] and a [`Resource`] to a [model][`cyclic_process_resources::ActiveModel`] to update.
@@ -130,7 +131,7 @@ pub struct CyclicProcessResourceMapper;
 impl CyclicProcessResourceMapper {
     /// Maps a [CyclicProcessResourceCreationForm] to a new [`model`][cyclic_process_resources::ActiveModel].
     pub fn to_new_active_model(
-        creation_form: CyclicProcessResourceCreationForm,
+        creation_form: CyclicProcessOutputResourceAssignmentForm,
     ) -> cyclic_process_resources::ActiveModel {
         cyclic_process_resources::ActiveModel {
             id: NotSet,

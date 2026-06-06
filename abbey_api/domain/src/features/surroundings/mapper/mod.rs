@@ -7,7 +7,7 @@ use crate::{
         source::domain::Source,
         surroundings::{
             domain::Surroundings, error::SurroundingsErrorKind,
-            forms::SurroundingSourceCreationForm,
+            forms::SurroundingSourceAssignmentForm,
         },
     },
     shared::{DomainElement, error::DomainError},
@@ -48,16 +48,16 @@ impl SurroundingsMapper {
 pub struct SurroundingsSourceMapper;
 
 impl SurroundingsSourceMapper {
-    /// Maps a [SurroundingSourceCreationForm] to a new [`model`][surroundings_sources::ActiveModel]
+    /// Maps a [SurroundingSourceAssignmentForm] to a new [`model`][surroundings_sources::ActiveModel]
     pub fn to_new_active_model(
-        creation_form: SurroundingSourceCreationForm,
+        form: SurroundingSourceAssignmentForm,
     ) -> surroundings_sources::ActiveModel {
         surroundings_sources::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            surroundings_id: Set(creation_form.surroundings_id),
-            source_id: Set(creation_form.source_id),
+            surroundings_id: Set(form.surroundings_id),
+            source_id: Set(form.source_id),
         }
     }
 }

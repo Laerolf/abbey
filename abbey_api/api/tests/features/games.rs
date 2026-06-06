@@ -137,8 +137,8 @@ pub async fn test_get_session_game_returns_200_after_a_process_was_assigned_to_a
 
     let game_id: i32 = app
         .context
-        .authentication_service
-        .get_user_session(test_auth_tokens.session_token(), db_connection)
+        .user_session_query_service
+        .get_by_session_token(test_auth_tokens.session_token(), db_connection)
         .await
         .expect("Failed to get the test user session.")
         .get_game_id()

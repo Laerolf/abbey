@@ -37,6 +37,10 @@ pub enum RefreshErrorKind {
     /// The RefreshToken has not been persisted yet.
     NotPersistedYet,
     FindById,
+    FindByUserId,
+    GetById,
+    GetByUserId,
+    GetByValue,
 }
 
 #[derive(Debug)]
@@ -130,6 +134,16 @@ impl DomainErrorKind for AuthenticationErrorKind {
                     "error.authentication.refresh.create_refresh_token".to_string()
                 }
                 RefreshErrorKind::FindById => "error.authentication.refresh.find_by_id".to_string(),
+                RefreshErrorKind::FindByUserId => {
+                    "error.authentication.refresh.find_by_user_id".to_string()
+                }
+                RefreshErrorKind::GetById => "error.authentication.refresh.get_by_id".to_string(),
+                RefreshErrorKind::GetByUserId => {
+                    "error.authentication.refresh.get_by_user_id".to_string()
+                }
+                RefreshErrorKind::GetByValue => {
+                    "error.authentication.refresh.get_by_value".to_string()
+                }
                 RefreshErrorKind::NotPersistedYet => {
                     "error.authentication.refresh.not_persisted_yet".to_string()
                 }
@@ -208,6 +222,18 @@ impl DomainErrorKind for AuthenticationErrorKind {
                 RefreshErrorKind::FindById => {
                     "Failed to find a refresh token with the provided ID.".to_string()
                 }
+                RefreshErrorKind::FindByUserId => {
+                    "Failed to find a RefreshToken with the provided User ID.".to_string()
+                }
+                RefreshErrorKind::GetById => {
+                    "Failed to get a RefreshToken with the provided ID.".to_string()
+                }
+                RefreshErrorKind::GetByUserId => {
+                    "Failed to get a RefreshToken with the provided User ID.".to_string()
+                }
+                RefreshErrorKind::GetByValue => {
+                    "Failed to get a RefreshToken with the provided RefreshToken value.".to_string()
+                }
                 RefreshErrorKind::NotPersistedYet => {
                     "The refresh token has not been persisted yet.".to_string()
                 }
@@ -244,6 +270,8 @@ impl DomainErrorKind for AuthenticationErrorKind {
                 RefreshErrorKind::RefreshTokenNotFound => StatusCode::UNAUTHORIZED,
                 RefreshErrorKind::UserNotFound => StatusCode::UNAUTHORIZED,
                 RefreshErrorKind::FindById => StatusCode::UNAUTHORIZED,
+                RefreshErrorKind::GetById => StatusCode::UNAUTHORIZED,
+                RefreshErrorKind::GetByValue => StatusCode::UNAUTHORIZED,
                 _ => StatusCode::INTERNAL_SERVER_ERROR,
             },
             AuthenticationErrorKind::Authenticate => StatusCode::UNAUTHORIZED,

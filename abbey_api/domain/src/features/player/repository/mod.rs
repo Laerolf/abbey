@@ -1,15 +1,11 @@
 use entity::{cyclic_process_resources, cyclic_processes, players, resources};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-};
+use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter};
 
 use crate::{
     features::{
         actor::error::ActorErrorKind,
         output::mapper::ResourceMapper,
-        player::{
-            domain::Player, error::PlayerErrorKind, forms::PlayerCreationForm, mapper::PlayerMapper,
-        },
+        player::{domain::Player, error::PlayerErrorKind, mapper::PlayerMapper},
         process::mapper::cyclic_process::CyclicProcessMapper,
     },
     shared::{DomainElement, error::DomainError},
@@ -125,20 +121,16 @@ impl PlayerRepository {
             .ok_or_else(|| DomainError::from(PlayerErrorKind::GetById))
     }
 
-    /// Creates a [`Player`] with all its relations.
-    pub async fn create(
+    /// Creates a [`Player`][players::Model].
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        form: PlayerCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Player, DomainError<PlayerErrorKind>> {
-        let new_player: players::Model = PlayerMapper::to_new_active_model(form)
-            .insert(db_transaction)
+        model: players::ActiveModel,
+        db_connection: &C,
+    ) -> Result<players::Model, DomainError<PlayerErrorKind>> {
+        players::Entity::insert(model)
+            .exec_with_returning(db_connection)
             .await
-            .map_err(|error| DomainError::from(PlayerErrorKind::Creation).with_cause(error))?;
-
-        self.find_by_id_with_relations(&new_player.id, db_transaction)
-            .await?
-            .ok_or(DomainError::from(PlayerErrorKind::Creation))
+            .map_err(|error| DomainError::from(PlayerErrorKind::Creation).with_cause(error))
     }
 
     /// Updates a [`Player`].

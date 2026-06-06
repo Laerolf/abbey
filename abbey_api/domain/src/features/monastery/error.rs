@@ -12,6 +12,8 @@ pub enum MonasteryErrorKind {
     Restore,
     /// The Monks of a Monastery are missing.
     MissingMonks,
+    /// Failed to assign Monks to a Monastery.
+    AssignMonks,
     /// Failed to find a Monastery with the provided ID.
     FindById,
     /// Failed to get a Monastery with the provided ID.
@@ -32,6 +34,7 @@ impl DomainErrorKind for MonasteryErrorKind {
             Self::Creation => "error.monastery.creation".to_string(),
             Self::Restore => "error.monastery.restore".to_string(),
             Self::MissingMonks => "error.monastery.missing_monks".to_string(),
+            Self::AssignMonks => "error.monastery.assign_monks".to_string(),
             Self::FindById => "error.monastery.find_by_id".to_string(),
             Self::GetById => "error.monastery.get_by_id".to_string(),
             Self::GetByIds => "error.monastery.get_by_ids".to_string(),
@@ -47,6 +50,7 @@ impl DomainErrorKind for MonasteryErrorKind {
             Self::Creation => "Failed to create a new Monastery.".to_string(),
             Self::Restore => "Failed to create a Monastery.".to_string(),
             Self::MissingMonks => "The Monks of a Monastery are missing.".to_string(),
+            Self::AssignMonks => "Failed to assign Monks to a Monastery.".to_string(),
             Self::FindById => "Failed to find a Monastery with the provided ID.".to_string(),
             Self::GetById => "Failed to get a Monastery with the provided ID.".to_string(),
             Self::GetByIds => "Failed to get the Monasteries with the provided IDs.".to_string(),

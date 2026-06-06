@@ -6,7 +6,11 @@ use crate::{
         auth::{
             domain::refresh_token::RefreshToken,
             dto::{LoginUserRequest, RegisterUserRequest, RegisterUserResponse},
-            error::{AuthenticationErrorKind, LoginErrorKind, RegistrationErrorKind},
+            error::{
+                AuthenticationErrorKind, LoginErrorKind,
+                RefreshErrorKind::{self},
+                RegistrationErrorKind,
+            },
             forms::{LoginForm, RefreshTokenCreationForm, RegistrationForm},
         },
         user::domain::User,
@@ -93,6 +97,24 @@ impl RefreshTokenMapper {
             value: Set(creation_form.value),
             expires_at: Set(creation_form.expires_at),
         }
+    }
+
+    /// Creates a [RefreshToken active model][refresh_tokens::ActiveModel].
+    pub fn to_active_model(
+        refresh_token: &RefreshToken,
+    ) -> Result<refresh_tokens::ActiveModel, DomainError<AuthenticationErrorKind>> {
+        Ok(refresh_tokens::ActiveModel {
+            id: Set(refresh_token.id()?),
+            created_at: Set(refresh_token.created_at().ok_or_else(|| {
+                DomainError::from(AuthenticationErrorKind::Refresh(
+                    RefreshErrorKind::NotPersistedYet,
+                ))
+            })?),
+            last_updated_at: Set(*refresh_token.last_updated_at()),
+            user_id: Set(*refresh_token.user_id()),
+            value: Set(refresh_token.value().to_string().clone()),
+            expires_at: Set(*refresh_token.expires_at()),
+        })
     }
 
     /// Maps a [model][refresh_tokens::Model] to a [`RefreshToken`].

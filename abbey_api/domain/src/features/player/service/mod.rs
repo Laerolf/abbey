@@ -1,4 +1,4 @@
-use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use sea_orm::ConnectionTrait;
 
 use crate::{
     features::{
@@ -11,37 +11,35 @@ use crate::{
     shared::{DomainElement, error::DomainError},
 };
 
-/// Represents a service handling the [`Player`] topic.
+/// Represents a command service for [`Players`][Player].
 #[derive(Clone)]
-pub struct PlayerService {
+pub struct PlayerCommandService {
     repository: PlayerRepository,
+    player_query_service: PlayerQueryService,
 }
 
-impl PlayerService {
-    /// Creates a new [`PlayerService`].
-    pub fn new(repository: PlayerRepository) -> Self {
-        Self { repository }
-    }
-
-    /// Finds a [`Player`] by its ID and all its related entities.
-    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
-        &self,
-        id: &i32,
-        db_connection: &C,
-    ) -> Result<Option<Player>, DomainError<PlayerErrorKind>> {
-        self.repository
-            .find_by_id_with_relations(id, db_connection)
-            .await
+impl PlayerCommandService {
+    /// Creates a new [`PlayerCommandService`].
+    pub fn new(repository: PlayerRepository, player_query_service: PlayerQueryService) -> Self {
+        Self {
+            repository,
+            player_query_service,
+        }
     }
 
     /// Creates a new [`Player`].
-    pub async fn create_player(
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        db_transaction: &DatabaseTransaction,
+        form: PlayerCreationForm,
+        db_connection: &C,
     ) -> Result<Player, DomainError<PlayerErrorKind>> {
-        let creation_form = PlayerCreationForm::new();
+        let model_plan = PlayerMapper::to_new_active_model(form);
 
-        self.repository.create(creation_form, db_transaction).await
+        let model = self.repository.create(model_plan, db_connection).await?;
+
+        self.player_query_service
+            .get_by_id(&model.id, db_connection)
+            .await
     }
 }
 

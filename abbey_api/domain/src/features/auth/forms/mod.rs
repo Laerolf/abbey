@@ -1,6 +1,8 @@
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 
 use crate::features::auth::domain::refresh_token::RefreshTokenValue;
+
+const REFRESH_TOKEN_LIFESPAN: Duration = Duration::weeks(2);
 
 /// Represents a user account registration form.
 #[derive(Clone)]
@@ -35,9 +37,12 @@ pub struct RefreshTokenCreationForm {
 
 impl RefreshTokenCreationForm {
     /// Creates a new [`RefreshTokenCreationForm`].
-    pub fn new(user_id: i32, created_at: OffsetDateTime, expires_at: OffsetDateTime) -> Self {
+    pub fn new(user_id: &i32) -> Self {
+        let created_at = OffsetDateTime::now_utc();
+        let expires_at = created_at.saturating_add(REFRESH_TOKEN_LIFESPAN);
+
         Self {
-            user_id,
+            user_id: *user_id,
             value: RefreshTokenValue::default().to_string().to_owned(),
             created_at,
             expires_at,

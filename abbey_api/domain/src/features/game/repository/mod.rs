@@ -7,7 +7,6 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QueryOrder,
     QuerySelect,
 };
-use tracing::debug;
 
 use crate::{
     features::{
@@ -15,7 +14,7 @@ use crate::{
             domain::{ActorKind, monk::Monk},
             mapper::MonkMapper,
         },
-        game::{domain::Game, error::GameErrorKind, forms::GameCreationForm, mapper::GameMapper},
+        game::{domain::Game, error::GameErrorKind, mapper::GameMapper},
         monastery::{domain::Monastery, mapper::MonasteryMapper},
         output::{domain::resource::Resource, mapper::ResourceMapper},
         player::{domain::Player, mapper::PlayerMapper},
@@ -56,15 +55,11 @@ impl GameRepository {
     /// Creates a new [Game][`games::Model`] and persists it in the database.
     pub async fn create<C: ConnectionTrait>(
         &self,
-        creation_form: GameCreationForm,
+        model: games::ActiveModel,
         db_connection: &C,
-    ) -> Result<Game, DomainError<GameErrorKind>> {
-        let new_game_model: games::Model = GameMapper::to_new_active_model(creation_form)
+    ) -> Result<games::Model, DomainError<GameErrorKind>> {
+        model
             .insert(db_connection)
-            .await
-            .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
-
-        self.get_relations(new_game_model, db_connection)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))
     }
@@ -484,14 +479,6 @@ async fn get_sources_cyclic_processes<C: ConnectionTrait>(
                     None,
                 )));
             }
-
-            debug!(
-                "ASSIGNED {:?}",
-                assigned_actors
-                    .iter()
-                    .map(|actor| actor.id().unwrap())
-                    .collect::<Vec<i32>>()
-            );
 
             CyclicProcessMapper::to_domain_entity(process_model, output_resources, assigned_actors)
                 .map_err(|error| {

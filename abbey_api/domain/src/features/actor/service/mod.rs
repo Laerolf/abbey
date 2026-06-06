@@ -1,5 +1,7 @@
-use entity::monk_skills;
-use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use std::collections::HashMap;
+
+use entity::{monk_skills, monks};
+use sea_orm::ConnectionTrait;
 
 use crate::{
     features::{
@@ -15,43 +17,103 @@ use crate::{
             domain::{ProcessKind, cyclic_process::CyclicProcess},
             service::cyclic_process::CyclicProcessQueryService,
         },
-        skill::{domain::Skill, service::SkillQueryService},
+        skill::{
+            domain::Skill,
+            forms::MonkSkillAssignmentForm,
+            mapper::MonkSkillMapper,
+            service::{SkillCommandService, SkillQueryService},
+        },
     },
     shared::{DomainElement, error::DomainError},
 };
 
-/// Represents a service handling the [`Monk`] topic.
+/// Represents a command service for [`Monks`][Monk].
 #[derive(Clone)]
-pub struct MonkService {
+pub struct MonkCommandService {
     repository: MonkRepository,
+    monk_query_service: MonkQueryService,
+    skill_command_service: SkillCommandService,
 }
 
-impl MonkService {
-    /// Creates a new [`MonkService`].
-    pub fn new(repository: MonkRepository) -> Self {
-        Self { repository }
+impl MonkCommandService {
+    /// Creates a new [`MonkCommandService`].
+    pub fn new(
+        repository: MonkRepository,
+        monk_query_service: MonkQueryService,
+        skill_command_service: SkillCommandService,
+    ) -> Self {
+        Self {
+            repository,
+            monk_query_service,
+            skill_command_service,
+        }
     }
 
-    /// Creates a new [`Monk`].
-    pub async fn create_monk(
+    /// Creates [`many Monks`][Vec<Monk>].
+    pub async fn create_many<C: ConnectionTrait>(
         &self,
-        creation_form: MonkCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Monk, DomainError<ActorErrorKind>> {
-        self.repository
-            .create(creation_form, db_transaction)
-            .await
-            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))
-    }
-
-    /// Creates new [`Monks`][Vec<Monk>].
-    pub async fn create_many_monks(
-        &self,
-        creation_forms: Vec<MonkCreationForm>,
-        db_transaction: &DatabaseTransaction,
+        forms: Vec<MonkCreationForm>,
+        db_connection: &C,
     ) -> Result<Vec<Monk>, DomainError<ActorErrorKind>> {
+        let mut skill_names: Vec<String> = forms
+            .iter()
+            .flat_map(|form| form.skill_names.iter().cloned())
+            .collect();
+        skill_names.sort();
+        skill_names.dedup();
+
+        let skills = self
+            .skill_command_service
+            .get_by_names_or_create(&skill_names, db_connection)
+            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))?;
+
+        let skills_by_name: HashMap<&str, &Skill> = skills
+            .iter()
+            .map(|skill| (skill.name().as_str(), skill))
+            .collect();
+
+        let model_plans: Vec<monks::ActiveModel> = forms
+            .clone()
+            .into_iter()
+            .map(MonkMapper::to_new_active_model)
+            .collect();
+
+        let monks = self
+            .repository
+            .create_many(model_plans, db_connection)
+            .await?;
+
+        let skill_assignments: Vec<monk_skills::ActiveModel> = monks
+            .iter()
+            .zip(forms.iter())
+            .flat_map(|(monk, form)| {
+                form.skill_names.iter().filter_map(|skill_name| {
+                    skills_by_name
+                        .get(skill_name.as_str())
+                        .and_then(|skill| skill.id().ok())
+                        .map(|skill_id| {
+                            MonkSkillMapper::to_new_active_model(MonkSkillAssignmentForm::new(
+                                monk.id, skill_id,
+                            ))
+                        })
+                })
+            })
+            .collect();
+
+        if skill_assignments.is_empty() {
+            return Err(DomainError::from(ActorErrorKind::NoSkills));
+        }
+
         self.repository
-            .create_many(creation_forms, db_transaction)
+            .assign_skills(skill_assignments, db_connection)
+            .await?;
+
+        self.monk_query_service
+            .get_by_ids(
+                &monks.iter().map(|m| m.id).collect::<Vec<i32>>(),
+                db_connection,
+            )
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))
     }

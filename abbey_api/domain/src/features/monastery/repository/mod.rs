@@ -1,20 +1,14 @@
 use entity::{cyclic_processes, monasteries, monastery_monks, monk_skills, monks, skills};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter,
-    QueryOrder, QuerySelect,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect,
 };
+use tracing::warn;
 
 use crate::{
     features::{
-        actor::{
-            domain::monk::Monk,
-            forms::MonasteryMonkCreationForm,
-            mapper::{MonasteryMonkMapper, MonkMapper},
-        },
-        monastery::{
-            domain::Monastery, error::MonasteryErrorKind, forms::MonasteryCreationForm,
-            mapper::MonasteryMapper,
-        },
+        actor::{domain::monk::Monk, mapper::MonkMapper},
+        monastery::{domain::Monastery, error::MonasteryErrorKind, mapper::MonasteryMapper},
         process::{domain::ProcessKind, mapper::cyclic_process::CyclicProcessMapper},
         skill::{domain::Skill, mapper::SkillMapper},
     },
@@ -188,38 +182,31 @@ impl MonasteryRepository {
     }
 
     /// Creates a new [`Monastery`].
-    pub async fn create(
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        form: MonasteryCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Monastery, DomainError<MonasteryErrorKind>> {
-        let new_monastery: monasteries::Model = MonasteryMapper::to_new_active_model()
-            .insert(db_transaction)
+        model: monasteries::ActiveModel,
+        db_connection: &C,
+    ) -> Result<monasteries::Model, DomainError<MonasteryErrorKind>> {
+        model
+            .insert(db_connection)
             .await
-            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
+            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))
+    }
 
-        if !form.monks.is_empty() {
-            let new_monastery_monks: Vec<monastery_monks::ActiveModel> = form
-                .monks
-                .iter()
-                .map(|monk| {
-                    MonasteryMonkMapper::to_new_active_model(MonasteryMonkCreationForm::new(
-                        new_monastery.id,
-                        monk.id().unwrap(),
-                    ))
-                })
-                .collect();
-
-            monastery_monks::Entity::insert_many(new_monastery_monks)
-                .exec(db_transaction)
-                .await
-                .map_err(|error| {
-                    DomainError::from(MonasteryErrorKind::Creation).with_cause(error)
-                })?;
+    /// Assigns Monks to a [`Monastery`].
+    pub async fn assign_monks<C: ConnectionTrait>(
+        &self,
+        models: Vec<monastery_monks::ActiveModel>,
+        db_connection: &C,
+    ) -> Result<Vec<monastery_monks::Model>, DomainError<MonasteryErrorKind>> {
+        if models.is_empty() {
+            warn!("Skipping this insertion because no models were provided.");
+            return Ok(vec![]);
         }
 
-        self.find_by_id_with_relations(&new_monastery.id, db_transaction)
-            .await?
-            .ok_or(DomainError::from(MonasteryErrorKind::Creation))
+        monastery_monks::Entity::insert_many(models)
+            .exec_with_returning_many(db_connection)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))
     }
 }

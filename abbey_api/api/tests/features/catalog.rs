@@ -14,7 +14,10 @@ pub mod get_all_skills {
 
         app.context
             .in_transaction(async |db_transaction| {
-                app.context.game_service.create_game(db_transaction).await
+                app.context
+                    .game_command_service
+                    .create(db_transaction)
+                    .await
             })
             .await
             .expect("Failed to create the test game.");
@@ -47,7 +50,10 @@ pub mod get_all_resources {
 
         app.context
             .in_transaction(async |db_transaction| {
-                app.context.game_service.create_game(db_transaction).await
+                app.context
+                    .game_command_service
+                    .create(db_transaction)
+                    .await
             })
             .await
             .expect("Failed to create the test game.");

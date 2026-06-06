@@ -1,80 +1,102 @@
-use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use entity::monastery_monks;
+use sea_orm::ConnectionTrait;
 
 use crate::{
     features::{
         actor::{
             domain::monk::Monk,
-            forms::MonkCreationForm,
-            service::{MonkQueryService, MonkService},
+            forms::{MonasteryMonkCreationForm, MonkCreationForm},
+            mapper::MonasteryMonkMapper,
+            service::{MonkCommandService, MonkQueryService},
         },
         monastery::{
-            domain::Monastery, error::MonasteryErrorKind, forms::MonasteryCreationForm,
-            mapper::MonasteryMapper, repository::MonasteryRepository,
+            domain::Monastery, error::MonasteryErrorKind, mapper::MonasteryMapper,
+            repository::MonasteryRepository,
         },
-        skill::{domain::Skill, service::SkillService},
     },
     shared::{DomainElement, error::DomainError},
 };
 
-/// The default amount of [Monks][`Monk`] in [`Monastery`].
-pub const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
+/// The default amount of Monks in a Monastery.
+const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 
-/// Represents a service handling the [`Monastery`] topic.
+/// Represents a command service for [`Monasteries`][Monastery].
 #[derive(Clone)]
-pub struct MonasteryService {
+pub struct MonasteryCommandService {
     repository: MonasteryRepository,
-    monk_service: MonkService,
-    skill_service: SkillService,
+    monastery_query_service: MonasteryQueryService,
+    monk_command_service: MonkCommandService,
 }
 
-impl MonasteryService {
-    /// Creates a new [`MonasteryService`].
+impl MonasteryCommandService {
+    /// Creates a new [`MonasteryCommandService`].
     pub fn new(
         repository: MonasteryRepository,
-        monk_service: MonkService,
-        skill_service: SkillService,
+        monastery_query_service: MonasteryQueryService,
+        monk_command_service: MonkCommandService,
     ) -> Self {
         Self {
             repository,
-            monk_service,
-            skill_service,
+            monastery_query_service,
+            monk_command_service,
         }
     }
 
-    /// Creates [Monks][`Monk`] for a new [`Monastery`].
-    async fn create_monks(
+    /// Assigns [Monks][`Vec<Monk>`] to a [``Monastery`].
+    async fn assign_monks<C: ConnectionTrait>(
         &self,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Vec<Monk>, DomainError<MonasteryErrorKind>> {
-        let skill_names = vec!["cooking", "brewing"];
-
-        let skills: Vec<Skill> = self
-            .skill_service
-            .find_many_by_name_or_create(skill_names, db_transaction)
-            .await
-            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
-
-        let skill_ids: Vec<i32> = skills.iter().map(|skill| skill.id().unwrap()).collect();
-
-        let monk_creation_forms = (0..DEFAULT_AMOUNT_OF_MONKS)
-            .map(|_| MonkCreationForm::new("Maurits", skill_ids.clone()))
+        forms: Vec<MonasteryMonkCreationForm>,
+        db_connection: &C,
+    ) -> Result<Vec<monastery_monks::Model>, DomainError<MonasteryErrorKind>> {
+        let models: Vec<monastery_monks::ActiveModel> = forms
+            .into_iter()
+            .map(MonasteryMonkMapper::to_new_active_model)
             .collect();
 
-        self.monk_service
-            .create_many_monks(monk_creation_forms, db_transaction)
-            .await
-            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))
+        self.repository.assign_monks(models, db_connection).await
     }
 
     /// Creates a new [`Monastery`].
-    pub async fn create_monastery(
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        db_transaction: &DatabaseTransaction,
+        db_connection: &C,
     ) -> Result<Monastery, DomainError<MonasteryErrorKind>> {
-        let monks: Vec<Monk> = self.create_monks(db_transaction).await?;
+        let skill_names = vec!["cooking".to_string(), "brewing".to_string()];
 
-        self.repository
-            .create(MonasteryCreationForm::new(monks), db_transaction)
+        let model_plan = MonasteryMapper::to_new_active_model();
+
+        let model = self
+            .repository
+            .create(model_plan, db_connection)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
+
+        let monk_creation_forms = (0..DEFAULT_AMOUNT_OF_MONKS)
+            .map(|_| MonkCreationForm::new("Maurits", skill_names.clone()))
+            .collect();
+
+        let monks: Vec<Monk> = self
+            .monk_command_service
+            .create_many(monk_creation_forms, db_connection)
+            .await
+            .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
+
+        let monk_assignments: Vec<MonasteryMonkCreationForm> = monks
+            .iter()
+            .map(|monk| {
+                Ok(MonasteryMonkCreationForm::new(
+                    model.id,
+                    monk.id().map_err(|error| {
+                        DomainError::from(MonasteryErrorKind::AssignMonks).with_cause(error)
+                    })?,
+                ))
+            })
+            .collect::<Result<Vec<MonasteryMonkCreationForm>, DomainError<MonasteryErrorKind>>>()?;
+
+        self.assign_monks(monk_assignments, db_connection).await?;
+
+        self.monastery_query_service
+            .get_by_id(&model.id, db_connection)
             .await
             .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))
     }

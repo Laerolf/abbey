@@ -86,6 +86,11 @@ impl RefreshToken {
         &self.value
     }
 
+    /// Returns the expiration of this [`RefreshToken`].
+    pub fn expires_at(&self) -> &OffsetDateTime {
+        &self.expires_at
+    }
+
     /// Computes the lifespan of this [`RefreshToken`].
     pub fn lifespan(&self) -> Duration {
         self.expires_at - self.created_at.unwrap()

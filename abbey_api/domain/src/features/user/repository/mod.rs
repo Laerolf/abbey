@@ -11,11 +11,7 @@ use sea_orm::{
 use crate::{
     features::{
         actor::{domain::monk::Monk, mapper::MonkMapper},
-        game::{
-            domain::Game,
-            forms::UserGameCreationForm,
-            mapper::{GameMapper, UserGameMapper},
-        },
+        game::{domain::Game, mapper::GameMapper},
         monastery::mapper::MonasteryMapper,
         output::{domain::resource::Resource, mapper::ResourceMapper},
         player::mapper::PlayerMapper,
@@ -25,7 +21,7 @@ use crate::{
         skill::{domain::Skill, mapper::SkillMapper},
         source::{domain::Source, mapper::SourceMapper},
         surroundings::mapper::SurroundingsMapper,
-        user::{domain::User, error::UserErrorKind, forms::UserCreationForm, mapper::UserMapper},
+        user::{domain::User, error::UserErrorKind, mapper::UserMapper},
     },
     shared::{DomainElement, error::DomainError},
 };
@@ -383,42 +379,28 @@ impl UserRepository {
         Ok(Some(UserMapper::to_domain_entity(user_model, user_games)))
     }
 
-    /// Finds a [`User`] by its email.
-    pub async fn find_by_email_with_relations<C: ConnectionTrait>(
+    /// Finds a [`User`][users::Model] by its email.
+    pub async fn find_by_email<C: ConnectionTrait>(
         &self,
         email: &String,
         connection: &C,
-    ) -> Result<Option<User>, DomainError<UserErrorKind>> {
-        let Some(user_model) = users::Entity::find()
+    ) -> Result<Option<users::Model>, DomainError<UserErrorKind>> {
+        users::Entity::find()
             .filter(users::Column::Email.eq(email))
             .one(connection)
             .await
-            .map_err(|error| DomainError::from(UserErrorKind::FindByEmail).with_cause(error))?
-        else {
-            return Ok(None);
-        };
-
-        let user_games: Vec<Game> = self
-            .get_all_games_by_user_id_with_relations(&user_model.id, connection)
-            .await?;
-
-        Ok(Some(UserMapper::to_domain_entity(user_model, user_games)))
+            .map_err(|error| DomainError::from(UserErrorKind::FindByEmail).with_cause(error))
     }
 
     /// Creates a new [`User`] and persists it in the database.
-    pub async fn create(
+    pub async fn create<C: ConnectionTrait>(
         &self,
-        form: UserCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<User, DomainError<UserErrorKind>> {
-        let user: users::Model = UserMapper::to_new_active_model(form.clone())
-            .insert(db_transaction)
+        user: users::ActiveModel,
+        db_connection: &C,
+    ) -> Result<users::Model, DomainError<UserErrorKind>> {
+        user.insert(db_connection)
             .await
-            .map_err(|error| DomainError::from(UserErrorKind::Insert).with_cause(error))?;
-
-        self.find_by_id_with_relations(&user.id, db_transaction)
-            .await?
-            .ok_or(DomainError::from(UserErrorKind::Insert))
+            .map_err(|error| DomainError::from(UserErrorKind::Insert).with_cause(error))
     }
 
     /// Updates a [`User`].
@@ -437,26 +419,20 @@ impl UserRepository {
             .ok_or(DomainError::from(UserErrorKind::Update))
     }
 
-    /// Assign a Game to a [`User`].
-    pub async fn assign_game(
+    /// Assign a Game to a [`User`][user_games::Model].
+    pub async fn assign_game<C: ConnectionTrait>(
         &self,
-        creation_form: UserGameCreationForm,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<User, DomainError<UserErrorKind>> {
-        let new_user_game: user_games::Model = UserGameMapper::to_new_active_model(creation_form)
-            .insert(db_transaction)
+        user_game_model: user_games::ActiveModel,
+        db_connection: &C,
+    ) -> Result<user_games::Model, DomainError<UserErrorKind>> {
+        user_game_model
+            .insert(db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(
                     super::error::UserCreationErrorKind::AssignGame,
                 ))
                 .with_cause(error)
-            })?;
-
-        self.find_by_id_with_relations(&new_user_game.user_id, db_transaction)
-            .await?
-            .ok_or(DomainError::from(UserErrorKind::Creation(
-                super::error::UserCreationErrorKind::AssignGame,
-            )))
+            })
     }
 }
