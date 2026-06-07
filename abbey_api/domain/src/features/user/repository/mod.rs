@@ -21,7 +21,7 @@ impl UserRepository {
             .map_err(|error| DomainError::from(UserErrorKind::FindById).with_cause(error))
     }
 
-    /// Gets the [`User Games`][user_games::Model] for the provided User ID.
+    /// Gets the [`User Games`][user_games::Model] with the provided User ID.
     pub async fn get_user_games_by_user_id<C: ConnectionTrait>(
         &self,
         user_id: &i32,

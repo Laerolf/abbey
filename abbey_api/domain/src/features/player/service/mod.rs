@@ -110,7 +110,7 @@ impl PlayerQueryService {
         Ok(PlayerMapper::to_domain_entity(model, process))
     }
 
-    /// Gets the [`Player`][Vec<Player>] for the provided IDs.
+    /// Gets the [`Player`][Vec<Player>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

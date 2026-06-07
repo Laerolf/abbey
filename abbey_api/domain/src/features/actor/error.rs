@@ -31,7 +31,7 @@ pub enum ActorErrorKind {
     NoSkills,
     /// Failed to get CyclicProcesses.
     GetProcesses,
-    /// Failed to get the Skill assignments for the provided Actor IDs.
+    /// Failed to get the Skill assignments with the provided Actor IDs.
     GetSkillAssignmentsByIds,
     /// The Actor has not been persisted yet.
     NotPersistedYet,
@@ -94,7 +94,7 @@ impl DomainErrorKind for ActorErrorKind {
             Self::NoSkills => "The Actor has no Skills.".to_string(),
             Self::GetProcesses => "Failed to get CyclicProcesses.".to_string(),
             Self::GetSkillAssignmentsByIds => {
-                "Failed to get the Skill assignments for the provided Actor IDs.".to_string()
+                "Failed to get the Skill assignments with the provided Actor IDs.".to_string()
             }
             Self::NotPersistedYet => "The Actor has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),

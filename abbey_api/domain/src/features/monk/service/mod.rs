@@ -195,7 +195,7 @@ impl MonkQueryService {
             .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))
     }
 
-    /// Gets the [`Monks`][Vec<Monk>] for the IDs.
+    /// Gets the [`Monks`][Vec<Monk>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

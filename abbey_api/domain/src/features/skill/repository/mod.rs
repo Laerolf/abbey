@@ -22,7 +22,7 @@ impl SkillRepository {
             .map_err(|error| DomainError::from(SkillErrorKind::GetAll).with_cause(error))
     }
 
-    /// Gets all [`Skills`][Vec<skills::Model>] for the provided IDs.
+    /// Gets all [`Skills`][Vec<skills::Model>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: Vec<i32>,

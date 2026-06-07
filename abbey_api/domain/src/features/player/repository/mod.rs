@@ -11,7 +11,7 @@ use crate::{
 pub struct PlayerRepository;
 
 impl PlayerRepository {
-    /// Finds a [`Player`][players::Model] for the provided ID.
+    /// Finds a [`Player`][players::Model] with the provided ID.
     pub async fn find_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -23,7 +23,7 @@ impl PlayerRepository {
             .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))
     }
 
-    /// Finds [`Players`][Vec<players::Model>] for the provided IDs.
+    /// Finds [`Players`][Vec<players::Model>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],
@@ -36,7 +36,7 @@ impl PlayerRepository {
             .map_err(|error| DomainError::from(PlayerErrorKind::GetByIds).with_cause(error))
     }
 
-    /// Finds the [`Players`][Vec<players::Model>] for the provided Process ID.
+    /// Finds the [`Players`][Vec<players::Model>] with the provided Process ID.
     pub async fn get_by_process_id<C: ConnectionTrait>(
         &self,
         process_id: &i32,
@@ -49,7 +49,7 @@ impl PlayerRepository {
             .map_err(|error| DomainError::from(ActorErrorKind::GetByProcessId).with_cause(error))
     }
 
-    /// Gets the [`Players`][Vec<players::Model>] for the provided Process IDs.
+    /// Gets the [`Players`][Vec<players::Model>] with the provided Process IDs.
     pub async fn get_by_process_ids<C: ConnectionTrait>(
         &self,
         process_ids: &[i32],

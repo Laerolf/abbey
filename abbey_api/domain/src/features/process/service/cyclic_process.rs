@@ -195,7 +195,7 @@ impl CyclicProcessQueryService {
         }
     }
 
-    /// Finds a [`CyclicProcess`] for the provided ID.
+    /// Finds a [`CyclicProcess`] with the provided ID.
     pub async fn find_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -233,7 +233,7 @@ impl CyclicProcessQueryService {
         )?))
     }
 
-    /// Gets a [`CyclicProcess`] for the provided ID.
+    /// Gets a [`CyclicProcess`] with the provided ID.
     pub async fn get_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -278,7 +278,7 @@ impl CyclicProcessQueryService {
         CyclicProcessMapper::to_domain_entity(model, output_resources, assigned_actors)
     }
 
-    /// Gets the [`CyclicProcesses`][Vec<CyclicProcess>] for the provided IDs.
+    /// Gets the [`CyclicProcesses`][Vec<CyclicProcess>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

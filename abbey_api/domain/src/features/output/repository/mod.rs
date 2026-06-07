@@ -22,7 +22,7 @@ impl ResourceRepository {
             .map_err(|error| DomainError::from(ResourceErrorKind::GetAll).with_cause(error))
     }
 
-    /// Gets the [`Resources`][Vec<resources::Model>] for the provided IDs.
+    /// Gets the [`Resources`][Vec<resources::Model>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

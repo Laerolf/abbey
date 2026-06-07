@@ -17,7 +17,7 @@ use crate::{
 pub struct ActorRepository;
 
 impl ActorRepository {
-    /// Finds an [`Actor`][ActorKind] for the provided ID and Game ID.
+    /// Finds an [`Actor`][ActorKind] with the provided ID and Game ID.
     pub async fn find_by_id_for_game<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -64,7 +64,7 @@ impl ActorRepository {
         Ok(Some(monk))
     }
 
-    /// Gets an [`Actor`][ActorKind] for the provided ID and Game ID.
+    /// Gets an [`Actor`][ActorKind] with the provided ID and Game ID.
     pub async fn get_by_id_for_game<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -76,7 +76,7 @@ impl ActorRepository {
             .ok_or_else(|| DomainError::from(ActorErrorKind::GetById))
     }
 
-    /// Finds [`Actors`][Vec<ActorKind>] for the provided IDs and Game ID.
+    /// Finds [`Actors`][Vec<ActorKind>] with the provided IDs and Game ID.
     pub async fn find_many_by_ids_for_game<C: ConnectionTrait>(
         &self,
         ids: &[i32],

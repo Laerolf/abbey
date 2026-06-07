@@ -21,7 +21,7 @@ impl CyclicProcessRepository {
             .map_err(|error| DomainError::from(ProcessErrorKind::FindById).with_cause(error))
     }
 
-    /// Gets the [`CyclicProcesses`][Vec<cyclic_processes::Model>] for the provided IDs.
+    /// Gets the [`CyclicProcesses`][Vec<cyclic_processes::Model>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],
@@ -34,7 +34,7 @@ impl CyclicProcessRepository {
             .map_err(|error| DomainError::from(ProcessErrorKind::GetByIds).with_cause(error))
     }
 
-    /// Gets the [`Resource Assignments`][Vec<cyclic_process_resources::Model>] for the provided CyclicProcess ID.
+    /// Gets the [`Resource Assignments`][Vec<cyclic_process_resources::Model>] with the provided CyclicProcess ID.
     pub async fn get_resource_assignments_by_cyclic_process_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -47,7 +47,7 @@ impl CyclicProcessRepository {
             .map_err(|error| DomainError::from(ProcessErrorKind::GetAllResources).with_cause(error))
     }
 
-    /// Gets the [`Resource Assignments`][Vec<cyclic_process_resources::Model>] for the provided CyclicProcess IDs.
+    /// Gets the [`Resource Assignments`][Vec<cyclic_process_resources::Model>] with the provided CyclicProcess IDs.
     pub async fn get_resource_assignments_by_cyclic_process_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

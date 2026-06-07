@@ -314,7 +314,7 @@ impl RefreshTokenCommandService {
             .await
     }
 
-    /// Deletes a [`RefreshToken`] for the provided ID.
+    /// Deletes a [`RefreshToken`] with the provided ID.
     pub async fn delete_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -341,7 +341,7 @@ impl RefreshTokenQueryService {
         Self { repository }
     }
 
-    /// Finds a [`RefreshToken`] for the provided User ID.
+    /// Finds a [`RefreshToken`] with the provided User ID.
     pub async fn find_by_user_id<C: ConnectionTrait>(
         &self,
         user_id: &i32,
@@ -354,7 +354,7 @@ impl RefreshTokenQueryService {
             .map(RefreshTokenMapper::to_domain_entity))
     }
 
-    /// Gets a [`RefreshToken`] for the provided ID.
+    /// Gets a [`RefreshToken`] with the provided ID.
     pub async fn get_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -365,7 +365,7 @@ impl RefreshTokenQueryService {
         Ok(RefreshTokenMapper::to_domain_entity(model))
     }
 
-    /// Gets a [`RefreshToken`] for the provided User ID.
+    /// Gets a [`RefreshToken`] with the provided User ID.
     pub async fn get_by_user_id<C: ConnectionTrait>(
         &self,
         user_id: &i32,
@@ -378,7 +378,7 @@ impl RefreshTokenQueryService {
             )))
     }
 
-    /// Gets a [`RefreshToken`] for the provided RefreshToken value.
+    /// Gets a [`RefreshToken`] with the provided RefreshToken value.
     pub async fn get_by_value<C: ConnectionTrait>(
         &self,
         value: impl Into<&String>,

@@ -144,7 +144,7 @@ impl MonasteryQueryService {
             .map_err(|error| DomainError::from(MonasteryErrorKind::Restore).with_cause(error))
     }
 
-    /// Gets the [`Monasteries`][Vec<Monastery>] for the provided IDs.
+    /// Gets the [`Monasteries`][Vec<Monastery>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

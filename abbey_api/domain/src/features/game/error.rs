@@ -18,7 +18,7 @@ pub enum GameErrorKind {
     FindById,
     /// Failed to get a Game by its ID.
     GetById,
-    /// Failed to get the Games for the provided IDs.
+    /// Failed to get the Games with the provided IDs.
     GetByIds,
     /// The Game has not been persisted yet.
     NotPersistedYet,
@@ -50,7 +50,7 @@ impl DomainErrorKind for GameErrorKind {
             Self::SurroundingsNotFound => "Failed to find the Surroundings of a Game.".to_string(),
             Self::FindById => "Failed to find a Game by its ID.".to_string(),
             Self::GetById => "Failed to get a Game by its ID.".to_string(),
-            Self::GetByIds => "Failed to get the Games for the provided IDs.".to_string(),
+            Self::GetByIds => "Failed to get the Games with the provided IDs.".to_string(),
             Self::NotPersistedYet => "The Game has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }

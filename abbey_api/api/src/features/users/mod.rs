@@ -24,7 +24,7 @@ impl ApiFeature for Feature {
 )]
 pub struct UsersApiDoc;
 
-/// Gets a User for the provided session.
+/// Gets a User with the provided session.
 #[axum::debug_handler]
 #[utoipa::path(
     get,

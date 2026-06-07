@@ -21,7 +21,7 @@ impl MonasteryRepository {
             .map_err(|error| DomainError::from(MonasteryErrorKind::FindById).with_cause(error))
     }
 
-    /// Gets the [`Monasteries`][Vec<monasteries::Model>] for the provided IDs.
+    /// Gets the [`Monasteries`][Vec<monasteries::Model>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],
@@ -34,7 +34,7 @@ impl MonasteryRepository {
             .map_err(|error| DomainError::from(MonasteryErrorKind::GetByIds).with_cause(error))
     }
 
-    /// Gets all [`Monastery Monks`][Vec<monastery_monks::Model>] for the provided Monastery ID.
+    /// Gets all [`Monastery Monks`][Vec<monastery_monks::Model>] with the provided Monastery ID.
     pub async fn get_monastery_monks_by_monastery_id<C: ConnectionTrait>(
         &self,
         monastery_id: &i32,
@@ -47,7 +47,7 @@ impl MonasteryRepository {
             .map_err(|error| DomainError::from(MonasteryErrorKind::GetAllMonks).with_cause(error))
     }
 
-    /// Gets all [`Monastery Monks`][Vec<monastery_monks::Model>] for the provided Monastery IDs.
+    /// Gets all [`Monastery Monks`][Vec<monastery_monks::Model>] with the provided Monastery IDs.
     pub async fn get_monastery_monks_by_monastery_ids<C: ConnectionTrait>(
         &self,
         monastery_ids: &[i32],

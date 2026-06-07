@@ -21,7 +21,7 @@ impl SurroundingsRepository {
             .map_err(|error| DomainError::from(SurroundingsErrorKind::FindById).with_cause(error))
     }
 
-    /// Gets the [Surroundings][`Vec<surroundings::Model>`] for the provided IDs.
+    /// Gets the [Surroundings][`Vec<surroundings::Model>`] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],
@@ -34,7 +34,7 @@ impl SurroundingsRepository {
             .map_err(|error| DomainError::from(SurroundingsErrorKind::GetByIds).with_cause(error))
     }
 
-    /// Gets all the [Sources][Vec<Source>] for the provided Surroundings ID.
+    /// Gets all the [Sources][Vec<Source>] with the provided Surroundings ID.
     pub async fn get_all_sources_by_surroundings_id<C: ConnectionTrait>(
         &self,
         surroundings_id: &i32,
@@ -49,7 +49,7 @@ impl SurroundingsRepository {
             })
     }
 
-    /// Gets all the [Sources][Vec<Source>] for the provided Surroundings IDs.
+    /// Gets all the [Sources][Vec<Source>] with the provided Surroundings IDs.
     pub async fn get_all_sources_by_surroundings_ids<C: ConnectionTrait>(
         &self,
         surroundings_ids: &[i32],

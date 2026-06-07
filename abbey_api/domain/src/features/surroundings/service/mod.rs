@@ -201,7 +201,7 @@ impl SurroundingsQueryService {
         }
     }
 
-    /// Gets a [`Surroundings`] for the provided ID.
+    /// Gets a [`Surroundings`] with the provided ID.
     pub async fn get_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -233,7 +233,7 @@ impl SurroundingsQueryService {
             .map_err(|error| DomainError::from(SurroundingsErrorKind::GetById).with_cause(error))
     }
 
-    /// Gets a all the [`Surroundings`][Vec<Surroundings>] for the provided IDs.
+    /// Gets a all the [`Surroundings`][Vec<Surroundings>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

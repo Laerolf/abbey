@@ -21,7 +21,7 @@ impl MonkRepository {
             .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))
     }
 
-    /// Gets the [`Monks`][Vec<monks::Model>] for the provided Monk IDs.
+    /// Gets the [`Monks`][Vec<monks::Model>] with the provided Monk IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],
@@ -34,7 +34,7 @@ impl MonkRepository {
             .map_err(|error| DomainError::from(ActorErrorKind::GetByIds).with_cause(error))
     }
 
-    /// Gets the [`Monk skills`][Vec<monk_skills::Model>] for the provided Monk ID.
+    /// Gets the [`Monk skills`][Vec<monk_skills::Model>] with the provided Monk ID.
     pub async fn get_skill_assignments_by_monk_id<C: ConnectionTrait>(
         &self,
         monk_id: &i32,
@@ -49,7 +49,7 @@ impl MonkRepository {
             })
     }
 
-    /// Gets all [`Monk skills`][Vec<monk_skills::Model>] for the provided Monk IDs.
+    /// Gets all [`Monk skills`][Vec<monk_skills::Model>] with the provided Monk IDs.
     pub async fn get_skill_assignments_by_monk_ids<C: ConnectionTrait>(
         &self,
         monk_ids: &[i32],
@@ -64,7 +64,7 @@ impl MonkRepository {
             })
     }
 
-    /// Gets [`Monks`][Vec<monks::Model>] for the provided Process ID.
+    /// Gets [`Monks`][Vec<monks::Model>] with the provided Process ID.
     pub async fn get_by_process_id<C: ConnectionTrait>(
         &self,
         process_id: &i32,
@@ -77,7 +77,7 @@ impl MonkRepository {
             .map_err(|error| DomainError::from(ActorErrorKind::GetByProcessId).with_cause(error))
     }
 
-    /// Gets [`Monks`][Vec<monks::Model>] for the provided Process IDs.
+    /// Gets [`Monks`][Vec<monks::Model>] with the provided Process IDs.
     pub async fn get_by_process_ids<C: ConnectionTrait>(
         &self,
         process_ids: &[i32],

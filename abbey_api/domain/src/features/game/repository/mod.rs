@@ -33,7 +33,7 @@ impl GameRepository {
             .map_err(|error| DomainError::from(GameErrorKind::FindById).with_cause(error))
     }
 
-    /// Gets the [`Games`][Vec<games::Model>] for the provided IDs.
+    /// Gets the [`Games`][Vec<games::Model>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

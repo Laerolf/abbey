@@ -137,7 +137,7 @@ impl GameQueryService {
         }
     }
 
-    /// Gets a [`Game`] for the provided ID.
+    /// Gets a [`Game`] with the provided ID.
     pub async fn get_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -179,7 +179,7 @@ impl GameQueryService {
         ))
     }
 
-    /// Gets the [`Games`][Vec<Game>] for the provided IDs.
+    /// Gets the [`Games`][Vec<Game>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

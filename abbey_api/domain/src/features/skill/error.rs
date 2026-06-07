@@ -10,7 +10,7 @@ pub enum SkillErrorKind {
     Creation,
     /// Failed to get all Skills.
     GetAll,
-    /// Failed to get Skills for the provided IDs.
+    /// Failed to get Skills with the provided IDs.
     GetByIds,
     /// Failed to find a Skill with the provided name.
     FindByName,
@@ -40,7 +40,7 @@ impl DomainErrorKind for SkillErrorKind {
         match self {
             Self::Creation => "Failed to create a new Skill.".to_string(),
             Self::GetAll => "Failed to get all Skills.".to_string(),
-            Self::GetByIds => "Failed to get Skills for the provided IDs.".to_string(),
+            Self::GetByIds => "Failed to get Skills with the provided IDs.".to_string(),
             Self::FindByName => "Failed to find a Skill with the provided name.".to_string(),
             Self::FindByNames => "Failed to find a Skills with the provided names.".to_string(),
             Self::NotPersistedYet => "The Skill has not been persisted yet.".to_string(),

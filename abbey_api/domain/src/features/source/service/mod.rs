@@ -71,7 +71,7 @@ impl SourceQueryService {
         }
     }
 
-    /// Gets [Sources][Vec<Source>] for the provided IDs.
+    /// Gets [Sources][Vec<Source>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],

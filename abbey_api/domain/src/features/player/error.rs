@@ -12,7 +12,7 @@ pub enum PlayerErrorKind {
     FindById,
     /// Failed to get a Player by its ID.
     GetById,
-    /// Failed to get Players for the provided IDs.
+    /// Failed to get Players with the provided IDs.
     GetByIds,
     /// Failed to update a Player.
     Update,
@@ -38,7 +38,7 @@ impl DomainErrorKind for PlayerErrorKind {
             Self::Creation => "Failed to create a new player.".to_string(),
             Self::FindById => "Failed to find a player by its ID.".to_string(),
             Self::GetById => "Failed to get a player with the provided ID.".to_string(),
-            Self::GetByIds => "Failed to get Players for the provided IDs.".to_string(),
+            Self::GetByIds => "Failed to get Players with the provided IDs.".to_string(),
             Self::Update => "Failed to update a player.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }

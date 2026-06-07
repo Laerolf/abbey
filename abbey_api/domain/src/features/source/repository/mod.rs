@@ -9,7 +9,7 @@ use crate::{features::source::error::SourceErrorKind, shared::error::DomainError
 pub struct SourceRepository;
 
 impl SourceRepository {
-    /// Gets [`Sources`][Vec<sources::Model>] for the provided IDs.
+    /// Gets [`Sources`][Vec<sources::Model>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],
