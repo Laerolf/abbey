@@ -1,13 +1,8 @@
-use entity::{cyclic_process_resources, cyclic_processes, players, resources};
+use entity::players;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
 use crate::{
-    features::{
-        actor::error::ActorErrorKind,
-        output::mapper::ResourceMapper,
-        player::{domain::Player, error::PlayerErrorKind, mapper::PlayerMapper},
-        process::mapper::cyclic_process::CyclicProcessMapper,
-    },
+    features::{actor::error::ActorErrorKind, player::error::PlayerErrorKind},
     shared::error::DomainError,
 };
 
@@ -16,45 +11,6 @@ use crate::{
 pub struct PlayerRepository;
 
 impl PlayerRepository {
-    /// Gets the [Player][players::Model] of a [`Player`].
-    async fn get_relations<C: ConnectionTrait>(
-        &self,
-        player_model: players::Model,
-        db_connection: &C,
-    ) -> Result<Player, DomainError<PlayerErrorKind>> {
-        let Some(process_model) = cyclic_processes::Entity::find()
-            .filter(cyclic_processes::Column::Id.eq(player_model.assigned_process_id))
-            .one(db_connection)
-            .await
-            .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))?
-        else {
-            return Ok(PlayerMapper::to_domain_entity(player_model, None));
-        };
-
-        let process_output_resources = resources::Entity::find()
-            .inner_join(cyclic_process_resources::Entity)
-            .filter(cyclic_process_resources::Column::CyclicProcessId.eq(process_model.id))
-            .all(db_connection)
-            .await
-            .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))?
-            .into_iter()
-            .map(ResourceMapper::to_domain_entity)
-            .collect();
-
-        let assigned_process = CyclicProcessMapper::to_process_kind(
-            process_model,
-            process_output_resources,
-            Vec::new(),
-        )
-        .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))
-        .unwrap();
-
-        Ok(PlayerMapper::to_domain_entity(
-            player_model,
-            Some(assigned_process),
-        ))
-    }
-
     /// Finds a [`Player`][players::Model] for the provided ID.
     pub async fn find_by_id<C: ConnectionTrait>(
         &self,
@@ -104,34 +60,6 @@ impl PlayerRepository {
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::GetByProcessIds).with_cause(error))
-    }
-
-    /// Finds a [`Player`] by its ID and with all its related assigned process.
-    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
-        &self,
-        id: &i32,
-        db_connection: &C,
-    ) -> Result<Option<Player>, DomainError<PlayerErrorKind>> {
-        let Some(player_model) = players::Entity::find_by_id(*id)
-            .one(db_connection)
-            .await
-            .map_err(|error| DomainError::from(PlayerErrorKind::FindById).with_cause(error))?
-        else {
-            return Ok(None);
-        };
-
-        Ok(Some(self.get_relations(player_model, db_connection).await?))
-    }
-
-    /// Gets a [`Player`] by its ID and with all its assigned process.
-    pub async fn get_by_id_with_relations<C: ConnectionTrait>(
-        &self,
-        id: &i32,
-        db_connection: &C,
-    ) -> Result<Player, DomainError<PlayerErrorKind>> {
-        self.find_by_id_with_relations(id, db_connection)
-            .await?
-            .ok_or_else(|| DomainError::from(PlayerErrorKind::GetById))
     }
 
     /// Creates a [`Player`][players::Model].
