@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 use crate::{
     features::{
         actor::{domain::Actor, error::ActorErrorKind},
-        monk::{domain::Monk, forms::MonkCreationForm},
+        monk::{domain::Monk, forms::MonkBlueprint},
         process::domain::ProcessKind,
         skill::domain::Skill,
     },
@@ -16,13 +16,13 @@ use crate::{
 pub struct MonkMapper;
 
 impl MonkMapper {
-    /// Maps a [`MonkCreationForm`] to a [model][`monks::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: MonkCreationForm) -> monks::ActiveModel {
+    /// Maps a [`MonkBlueprint`] to a [model][`monks::ActiveModel`] to create.
+    pub fn to_new_active_model(blueprint: MonkBlueprint) -> monks::ActiveModel {
         monks::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            name: Set(creation_form.name),
+            name: Set(blueprint.name),
             assigned_cyclic_process_id: NotSet,
         }
     }

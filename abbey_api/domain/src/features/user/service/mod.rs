@@ -5,14 +5,14 @@ use tracing::info;
 use crate::{
     features::{
         game::{
-            forms::UserGameCreationForm,
+            forms::UserGameAssignmentForm,
             mapper::UserGameMapper,
             service::{GameCommandService, GameQueryService},
         },
         user::{
             domain::User,
             error::{UserCreationErrorKind, UserErrorKind},
-            forms::UserCreationForm,
+            forms::UserBlueprint,
             mapper::UserMapper,
             repository::UserRepository,
         },
@@ -45,14 +45,11 @@ impl UserCommandService {
     /// Assigns a Game to a [`User`].
     pub async fn assign_game<C: ConnectionTrait>(
         &self,
-        creation_form: UserGameCreationForm,
+        form: UserGameAssignmentForm,
         db_connection: &C,
     ) -> Result<(), DomainError<UserErrorKind>> {
         self.repository
-            .assign_game(
-                UserGameMapper::to_new_active_model(creation_form),
-                db_connection,
-            )
+            .assign_game(UserGameMapper::to_new_active_model(form), db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::AssignGame))
@@ -65,12 +62,12 @@ impl UserCommandService {
     /// Creates a new [`User`].
     pub async fn create<C: ConnectionTrait>(
         &self,
-        creation_form: UserCreationForm,
+        blueprint: UserBlueprint,
         db_connection: &C,
     ) -> Result<User, DomainError<UserErrorKind>> {
         if self
             .user_query_service
-            .exists_by_email(&creation_form.email, db_connection)
+            .exists_by_email(&blueprint.email, db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
@@ -78,16 +75,13 @@ impl UserCommandService {
             })?
         {
             return Err(DomainError::from(UserErrorKind::Creation(
-                UserCreationErrorKind::EmailAlreadyExists(creation_form.email),
+                UserCreationErrorKind::EmailAlreadyExists(blueprint.email),
             )));
         }
 
         let new_model = self
             .repository
-            .create(
-                UserMapper::to_new_active_model(creation_form),
-                db_connection,
-            )
+            .create(UserMapper::to_new_active_model(blueprint), db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::Unknown))
@@ -104,7 +98,7 @@ impl UserCommandService {
             })?;
 
         self.assign_game(
-            UserGameCreationForm::new(new_model.id, new_game.id().unwrap()),
+            UserGameAssignmentForm::new(new_model.id, new_game.id().unwrap()),
             db_connection,
         )
         .await

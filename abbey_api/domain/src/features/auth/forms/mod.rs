@@ -6,15 +6,15 @@ const REFRESH_TOKEN_LIFESPAN: Duration = Duration::weeks(2);
 
 /// Represents a user account registration form.
 #[derive(Clone)]
-pub struct RegistrationForm {
+pub struct UserRegistrationForm {
     /// The email address of the new user account to create.
     pub email: String,
     /// The password of the new user account to create.
     pub password: String,
 }
 
-impl RegistrationForm {
-    /// Creates a new [`RegistrationForm`].
+impl UserRegistrationForm {
+    /// Creates a new [`UserRegistrationForm`].
     pub fn new(email: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
             email: email.into(),
@@ -23,20 +23,20 @@ impl RegistrationForm {
     }
 }
 
-/// Represents a [`RefreshToken`][`super::domain::SessionToken`] creation form.
-pub struct RefreshTokenCreationForm {
-    /// The user ID of the [`RefreshToken`][`super::domain::RefreshToken`] to create.
+/// Represents a RefreshToken blueprint.
+pub struct RefreshTokenBlueprint {
+    /// The user ID of the RefreshToken to create.
     pub user_id: i32,
-    /// The value of the [`RefreshToken`][`super::domain::RefreshToken`] to create.
+    /// The value of the RefreshToken to create.
     pub value: String,
-    /// The creation time of the [`RefreshToken`][`super::domain::RefreshToken`] to create.
+    /// The creation time of the RefreshToken to create.
     pub created_at: OffsetDateTime,
-    /// The expiration time of the [`RefreshToken`][`super::domain::RefreshToken`] to create.
+    /// The expiration time of the RefreshToken to create.
     pub expires_at: OffsetDateTime,
 }
 
-impl RefreshTokenCreationForm {
-    /// Creates a new [`RefreshTokenCreationForm`].
+impl RefreshTokenBlueprint {
+    /// Creates a new [`RefreshTokenBlueprint`].
     pub fn new(user_id: &i32) -> Self {
         let created_at = OffsetDateTime::now_utc();
         let expires_at = created_at.saturating_add(REFRESH_TOKEN_LIFESPAN);
@@ -52,15 +52,15 @@ impl RefreshTokenCreationForm {
 
 /// Represents a user login attempt form.
 #[derive(Clone)]
-pub struct LoginForm {
+pub struct UserLoginForm {
     /// The email address of a user that attempts to login.
     pub email: String,
     /// The password of a user that attempts to login.
     pub password: String,
 }
 
-impl LoginForm {
-    /// Creates a new [`LoginForm`].
+impl UserLoginForm {
+    /// Creates a new [`UserLoginForm`].
     pub fn new(email: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
             email: email.into(),

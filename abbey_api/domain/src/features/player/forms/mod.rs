@@ -1,9 +1,9 @@
-/// Represents a [Player][`crate::features::player::domain::Player`] creation form.
+/// Represents a Player blueprint.
 #[derive(Clone)]
-pub struct PlayerCreationForm {}
+pub struct PlayerBlueprint {}
 
-impl PlayerCreationForm {
-    /// Creates a new [`PlayerCreationForm`].
+impl PlayerBlueprint {
+    /// Creates a new [`PlayerBlueprint`].
     pub fn new() -> Self {
         Self {}
     }

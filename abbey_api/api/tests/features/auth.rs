@@ -182,7 +182,7 @@ pub mod register {
 
 pub mod login {
     use axum::http::StatusCode;
-    use domain::features::auth::{domain::AuthenticationTokens, forms::RegistrationForm};
+    use domain::features::auth::{domain::AuthenticationTokens, forms::UserRegistrationForm};
     use serde_json::json;
     use serial_test::serial;
     use tracing::debug;
@@ -205,7 +205,7 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -249,7 +249,7 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -313,7 +313,7 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -345,7 +345,7 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -371,7 +371,7 @@ pub mod refresh {
         features::auth::{
             domain::AuthenticationTokens,
             error::{AuthenticationErrorKind, RefreshErrorKind},
-            forms::{LoginForm, RegistrationForm},
+            forms::{UserLoginForm, UserRegistrationForm},
         },
         shared::error::{DomainError, DomainErrorKind},
     };
@@ -396,7 +396,7 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -407,7 +407,7 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -463,7 +463,7 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -494,7 +494,7 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await

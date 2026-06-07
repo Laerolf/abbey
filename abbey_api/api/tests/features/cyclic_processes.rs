@@ -6,7 +6,7 @@ pub mod start_cyclic_process {
         features::{
             actor::{domain::ActorKind, dto::ActorDto},
             assignment::forms::ProcessAssignmentForm,
-            auth::forms::{LoginForm, RegistrationForm},
+            auth::forms::{UserLoginForm, UserRegistrationForm},
             process::{
                 dto::{CyclicProcessDto, ProcessStatusDto},
                 error::ProcessErrorKind,
@@ -41,7 +41,7 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -52,7 +52,7 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -178,7 +178,7 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -189,7 +189,7 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -229,7 +229,7 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -240,7 +240,7 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -310,7 +310,7 @@ pub mod pause_cyclic_process {
         features::{
             actor::{domain::ActorKind, dto::ActorDto},
             assignment::forms::ProcessAssignmentForm,
-            auth::forms::{LoginForm, RegistrationForm},
+            auth::forms::{UserLoginForm, UserRegistrationForm},
             process::{
                 dto::{CyclicProcessDto, ProcessStatusDto},
                 error::ProcessErrorKind,
@@ -345,7 +345,7 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -356,7 +356,7 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -495,7 +495,7 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -506,7 +506,7 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -591,7 +591,7 @@ pub mod assign_cyclic_process {
         features::{
             actor::{domain::person::Person, dto::ActorDto},
             assignment::dto::ProcessAssignmentDto,
-            auth::forms::{LoginForm, RegistrationForm},
+            auth::forms::{UserLoginForm, UserRegistrationForm},
             monk::{domain::Monk, dto::MonkDto},
             player::dto::PlayerDto,
             process::dto::{CyclicProcessDto, ProcessDto, ProcessStatusDto},
@@ -621,7 +621,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -632,7 +632,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -759,7 +759,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -770,7 +770,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -858,7 +858,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -869,7 +869,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -968,7 +968,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -979,7 +979,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -1056,7 +1056,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -1067,7 +1067,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -1101,7 +1101,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
                     .await
             })
             .await
@@ -1112,7 +1112,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await

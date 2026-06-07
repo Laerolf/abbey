@@ -6,7 +6,7 @@ use crate::{
     features::{
         game::{
             domain::Game,
-            forms::{GameCreationForm, UserGameCreationForm},
+            forms::{GameBlueprint, UserGameAssignmentForm},
         },
         monastery::domain::Monastery,
         player::domain::Player,
@@ -19,15 +19,15 @@ use crate::{
 pub struct GameMapper;
 
 impl GameMapper {
-    /// Maps a [`GameCreationForm`] to a [model][`games::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: GameCreationForm) -> games::ActiveModel {
+    /// Maps a [`GameBlueprint`] to a [model][`games::ActiveModel`] to create.
+    pub fn to_new_active_model(blueprint: GameBlueprint) -> games::ActiveModel {
         games::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            monastery_id: Set(creation_form.monastery_id),
-            player_id: Set(creation_form.player_id),
-            surroundings_id: Set(creation_form.surroundings_id),
+            monastery_id: Set(blueprint.monastery_id),
+            player_id: Set(blueprint.player_id),
+            surroundings_id: Set(blueprint.surroundings_id),
         }
     }
 
@@ -65,14 +65,14 @@ impl GameMapper {
 pub struct UserGameMapper;
 
 impl UserGameMapper {
-    /// Maps a [UserGameCreationForm] to a new [`model`][user_games::ActiveModel].
-    pub fn to_new_active_model(creation_form: UserGameCreationForm) -> user_games::ActiveModel {
+    /// Maps a [UserGameAssignmentForm] to a new [`model`][user_games::ActiveModel].
+    pub fn to_new_active_model(form: UserGameAssignmentForm) -> user_games::ActiveModel {
         user_games::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            user_id: Set(creation_form.user_id),
-            game_id: Set(creation_form.game_id),
+            user_id: Set(form.user_id),
+            game_id: Set(form.game_id),
         }
     }
 }

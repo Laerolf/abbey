@@ -6,21 +6,17 @@ use crate::{
         monastery::{
             domain::Monastery,
             error::MonasteryErrorKind,
-            forms::MonasteryMonkCreationForm,
+            forms::{MonasteryBlueprint, MonasteryMonkAssignmentForm},
             mapper::{MonasteryMapper, MonasteryMonkMapper},
             repository::MonasteryRepository,
         },
         monk::{
             domain::Monk,
-            forms::MonkCreationForm,
             service::{MonkCommandService, MonkQueryService},
         },
     },
     shared::{DomainElement, error::DomainError},
 };
-
-/// The default amount of Monks in a Monastery.
-const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 
 /// Represents a command service for [`Monasteries`][Monastery].
 #[derive(Clone)]
@@ -47,7 +43,7 @@ impl MonasteryCommandService {
     /// Assigns [Monks][`Vec<Monk>`] to a [``Monastery`].
     async fn assign_monks<C: ConnectionTrait>(
         &self,
-        forms: Vec<MonasteryMonkCreationForm>,
+        forms: Vec<MonasteryMonkAssignmentForm>,
         db_connection: &C,
     ) -> Result<Vec<monastery_monks::Model>, DomainError<MonasteryErrorKind>> {
         let models: Vec<monastery_monks::ActiveModel> = forms
@@ -61,11 +57,10 @@ impl MonasteryCommandService {
     /// Creates a new [`Monastery`].
     pub async fn create<C: ConnectionTrait>(
         &self,
+        blueprint: MonasteryBlueprint,
         db_connection: &C,
     ) -> Result<Monastery, DomainError<MonasteryErrorKind>> {
-        let skill_names = vec!["cooking".to_string(), "brewing".to_string()];
-
-        let model_plan = MonasteryMapper::to_new_active_model();
+        let model_plan = MonasteryMapper::to_new_active_model(blueprint.clone());
 
         let model = self
             .repository
@@ -73,27 +68,24 @@ impl MonasteryCommandService {
             .await
             .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
 
-        let monk_creation_forms = (0..DEFAULT_AMOUNT_OF_MONKS)
-            .map(|_| MonkCreationForm::new("Maurits", skill_names.clone()))
-            .collect();
-
         let monks: Vec<Monk> = self
             .monk_command_service
-            .create_many(monk_creation_forms, db_connection)
+            .create_many(blueprint.monk_blueprints, db_connection)
             .await
             .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
 
-        let monk_assignments: Vec<MonasteryMonkCreationForm> = monks
+        let monk_assignments: Vec<MonasteryMonkAssignmentForm> = monks
             .iter()
             .map(|monk| {
-                Ok(MonasteryMonkCreationForm::new(
+                Ok(MonasteryMonkAssignmentForm::new(
                     model.id,
                     monk.id().map_err(|error| {
                         DomainError::from(MonasteryErrorKind::AssignMonks).with_cause(error)
                     })?,
                 ))
             })
-            .collect::<Result<Vec<MonasteryMonkCreationForm>, DomainError<MonasteryErrorKind>>>()?;
+            .collect::<Result<Vec<MonasteryMonkAssignmentForm>, DomainError<MonasteryErrorKind>>>(
+            )?;
 
         self.assign_monks(monk_assignments, db_connection).await?;
 

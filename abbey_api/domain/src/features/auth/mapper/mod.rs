@@ -11,7 +11,7 @@ use crate::{
                 RefreshErrorKind::{self},
                 RegistrationErrorKind,
             },
-            forms::{LoginForm, RefreshTokenCreationForm, RegistrationForm},
+            forms::{RefreshTokenBlueprint, UserLoginForm, UserRegistrationForm},
         },
         user::domain::User,
     },
@@ -25,7 +25,7 @@ impl AuthenticationDtoMapper {
     /// Maps a [RegisterUserRequest] to a [`RegistrationForm`].
     pub fn to_registration_form(
         request: RegisterUserRequest,
-    ) -> Result<RegistrationForm, DomainError<AuthenticationErrorKind>> {
+    ) -> Result<UserRegistrationForm, DomainError<AuthenticationErrorKind>> {
         let Some(email_address) = request.email else {
             return Err(DomainError::from(AuthenticationErrorKind::Registration(
                 RegistrationErrorKind::EmailRequired,
@@ -50,13 +50,13 @@ impl AuthenticationDtoMapper {
             )));
         }
 
-        Ok(RegistrationForm::new(email_address, password))
+        Ok(UserRegistrationForm::new(email_address, password))
     }
 
     /// Maps a [LoginUserRequest] to a [`LoginForm`].
     pub fn to_login_form(
         request: LoginUserRequest,
-    ) -> Result<LoginForm, DomainError<AuthenticationErrorKind>> {
+    ) -> Result<UserLoginForm, DomainError<AuthenticationErrorKind>> {
         let Some(email_address) = request.email else {
             return Err(DomainError::from(AuthenticationErrorKind::Login(
                 LoginErrorKind::EmailRequired,
@@ -69,7 +69,7 @@ impl AuthenticationDtoMapper {
             )));
         };
 
-        Ok(LoginForm::new(email_address, password))
+        Ok(UserLoginForm::new(email_address, password))
     }
 
     /// Maps a [`User`] to a [RegisterUserResponse].
@@ -81,25 +81,23 @@ impl AuthenticationDtoMapper {
     }
 }
 
-/// Represents an element that maps [RefreshToken][`super::domain::RefreshToken`]s.
+/// Represents an element that maps [`RefreshTokens`][RefreshToken].
 pub struct RefreshTokenMapper;
 
 impl RefreshTokenMapper {
     /// Creates a new [RefreshToken active model][`refresh_tokens::ActiveModel`].
-    pub fn to_new_active_model(
-        creation_form: RefreshTokenCreationForm,
-    ) -> refresh_tokens::ActiveModel {
+    pub fn to_new_active_model(blueprint: RefreshTokenBlueprint) -> refresh_tokens::ActiveModel {
         refresh_tokens::ActiveModel {
             id: NotSet,
-            created_at: Set(creation_form.created_at),
+            created_at: Set(blueprint.created_at),
             last_updated_at: NotSet,
-            user_id: Set(creation_form.user_id),
-            value: Set(creation_form.value),
-            expires_at: Set(creation_form.expires_at),
+            user_id: Set(blueprint.user_id),
+            value: Set(blueprint.value),
+            expires_at: Set(blueprint.expires_at),
         }
     }
 
-    /// Creates a [RefreshToken active model][refresh_tokens::ActiveModel].
+    /// Creates a [RefreshToken][refresh_tokens::ActiveModel].
     pub fn to_active_model(
         refresh_token: &RefreshToken,
     ) -> Result<refresh_tokens::ActiveModel, DomainError<AuthenticationErrorKind>> {

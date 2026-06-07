@@ -20,7 +20,7 @@ use crate::{
                 AuthenticationErrorKind, GetUserSessionErrorKind, LoginErrorKind, RefreshErrorKind,
                 RegistrationErrorKind,
             },
-            forms::{LoginForm, RefreshTokenCreationForm, RegistrationForm},
+            forms::{RefreshTokenBlueprint, UserLoginForm, UserRegistrationForm},
             mapper::RefreshTokenMapper,
             repository::RefreshTokenRepository,
         },
@@ -28,7 +28,7 @@ use crate::{
         user::{
             domain::User,
             error::{UserCreationErrorKind, UserErrorKind},
-            forms::UserCreationForm,
+            forms::UserBlueprint,
             service::{UserCommandService, UserQueryService},
         },
     },
@@ -81,7 +81,7 @@ impl AuthenticationService {
     /// Registers a new [User].
     pub async fn register(
         &self,
-        form: RegistrationForm,
+        form: UserRegistrationForm,
         db_transaction: &DatabaseTransaction,
     ) -> Result<User, DomainError<AuthenticationErrorKind>> {
         let hashed_password = self
@@ -93,17 +93,17 @@ impl AuthenticationService {
                 ))
             })?;
 
-        let user_creation_form = UserCreationForm::new(form.email.clone(), hashed_password);
+        let user_blueprint = UserBlueprint::new(form.email, hashed_password);
 
         self.user_command_service
-            .create(user_creation_form, db_transaction)
+            .create(user_blueprint.clone(), db_transaction)
             .await
             .map_err(|error| match error.kind() {
                 UserErrorKind::Creation(UserCreationErrorKind::EmailAlreadyExists(_)) => {
                     DomainError::from(AuthenticationErrorKind::Registration(
                         RegistrationErrorKind::EmailAlreadyExists,
                     ))
-                    .with_context("email", form.email.clone())
+                    .with_context("email", user_blueprint.email.clone())
                 }
                 _ => DomainError::from(AuthenticationErrorKind::Registration(
                     RegistrationErrorKind::CreateUser,
@@ -115,7 +115,7 @@ impl AuthenticationService {
     /// Logins a User.
     pub async fn login<C: ConnectionTrait>(
         &self,
-        form: LoginForm,
+        form: UserLoginForm,
         db_connection: &C,
     ) -> Result<AuthTokens, DomainError<AuthenticationErrorKind>> {
         let user = self
@@ -256,7 +256,7 @@ impl RefreshTokenCommandService {
         user_id: &i32,
         db_connection: &C,
     ) -> Result<RefreshToken, DomainError<AuthenticationErrorKind>> {
-        let creation_form = RefreshTokenCreationForm::new(user_id);
+        let blueprint = RefreshTokenBlueprint::new(user_id);
 
         if let Some(existing_model) = self
             .refresh_token_query_service
@@ -280,7 +280,7 @@ impl RefreshTokenCommandService {
         let new_model = self
             .repository
             .create(
-                RefreshTokenMapper::to_new_active_model(creation_form),
+                RefreshTokenMapper::to_new_active_model(blueprint),
                 db_connection,
             )
             .await

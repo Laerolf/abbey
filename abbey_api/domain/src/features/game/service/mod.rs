@@ -4,13 +4,16 @@ use time::Duration;
 use crate::{
     features::{
         game::{
-            domain::Game, error::GameErrorKind, forms::GameCreationForm, mapper::GameMapper,
+            domain::Game, error::GameErrorKind, forms::GameBlueprint, mapper::GameMapper,
             repository::GameRepository,
         },
-        monastery::service::{MonasteryCommandService, MonasteryQueryService},
+        monastery::{
+            forms::MonasteryBlueprint,
+            service::{MonasteryCommandService, MonasteryQueryService},
+        },
         output::{domain::resource::Category, forms::ResourceBlueprint},
         player::{
-            forms::PlayerCreationForm,
+            forms::PlayerBlueprint,
             service::{PlayerCommandService, PlayerQueryService},
         },
         surroundings::{
@@ -57,17 +60,19 @@ impl GameCommandService {
         &self,
         db_connection: &C,
     ) -> Result<Game, DomainError<GameErrorKind>> {
+        let monastery_blueprint = MonasteryBlueprint::temp();
+
         let monastery = self
             .monastery_command_service
-            .create(db_connection)
+            .create(monastery_blueprint, db_connection)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
-        let player_creation_form = PlayerCreationForm::new();
+        let player_blueprint = PlayerBlueprint::new();
 
         let player = self
             .player_command_service
-            .create(player_creation_form, db_connection)
+            .create(player_blueprint, db_connection)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
@@ -89,7 +94,7 @@ impl GameCommandService {
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
-        let creation_form = GameCreationForm::new(
+        let blueprint = GameBlueprint::new(
             player.id().unwrap(),
             monastery.id().unwrap(),
             surroundings.id().unwrap(),
@@ -97,10 +102,7 @@ impl GameCommandService {
 
         let new_model = self
             .repository
-            .create(
-                GameMapper::to_new_active_model(creation_form),
-                db_connection,
-            )
+            .create(GameMapper::to_new_active_model(blueprint), db_connection)
             .await
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 

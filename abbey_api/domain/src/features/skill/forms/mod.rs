@@ -1,12 +1,12 @@
-/// Represents a [`Skill`][`entity::skills::ActiveModel`] creation form.
+/// Represents a Skill blueprint.
 #[derive(Clone)]
-pub struct SkillCreationForm {
-    /// The name of this [`Skill`][`super::domain::Skill`].
+pub struct SkillBlueprint {
+    /// The name of the Skill to create.
     pub name: String,
 }
 
-impl SkillCreationForm {
-    /// Creates a new [`SkillCreationForm`].
+impl SkillBlueprint {
+    /// Creates a new [`SkillBlueprint`].
     pub fn new(name: impl Into<String>) -> Self {
         Self { name: name.into() }
     }

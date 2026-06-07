@@ -5,7 +5,7 @@ use sea_orm::ConnectionTrait;
 
 use crate::{
     features::skill::{
-        domain::Skill, error::SkillErrorKind, forms::SkillCreationForm, mapper::SkillMapper,
+        domain::Skill, error::SkillErrorKind, forms::SkillBlueprint, mapper::SkillMapper,
         repository::SkillRepository,
     },
     shared::error::DomainError,
@@ -26,17 +26,17 @@ impl SkillCommandService {
     /// Creates many [`Skills`][Vec<Skills>].
     pub async fn create_many<C: ConnectionTrait>(
         &self,
-        forms: Vec<SkillCreationForm>,
+        blueprints: Vec<SkillBlueprint>,
         db_connection: &C,
     ) -> Result<Vec<Skill>, DomainError<SkillErrorKind>> {
-        let model_plans: Vec<skills::ActiveModel> = forms
+        let active_models: Vec<skills::ActiveModel> = blueprints
             .into_iter()
             .map(SkillMapper::to_new_active_model)
             .collect();
 
         let models = self
             .repository
-            .create_many(model_plans, db_connection)
+            .create_many(active_models, db_connection)
             .await?;
 
         Ok(models
@@ -51,8 +51,7 @@ impl SkillCommandService {
         names: &[String],
         db_connection: &C,
     ) -> Result<Vec<Skill>, DomainError<SkillErrorKind>> {
-        let creation_forms: Vec<SkillCreationForm> =
-            names.iter().map(SkillCreationForm::new).collect();
+        let blueprints: Vec<SkillBlueprint> = names.iter().map(SkillBlueprint::new).collect();
 
         let existing_models = self.repository.get_by_names(names, db_connection).await?;
 
@@ -62,9 +61,9 @@ impl SkillCommandService {
             .map(|skill| skill.name)
             .collect();
 
-        let missing_models: Vec<SkillCreationForm> = creation_forms
+        let missing_models: Vec<SkillBlueprint> = blueprints
             .into_iter()
-            .filter(|form| !found_skill_names.contains(&form.name))
+            .filter(|blueprint| !found_skill_names.contains(&blueprint.name))
             .collect();
 
         let created_models = self.create_many(missing_models, db_connection).await?;

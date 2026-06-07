@@ -129,16 +129,16 @@ impl CyclicProcessMapper {
 pub struct CyclicProcessResourceMapper;
 
 impl CyclicProcessResourceMapper {
-    /// Maps a [CyclicProcessResourceCreationForm] to a new [`model`][cyclic_process_resources::ActiveModel].
+    /// Maps a [CyclicProcessOutputResourceAssignmentForm] to a new [`model`][cyclic_process_resources::ActiveModel].
     pub fn to_new_active_model(
-        creation_form: CyclicProcessOutputResourceAssignmentForm,
+        form: CyclicProcessOutputResourceAssignmentForm,
     ) -> cyclic_process_resources::ActiveModel {
         cyclic_process_resources::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            cyclic_process_id: Set(creation_form.cyclic_process_id),
-            resource_id: Set(creation_form.resource_id),
+            cyclic_process_id: Set(form.cyclic_process_id),
+            resource_id: Set(form.resource_id),
         }
     }
 }

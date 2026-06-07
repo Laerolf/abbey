@@ -9,7 +9,7 @@ use crate::{
         game::domain::Game,
         user::{
             domain::{Status, User},
-            forms::UserCreationForm,
+            forms::UserBlueprint,
         },
     },
     shared::DomainElement,
@@ -19,14 +19,14 @@ use crate::{
 pub struct UserMapper;
 
 impl UserMapper {
-    /// Maps a [`UserCreationForm`] to a [model][`users::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: UserCreationForm) -> users::ActiveModel {
+    /// Maps a [`UserBlueprint`] to a [model][`users::ActiveModel`] to create.
+    pub fn to_new_active_model(blueprint: UserBlueprint) -> users::ActiveModel {
         users::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            email: Set(creation_form.email),
-            password: Set(creation_form.password),
+            email: Set(blueprint.email),
+            password: Set(blueprint.password),
             status: Set(Status::New.to_string()),
         }
     }

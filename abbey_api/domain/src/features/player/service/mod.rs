@@ -4,8 +4,8 @@ use crate::{
     features::{
         actor::error::ActorErrorKind,
         player::{
-            domain::Player, error::PlayerErrorKind, forms::PlayerCreationForm,
-            mapper::PlayerMapper, repository::PlayerRepository,
+            domain::Player, error::PlayerErrorKind, forms::PlayerBlueprint, mapper::PlayerMapper,
+            repository::PlayerRepository,
         },
         process::{domain::ProcessKind, service::cyclic_process::CyclicProcessQueryService},
     },
@@ -31,12 +31,12 @@ impl PlayerCommandService {
     /// Creates a new [`Player`].
     pub async fn create<C: ConnectionTrait>(
         &self,
-        form: PlayerCreationForm,
+        blueprint: PlayerBlueprint,
         db_connection: &C,
     ) -> Result<Player, DomainError<PlayerErrorKind>> {
-        let model_plan = PlayerMapper::to_new_active_model(form);
+        let active_model = PlayerMapper::to_new_active_model(blueprint);
 
-        let model = self.repository.create(model_plan, db_connection).await?;
+        let model = self.repository.create(active_model, db_connection).await?;
 
         self.player_query_service
             .get_by_id(&model.id, db_connection)

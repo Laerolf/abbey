@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 use crate::{
     features::skill::{
         domain::Skill,
-        forms::{MonkSkillAssignmentForm, SkillCreationForm},
+        forms::{MonkSkillAssignmentForm, SkillBlueprint},
     },
     shared::DomainElement,
 };
@@ -14,13 +14,13 @@ use crate::{
 pub struct SkillMapper;
 
 impl SkillMapper {
-    /// Maps a [`SkillCreationForm`] to a [model][`skills::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: SkillCreationForm) -> skills::ActiveModel {
+    /// Maps a [`SkillBlueprint`] to a [model][`skills::ActiveModel`] to create.
+    pub fn to_new_active_model(blueprint: SkillBlueprint) -> skills::ActiveModel {
         skills::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            name: Set(creation_form.name),
+            name: Set(blueprint.name),
         }
     }
 
@@ -49,14 +49,14 @@ impl SkillMapper {
 pub struct MonkSkillMapper;
 
 impl MonkSkillMapper {
-    /// Maps a [MonkSkillCreationForm] to a [`model`][monk_skills::ActiveModel].
-    pub fn to_new_active_model(creation_form: MonkSkillAssignmentForm) -> monk_skills::ActiveModel {
+    /// Maps a [MonkSkillAssignmentForm] to a [`model`][monk_skills::ActiveModel].
+    pub fn to_new_active_model(form: MonkSkillAssignmentForm) -> monk_skills::ActiveModel {
         monk_skills::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            monk_id: Set(creation_form.monk_id),
-            skill_id: Set(creation_form.skill_id),
+            monk_id: Set(form.monk_id),
+            skill_id: Set(form.skill_id),
         }
     }
 }

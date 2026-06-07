@@ -4,7 +4,7 @@ use time::OffsetDateTime;
 
 use crate::{
     features::{
-        player::{domain::Player, forms::PlayerCreationForm},
+        player::{domain::Player, forms::PlayerBlueprint},
         process::domain::ProcessKind,
     },
     shared::DomainElement,
@@ -14,8 +14,8 @@ use crate::{
 pub struct PlayerMapper;
 
 impl PlayerMapper {
-    /// Maps a [`PlayerCreationForm`] to a [model][`players::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: PlayerCreationForm) -> players::ActiveModel {
+    /// Maps a [`PlayerBlueprint`] to a [model][`players::ActiveModel`] to create.
+    pub fn to_new_active_model(_blueprint: PlayerBlueprint) -> players::ActiveModel {
         players::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),

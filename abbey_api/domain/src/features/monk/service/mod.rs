@@ -7,7 +7,7 @@ use crate::{
     features::{
         actor::error::ActorErrorKind,
         monk::{
-            domain::Monk, forms::MonkCreationForm, mapper::MonkMapper, repository::MonkRepository,
+            domain::Monk, forms::MonkBlueprint, mapper::MonkMapper, repository::MonkRepository,
         },
         process::{
             domain::{ProcessKind, cyclic_process::CyclicProcess},
@@ -48,12 +48,12 @@ impl MonkCommandService {
     /// Creates [`many Monks`][Vec<Monk>].
     pub async fn create_many<C: ConnectionTrait>(
         &self,
-        forms: Vec<MonkCreationForm>,
+        blueprints: Vec<MonkBlueprint>,
         db_connection: &C,
     ) -> Result<Vec<Monk>, DomainError<ActorErrorKind>> {
-        let mut skill_names: Vec<String> = forms
+        let mut skill_names: Vec<String> = blueprints
             .iter()
-            .flat_map(|form| form.skill_names.iter().cloned())
+            .flat_map(|blueprint| blueprint.skill_names.iter().cloned())
             .collect();
         skill_names.sort();
         skill_names.dedup();
@@ -69,7 +69,7 @@ impl MonkCommandService {
             .map(|skill| (skill.name().as_str(), skill))
             .collect();
 
-        let model_plans: Vec<monks::ActiveModel> = forms
+        let model_plans: Vec<monks::ActiveModel> = blueprints
             .clone()
             .into_iter()
             .map(MonkMapper::to_new_active_model)
@@ -82,9 +82,9 @@ impl MonkCommandService {
 
         let skill_assignments: Vec<monk_skills::ActiveModel> = monks
             .iter()
-            .zip(forms.iter())
-            .flat_map(|(monk, form)| {
-                form.skill_names.iter().filter_map(|skill_name| {
+            .zip(blueprints.iter())
+            .flat_map(|(monk, blueprint)| {
+                blueprint.skill_names.iter().filter_map(|skill_name| {
                     skills_by_name
                         .get(skill_name.as_str())
                         .and_then(|skill| skill.id().ok())
