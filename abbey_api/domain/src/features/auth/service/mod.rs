@@ -156,7 +156,7 @@ impl AuthenticationService {
 
         let refresh_token = self
             .refresh_token_command_service
-            .create(&user_id, db_connection)
+            .create(RefreshTokenBlueprint::new(&user_id), db_connection)
             .await?;
 
         info!(
@@ -219,7 +219,7 @@ impl AuthenticationService {
 
         let new_refresh_token = self
             .refresh_token_command_service
-            .create(&user_id, db_connection)
+            .create(RefreshTokenBlueprint::new(&user_id), db_connection)
             .await?;
 
         info!(
@@ -253,14 +253,12 @@ impl RefreshTokenCommandService {
     /// Creates a new [`RefreshToken`].
     pub async fn create<C: ConnectionTrait>(
         &self,
-        user_id: &i32,
+        blueprint: RefreshTokenBlueprint,
         db_connection: &C,
     ) -> Result<RefreshToken, DomainError<AuthenticationErrorKind>> {
-        let blueprint = RefreshTokenBlueprint::new(user_id);
-
         if let Some(existing_model) = self
             .refresh_token_query_service
-            .find_by_user_id(user_id, db_connection)
+            .find_by_user_id(&blueprint.user_id, db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(AuthenticationErrorKind::Refresh(RefreshErrorKind::FindById))
