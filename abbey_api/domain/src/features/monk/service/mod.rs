@@ -69,7 +69,7 @@ impl MonkCommandService {
             .map(|skill| (skill.name().as_str(), skill))
             .collect();
 
-        let model_plans: Vec<monks::ActiveModel> = blueprints
+        let active_models: Vec<monks::ActiveModel> = blueprints
             .clone()
             .into_iter()
             .map(MonkMapper::to_new_active_model)
@@ -77,7 +77,7 @@ impl MonkCommandService {
 
         let monks = self
             .repository
-            .create_many(model_plans, db_connection)
+            .create_many(active_models, db_connection)
             .await?;
 
         let skill_assignments: Vec<monk_skills::ActiveModel> = monks

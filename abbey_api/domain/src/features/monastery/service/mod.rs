@@ -60,11 +60,11 @@ impl MonasteryCommandService {
         blueprint: MonasteryBlueprint,
         db_connection: &C,
     ) -> Result<Monastery, DomainError<MonasteryErrorKind>> {
-        let model_plan = MonasteryMapper::to_new_active_model(blueprint.clone());
+        let active_model = MonasteryMapper::to_new_active_model(blueprint.clone());
 
         let model = self
             .repository
-            .create(model_plan, db_connection)
+            .create(active_model, db_connection)
             .await
             .map_err(|error| DomainError::from(MonasteryErrorKind::Creation).with_cause(error))?;
 
