@@ -3,8 +3,7 @@ use entity::{
     skills,
 };
 use sea_orm::{
-    ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Statement,
+    ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Statement,
 };
 use tracing::warn;
 
@@ -341,19 +340,14 @@ impl CyclicProcessRepository {
     }
 
     /// Updates a [`CyclicProcess`].
-    pub async fn update(
+    pub async fn update<C: ConnectionTrait>(
         &self,
-        cyclic_process: CyclicProcess,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
-        cyclic_processes::Entity::update(CyclicProcessMapper::to_update_active_model(
-            cyclic_process.clone(),
-        ))
-        .exec(db_transaction)
-        .await
-        .map_err(|error| DomainError::from(ProcessErrorKind::Update).with_cause(error))?;
-
-        self.get_by_id_with_relations(&cyclic_process.id()?, db_transaction)
+        model: cyclic_processes::ActiveModel,
+        db_connection: &C,
+    ) -> Result<cyclic_processes::Model, DomainError<ProcessErrorKind>> {
+        cyclic_processes::Entity::update(model)
+            .exec(db_connection)
             .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::Update).with_cause(error))
     }
 }

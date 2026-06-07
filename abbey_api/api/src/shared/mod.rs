@@ -7,7 +7,7 @@ use domain::{
             repository::{ActorRepository, MonkRepository},
             service::{ActorQueryService, MonkCommandService, MonkQueryService},
         },
-        assignment::service::ProcessAssignmentService,
+        assignment::service::ProcessCommandService,
         auth::{
             repository::RefreshTokenRepository,
             service::{
@@ -35,10 +35,8 @@ use domain::{
         process::{
             repository::{cyclic_process::CyclicProcessRepository, task::TaskRepository},
             service::{
-                cyclic_process::{
-                    CyclicProcessCommandService, CyclicProcessQueryService, CyclicProcessService,
-                },
-                task::TaskService,
+                cyclic_process::{CyclicProcessCommandService, CyclicProcessQueryService},
+                task::{TaskCommandService, TaskQueryService},
             },
         },
         skill::{
@@ -66,16 +64,12 @@ use sea_orm::{ConnectionTrait, DatabaseConnection, DatabaseTransaction, DbErr, T
 pub struct ApiContext<C: ConnectionTrait> {
     db_connection: Arc<C>,
     pub authentication_service: AuthenticationService,
-
-    pub cyclic_process_service: CyclicProcessService,
-    pub task_service: TaskService,
-    pub process_assignment_service: ProcessAssignmentService,
-
     pub game_query_service: GameQueryService,
     pub game_command_service: GameCommandService,
     pub user_query_service: UserQueryService,
     pub catalog_query_service: CatalogQueryService,
-
+    pub cyclic_process_command_service: CyclicProcessCommandService,
+    pub process_command_service: ProcessCommandService,
     pub user_session_query_service: UserSessionQueryService,
 }
 
@@ -95,17 +89,6 @@ impl<C: ConnectionTrait> ApiContext<C> {
         let game_repository = GameRepository;
         let refresh_token_repository = RefreshTokenRepository;
         let actor_repository = ActorRepository;
-
-        let cyclic_process_service = CyclicProcessService::new(cyclic_process_repository.clone());
-        let task_service = TaskService::new(task_repository.clone());
-
-        let process_assignment_service = ProcessAssignmentService::new(
-            player_repository.clone(),
-            monk_repository.clone(),
-            cyclic_process_repository.clone(),
-            task_repository,
-            actor_repository,
-        );
 
         let refresh_token_query_service =
             RefreshTokenQueryService::new(refresh_token_repository.clone());
@@ -133,7 +116,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
 
         let cyclic_process_query_service = CyclicProcessQueryService::new(
             cyclic_process_repository.clone(),
-            resource_query_service,
+            resource_query_service.clone(),
             actor_query_service,
         );
         let cyclic_process_command_service = CyclicProcessCommandService::new(
@@ -166,7 +149,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
             surroundings_query_service.clone(),
             source_command_service,
             resource_command_service,
-            cyclic_process_command_service,
+            cyclic_process_command_service.clone(),
         );
 
         let monastery_query_service =
@@ -174,13 +157,28 @@ impl<C: ConnectionTrait> ApiContext<C> {
         let monastery_command_service = MonasteryCommandService::new(
             monastery_repository.clone(),
             monastery_query_service.clone(),
-            monk_command_service,
+            monk_command_service.clone(),
         );
 
-        let player_query_service =
-            PlayerQueryService::new(player_repository.clone(), cyclic_process_query_service);
+        let player_query_service = PlayerQueryService::new(
+            player_repository.clone(),
+            cyclic_process_query_service.clone(),
+        );
         let player_command_service =
             PlayerCommandService::new(player_repository, player_query_service.clone());
+
+        let task_query_service =
+            TaskQueryService::new(task_repository.clone(), resource_query_service);
+        let task_command_service = TaskCommandService::new(task_repository, task_query_service);
+
+        let process_command_service = ProcessCommandService::new(
+            actor_repository,
+            player_command_service.clone(),
+            monk_command_service,
+            cyclic_process_command_service.clone(),
+            cyclic_process_query_service,
+            task_command_service,
+        );
 
         let game_query_service = GameQueryService::new(
             game_repository.clone(),
@@ -216,15 +214,12 @@ impl<C: ConnectionTrait> ApiContext<C> {
         Self {
             db_connection,
             authentication_service,
-
-            cyclic_process_service,
-            task_service,
-            process_assignment_service,
-
             game_query_service,
             game_command_service,
             user_query_service,
+            cyclic_process_command_service,
             catalog_query_service,
+            process_command_service,
             user_session_query_service,
         }
     }
@@ -278,10 +273,9 @@ impl<C: ConnectionTrait> Clone for ApiContext<C> {
         Self {
             db_connection: self.db_connection.clone(),
             authentication_service: self.authentication_service.clone(),
-            cyclic_process_service: self.cyclic_process_service.clone(),
-            task_service: self.task_service.clone(),
-            process_assignment_service: self.process_assignment_service.clone(),
+            process_command_service: self.process_command_service.clone(),
             catalog_query_service: self.catalog_query_service.clone(),
+            cyclic_process_command_service: self.cyclic_process_command_service.clone(),
             game_query_service: self.game_query_service.clone(),
             game_command_service: self.game_command_service.clone(),
             user_query_service: self.user_query_service.clone(),

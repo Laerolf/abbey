@@ -21,8 +21,10 @@ pub enum ActorErrorKind {
     Update,
     /// Failed to find an Actor with the provided ID.
     FindById,
-    /// Failed to find Actors assigned to processes with the provided IDs.
-    FindByProcessIds,
+    /// Failed to get Actors assigned to process with the provided ID.
+    GetByProcessId,
+    /// Failed to get Actors assigned to processes with the provided IDs.
+    GetByProcessIds,
     /// Failed to get an Actor with the provided ID.
     GetById,
     /// Failed to get Actors with the provided IDs.
@@ -55,7 +57,8 @@ impl DomainErrorKind for ActorErrorKind {
             Self::Restore => "error.actor.restore".to_string(),
             Self::Update => "error.actor.update".to_string(),
             Self::FindById => "error.actor.find_by_id".to_string(),
-            Self::FindByProcessIds => "error.actor.find_by_process_ids".to_string(),
+            Self::GetByProcessId => "error.actor.get_by_process_id".to_string(),
+            Self::GetByProcessIds => "error.actor.get_by_process_ids".to_string(),
             Self::GetById => "error.actor.find_by_id".to_string(),
             Self::GetByIds => "error.actor.find_by_ids".to_string(),
             Self::GetByCyclicProcessIds => "error.actor.find_by_cyclic_process_ids".to_string(),
@@ -82,8 +85,11 @@ impl DomainErrorKind for ActorErrorKind {
             Self::Restore => "Failed to create an Actor.".to_string(),
             Self::Update => "Failed to update an Actor.".to_string(),
             Self::FindById => "Failed to find an Actor with the provided ID.".to_string(),
-            Self::FindByProcessIds => {
-                "Failed to find Actors assigned to processes with the provided IDs.".to_string()
+            Self::GetByProcessId => {
+                "Failed to get Actors assigned to process with the provided ID.".to_string()
+            }
+            Self::GetByProcessIds => {
+                "Failed to get Actors assigned to processes with the provided IDs.".to_string()
             }
             Self::GetById => "Failed to get an Actor with the provided ID.".to_string(),
             Self::GetByIds => "Failed to find Actors with the provided IDs.".to_string(),

@@ -11,7 +11,7 @@ use domain::{
             forms::ProcessAssignmentForm,
         },
         auth::domain::session_token::SessionToken,
-        process::dto::ProcessDto,
+        process::{domain::ProcessKind, dto::ProcessDto},
     },
     shared::error::DomainError,
 };
@@ -71,7 +71,7 @@ async fn assign(
     let assignment = context
         .in_transaction(async |db_transaction| {
             context
-                .process_assignment_service
+                .process_command_service
                 .assign_process_to_actors_in_game(
                     ProcessAssignmentForm::from_request(payload),
                     &game,
@@ -105,17 +105,16 @@ async fn start(
     Path(process_id): Path<i32>,
     session_token: SessionToken,
 ) -> Result<Json<ProcessDto>, AppError> {
-    let game_id = context
+    let _ = context
         .user_session_query_service
         .get_by_session_token(&session_token, context.db_connection())
-        .await?
-        .get_game_id()?;
+        .await?;
 
     let cyclic_process = context
         .in_transaction(async |db_transaction| {
             context
-                .cyclic_process_service
-                .start_by_id_in_game(&process_id, &game_id, db_transaction)
+                .cyclic_process_command_service
+                .start(&process_id, db_transaction)
                 .await
                 .inspect_err(|error| {
                     error!(?error);
@@ -123,7 +122,9 @@ async fn start(
         })
         .await?;
 
-    Ok(Json(ProcessDto::from(cyclic_process)))
+    Ok(Json(ProcessDto::from(ProcessKind::CyclicProcess(
+        cyclic_process,
+    ))))
 }
 
 /// Starts a cyclic process.
@@ -144,17 +145,16 @@ async fn pause(
     Path(process_id): Path<i32>,
     session_token: SessionToken,
 ) -> Result<Json<ProcessDto>, AppError> {
-    let game_id = context
+    let _ = context
         .user_session_query_service
         .get_by_session_token(&session_token, context.db_connection())
-        .await?
-        .get_game_id()?;
+        .await;
 
     let cyclic_process = context
         .in_transaction(async |db_transaction| {
             context
-                .cyclic_process_service
-                .pause_by_id_in_game(&process_id, &game_id, db_transaction)
+                .cyclic_process_command_service
+                .pause(&process_id, db_transaction)
                 .await
                 .inspect_err(|error| {
                     error!(?error);
@@ -162,5 +162,7 @@ async fn pause(
         })
         .await?;
 
-    Ok(Json(ProcessDto::from(cyclic_process)))
+    Ok(Json(ProcessDto::from(ProcessKind::CyclicProcess(
+        cyclic_process,
+    ))))
 }

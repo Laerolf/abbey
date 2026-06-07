@@ -1,5 +1,5 @@
 use entity::{cyclic_process_resources, cyclic_processes};
-use sea_orm::{ConnectionTrait, DatabaseTransaction};
+use sea_orm::ConnectionTrait;
 use time::OffsetDateTime;
 
 use crate::{
@@ -7,7 +7,7 @@ use crate::{
         actor::{domain::ActorKind, service::ActorQueryService},
         output::{domain::resource::Resource, service::ResourceQueryService},
         process::{
-            domain::{Process, ProcessKind, cyclic_process::CyclicProcess},
+            domain::{Process, cyclic_process::CyclicProcess},
             error::ProcessErrorKind,
             forms::cyclic_process::{
                 CyclicProcessBlueprint, CyclicProcessOutputResourceAssignmentForm,
@@ -18,92 +18,6 @@ use crate::{
     },
     shared::{DomainElement, error::DomainError},
 };
-
-/// Represents a service handling the [`CyclicProcess`] topic.
-#[derive(Clone)]
-pub struct CyclicProcessService {
-    repository: CyclicProcessRepository,
-}
-
-impl CyclicProcessService {
-    /// Creates a new [`CyclicProcessService`].
-    pub fn new(repository: CyclicProcessRepository) -> Self {
-        Self { repository }
-    }
-
-    /// Finds a [`CyclicProcess`] and all its related entities by its ID.
-    pub async fn find_by_id_with_relations<C: ConnectionTrait>(
-        &self,
-        id: &i32,
-        db_connection: &C,
-    ) -> Result<Option<CyclicProcess>, DomainError<ProcessErrorKind>> {
-        self.repository
-            .find_by_id_with_relations(id, db_connection)
-            .await
-    }
-
-    /// Starts a [`CyclicProcess`].
-    pub async fn start_by_id_in_game(
-        &self,
-        process_id: &i32,
-        game_id: &i32,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<ProcessKind, DomainError<ProcessErrorKind>> {
-        let mut process = self
-            .repository
-            .get_by_id_for_game_with_relations(process_id, game_id, db_transaction)
-            .await?;
-
-        process.start(OffsetDateTime::now_utc()).map_err(|error| {
-            DomainError::from(ProcessErrorKind::Start)
-                .with_cause(error)
-                .with_context("process_id", process_id.to_string())
-        })?;
-
-        process = self
-            .repository
-            .update(process, db_transaction)
-            .await
-            .map_err(|error| {
-                DomainError::from(ProcessErrorKind::Start)
-                    .with_cause(error)
-                    .with_context("process_id", process_id.to_string())
-            })?;
-
-        Ok(ProcessKind::CyclicProcess(process))
-    }
-
-    /// Pauses a [`CyclicProcess`].
-    pub async fn pause_by_id_in_game(
-        &self,
-        process_id: &i32,
-        game_id: &i32,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<ProcessKind, DomainError<ProcessErrorKind>> {
-        let mut process = self
-            .repository
-            .get_by_id_for_game_with_relations(process_id, game_id, db_transaction)
-            .await?;
-
-        process.pause(OffsetDateTime::now_utc()).map_err(|error| {
-            DomainError::from(ProcessErrorKind::Start)
-                .with_cause(error)
-                .with_context("process_id", process_id.to_string())
-        })?;
-
-        process = self
-            .repository
-            .update(process, db_transaction)
-            .await
-            .map_err(|error| {
-                DomainError::from(ProcessErrorKind::Start)
-                    .with_cause(error)
-                    .with_context("process_id", process_id.to_string())
-            })?;
-
-        Ok(ProcessKind::CyclicProcess(process))
-    }
-}
 
 /// Represents a command service for [`CyclicProcesses`][CyclicProcess].
 #[derive(Clone)]
@@ -169,6 +83,94 @@ impl CyclicProcessCommandService {
             .await
             .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))
     }
+
+    /// Updates a [`CyclicProcess`].
+    pub async fn update<C: ConnectionTrait>(
+        &self,
+        cyclic_process: CyclicProcess,
+        db_connection: &C,
+    ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
+        let active_model = CyclicProcessMapper::to_update_active_model(cyclic_process);
+
+        let updated_model = self.repository.update(active_model, db_connection).await?;
+
+        self.cyclic_process_query_service
+            .get_by_id(&updated_model.id, db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::Update).with_cause(error))
+    }
+
+    /// Starts a [`CyclicProcess`].
+    pub async fn start<C: ConnectionTrait>(
+        &self,
+        process_id: &i32,
+        db_connection: &C,
+    ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
+        let mut model = self
+            .cyclic_process_query_service
+            .get_by_id(process_id, db_connection)
+            .await
+            .map_err(|_error| DomainError::from(ProcessErrorKind::NotFound))?;
+
+        model.start(OffsetDateTime::now_utc()).map_err(|error| {
+            DomainError::from(ProcessErrorKind::Start)
+                .with_cause(error)
+                .with_context("process_id", process_id.to_string())
+        })?;
+
+        let active_model = CyclicProcessMapper::to_update_active_model(model);
+
+        let updated_model = self
+            .repository
+            .update(active_model, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(ProcessErrorKind::Start)
+                    .with_cause(error)
+                    .with_context("process_id", process_id.to_string())
+            })?;
+
+        self.cyclic_process_query_service
+            .get_by_id(&updated_model.id, db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::Start).with_cause(error))
+    }
+
+    /// Starts a [`CyclicProcess`].
+    pub async fn pause<C: ConnectionTrait>(
+        &self,
+        process_id: &i32,
+        db_connection: &C,
+    ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
+        let mut model = self
+            .cyclic_process_query_service
+            .get_by_id(process_id, db_connection)
+            .await
+            .map_err(|_error| DomainError::from(ProcessErrorKind::NotFound))?;
+
+        model.pause(OffsetDateTime::now_utc()).map_err(|error| {
+            DomainError::from(ProcessErrorKind::Pause)
+                .with_cause(error)
+                .with_context("process_id", process_id.to_string())
+        })?;
+
+        let active_model = CyclicProcessMapper::to_update_active_model(model);
+
+        let updated_model = self
+            .repository
+            .update(active_model, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(ProcessErrorKind::Pause)
+                    .with_cause(error)
+                    .with_context("process_id", process_id.to_string())
+            })?;
+
+        self.cyclic_process_query_service
+            .get_by_id(&updated_model.id, db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::Pause).with_cause(error))
+    }
 }
 
 /// Represents a query service for [`CyclicProcesses`][CyclicProcess].
@@ -193,7 +195,45 @@ impl CyclicProcessQueryService {
         }
     }
 
-    /// Get a [`CyclicProcess`] for the provided ID.
+    /// Finds a [`CyclicProcess`] for the provided ID.
+    pub async fn find_by_id<C: ConnectionTrait>(
+        &self,
+        id: &i32,
+        db_connection: &C,
+    ) -> Result<Option<CyclicProcess>, DomainError<ProcessErrorKind>> {
+        let Some(model) = self.repository.find_by_id(id, db_connection).await? else {
+            return Ok(None);
+        };
+
+        let output_resource_assignments = self
+            .repository
+            .get_resource_assignments_by_cyclic_process_id(&model.id, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(ProcessErrorKind::GetAllResources).with_cause(error)
+            })?;
+
+        let output_resource_ids: Vec<i32> = output_resource_assignments
+            .iter()
+            .map(|assignment| assignment.resource_id)
+            .collect();
+
+        let output_resources: Vec<Resource> = self
+            .resource_query_service
+            .get_by_ids(&output_resource_ids, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(ProcessErrorKind::GetAllResources).with_cause(error)
+            })?;
+
+        Ok(Some(CyclicProcessMapper::to_domain_entity(
+            model,
+            output_resources,
+            Vec::new(),
+        )?))
+    }
+
+    /// Gets a [`CyclicProcess`] for the provided ID.
     pub async fn get_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
@@ -226,7 +266,16 @@ impl CyclicProcessQueryService {
                 DomainError::from(ProcessErrorKind::GetAllResources).with_cause(error)
             })?;
 
-        CyclicProcessMapper::to_domain_entity(model, output_resources, Vec::new())
+        let assigned_actors: Vec<ActorKind> = self
+            .actor_query_service
+            .get_process_actors_by_process_id(&model.id, db_connection)
+            .await
+            .map_err(|error| DomainError::from(ProcessErrorKind::FindActors).with_cause(error))?
+            .into_iter()
+            .map(|link| link.actor().clone())
+            .collect();
+
+        CyclicProcessMapper::to_domain_entity(model, output_resources, assigned_actors)
     }
 
     /// Gets the [`CyclicProcesses`][Vec<CyclicProcess>] for the provided IDs.

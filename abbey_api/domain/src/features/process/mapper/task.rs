@@ -14,7 +14,7 @@ use crate::{
             },
             error::ProcessErrorKind,
             forms::task::{
-                TaskCreationForm, TaskInputResourceCreationForm, TaskOutputResourceCreationForm,
+                TaskBlueprint, TaskInputResourceAssignmentForm, TaskOutputResourceAssignmentForm,
             },
         },
     },
@@ -51,8 +51,8 @@ impl TaskMapper {
     }
 
     /// Maps a [`TaskCreationForm`] to a [model][`tasks::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: TaskCreationForm) -> tasks::ActiveModel {
-        let duration_in_seconds: i32 = creation_form
+    pub fn to_new_active_model(blueprint: TaskBlueprint) -> tasks::ActiveModel {
+        let duration_in_seconds: i32 = blueprint
             .duration
             .whole_seconds()
             .try_into()
@@ -119,16 +119,16 @@ impl TaskMapper {
 pub struct TaskInputResourceMapper;
 
 impl TaskInputResourceMapper {
-    /// Maps a [TaskInputResourceCreationForm] to a new [`model`][task_input_resources::ActiveModel].
+    /// Maps a [TaskInputResourceAssignmentForm] to a new [`model`][task_input_resources::ActiveModel].
     pub fn to_new_active_model(
-        creation_form: TaskInputResourceCreationForm,
+        blueprint: TaskInputResourceAssignmentForm,
     ) -> task_input_resources::ActiveModel {
         task_input_resources::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            task_id: Set(creation_form.task_id),
-            resource_id: Set(creation_form.resource_id),
+            task_id: Set(blueprint.task_id),
+            resource_id: Set(blueprint.resource_id),
         }
     }
 }
@@ -137,16 +137,16 @@ impl TaskInputResourceMapper {
 pub struct TaskOutputResourceMapper;
 
 impl TaskOutputResourceMapper {
-    /// Maps a [TaskOutputResourceMapper] to a new [`model`][task_output_resources::ActiveModel].
+    /// Maps a [TaskInputResourceAssignmentForm] to a new [`model`][task_output_resources::ActiveModel].
     pub fn to_new_active_model(
-        creation_form: TaskOutputResourceCreationForm,
+        blueprint: TaskOutputResourceAssignmentForm,
     ) -> task_output_resources::ActiveModel {
         task_output_resources::ActiveModel {
             id: NotSet,
             created_at: Set(OffsetDateTime::now_utc()),
             last_updated_at: NotSet,
-            task_id: Set(creation_form.task_id),
-            resource_id: Set(creation_form.resource_id),
+            task_id: Set(blueprint.task_id),
+            resource_id: Set(blueprint.resource_id),
         }
     }
 }

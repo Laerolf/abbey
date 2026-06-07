@@ -12,6 +12,8 @@ pub enum ProcessErrorKind {
     Update,
     /// Failed to start a Process.
     Start,
+    /// Failed to pause a Process.
+    Pause,
     /// Failed to get all the resources of a Process.
     GetAllResources,
     /// Failed to find a Process with the provided ID.
@@ -52,6 +54,7 @@ impl DomainErrorKind for ProcessErrorKind {
             Self::Creation => "error.process.creation".to_string(),
             Self::Update => "error.process.update".to_string(),
             Self::Start => "error.process.start".to_string(),
+            Self::Pause => "error.process.pause".to_string(),
             Self::GetAllResources => "error.process.get_all_resources".to_string(),
             Self::FindById => "error.process.find_by_id".to_string(),
             Self::GetById => "error.process.get_by_id".to_string(),
@@ -77,6 +80,7 @@ impl DomainErrorKind for ProcessErrorKind {
             Self::Creation => "Failed to create a new process.".to_string(),
             Self::Update => "Failed to update a process.".to_string(),
             Self::Start => "Failed to start a process.".to_string(),
+            Self::Pause => "Failed to pause a process.".to_string(),
             Self::GetAllResources => "Failed to get all the resources of a process.".to_string(),
             Self::FindById => "Failed to find a process with the provided ID.".to_string(),
             Self::GetById => "Failed to get a process with the provided ID.".to_string(),

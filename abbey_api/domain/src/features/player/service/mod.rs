@@ -2,6 +2,7 @@ use sea_orm::ConnectionTrait;
 
 use crate::{
     features::{
+        actor::error::ActorErrorKind,
         player::{
             domain::Player, error::PlayerErrorKind, forms::PlayerCreationForm,
             mapper::PlayerMapper, repository::PlayerRepository,
@@ -40,6 +41,26 @@ impl PlayerCommandService {
         self.player_query_service
             .get_by_id(&model.id, db_connection)
             .await
+    }
+
+    /// Updates a [`Player`].
+    pub async fn update<C: ConnectionTrait>(
+        &self,
+        player: Player,
+        db_connection: &C,
+    ) -> Result<Player, DomainError<ActorErrorKind>> {
+        let active_model = PlayerMapper::to_update_active_model(player);
+
+        let updated_model = self
+            .repository
+            .update(active_model, db_connection)
+            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::Update).with_cause(error))?;
+
+        self.player_query_service
+            .get_by_id(&updated_model.id, db_connection)
+            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::Update).with_cause(error))
     }
 }
 

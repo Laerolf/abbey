@@ -1,5 +1,5 @@
 use entity::{cyclic_process_resources, cyclic_processes, players, resources};
-use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
 use crate::{
     features::{
@@ -8,7 +8,7 @@ use crate::{
         player::{domain::Player, error::PlayerErrorKind, mapper::PlayerMapper},
         process::mapper::cyclic_process::CyclicProcessMapper,
     },
-    shared::{DomainElement, error::DomainError},
+    shared::error::DomainError,
 };
 
 /// Represents an element that handles all [Player][`crate::features::player::domain::Player`] database topics.
@@ -80,8 +80,21 @@ impl PlayerRepository {
             .map_err(|error| DomainError::from(PlayerErrorKind::GetByIds).with_cause(error))
     }
 
-    /// Finds [`Players`][Vec<players::Model>] for the provided Process IDs.
-    pub async fn find_by_process_ids<C: ConnectionTrait>(
+    /// Finds the [`Players`][Vec<players::Model>] for the provided Process ID.
+    pub async fn get_by_process_id<C: ConnectionTrait>(
+        &self,
+        process_id: &i32,
+        db_connection: &C,
+    ) -> Result<Vec<players::Model>, DomainError<ActorErrorKind>> {
+        players::Entity::find()
+            .filter(players::Column::AssignedProcessId.eq(*process_id))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::GetByProcessId).with_cause(error))
+    }
+
+    /// Gets the [`Players`][Vec<players::Model>] for the provided Process IDs.
+    pub async fn get_by_process_ids<C: ConnectionTrait>(
         &self,
         process_ids: &[i32],
         db_connection: &C,
@@ -90,7 +103,7 @@ impl PlayerRepository {
             .filter(players::Column::AssignedProcessId.is_in(process_ids.to_vec()))
             .all(db_connection)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::FindByProcessIds).with_cause(error))
+            .map_err(|error| DomainError::from(ActorErrorKind::GetByProcessIds).with_cause(error))
     }
 
     /// Finds a [`Player`] by its ID and with all its related assigned process.
@@ -133,18 +146,15 @@ impl PlayerRepository {
             .map_err(|error| DomainError::from(PlayerErrorKind::Creation).with_cause(error))
     }
 
-    /// Updates a [`Player`].
-    pub async fn update(
+    /// Updates a [`Player`][players::ActiveModel].
+    pub async fn update<C: ConnectionTrait>(
         &self,
-        player: Player,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Player, DomainError<PlayerErrorKind>> {
-        players::Entity::update(PlayerMapper::to_update_active_model(player.clone()))
-            .exec(db_transaction)
+        model: players::ActiveModel,
+        db_connection: &C,
+    ) -> Result<players::Model, DomainError<PlayerErrorKind>> {
+        players::Entity::update(model)
+            .exec(db_connection)
             .await
-            .map_err(|error| DomainError::from(PlayerErrorKind::Update).with_cause(error))?;
-
-        self.get_by_id_with_relations(&player.id().unwrap(), db_transaction)
-            .await
+            .map_err(|error| DomainError::from(PlayerErrorKind::Update).with_cause(error))
     }
 }

@@ -1,7 +1,6 @@
 use entity::{cyclic_process_resources, cyclic_processes, monk_skills, monks, resources, skills};
 use sea_orm::{
-    ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Statement,
+    ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Statement,
 };
 use tracing::warn;
 
@@ -175,37 +174,16 @@ impl ActorRepository {
 pub struct MonkRepository;
 
 impl MonkRepository {
-    /// Finds a [`Monk`] by its ID.
+    /// Finds a [`Monk`][monks::Model] by its ID.
     pub async fn find_by_id<C: ConnectionTrait>(
         &self,
         id: &i32,
         db_connection: &C,
-    ) -> Result<Option<Monk>, DomainError<ActorErrorKind>> {
-        let Some(monk_model) = monks::Entity::find_by_id(*id)
+    ) -> Result<Option<monks::Model>, DomainError<ActorErrorKind>> {
+        monks::Entity::find_by_id(*id)
             .one(db_connection)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))?
-        else {
-            return Ok(None);
-        };
-
-        let monk_skills: Vec<Skill> = skills::Entity::find()
-            .inner_join(monk_skills::Entity)
-            .filter(monk_skills::Column::MonkId.eq(monk_model.id))
-            .distinct()
-            .order_by_asc(skills::Column::Id)
-            .all(db_connection)
-            .await
-            .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))?
-            .into_iter()
-            .map(SkillMapper::to_domain_entity)
-            .collect();
-
-        Ok(Some(MonkMapper::to_domain_entity(
-            monk_model,
-            monk_skills,
-            None,
-        )?))
+            .map_err(|error| DomainError::from(ActorErrorKind::FindById).with_cause(error))
     }
 
     /// Gets the [`Monks`][Vec<monks::Model>] for the provided Monk IDs.
@@ -219,6 +197,21 @@ impl MonkRepository {
             .all(db_connection)
             .await
             .map_err(|error| DomainError::from(ActorErrorKind::GetByIds).with_cause(error))
+    }
+
+    /// Gets the [`Monk skills`][Vec<monk_skills::Model>] for the provided Monk ID.
+    pub async fn get_skill_assignments_by_monk_id<C: ConnectionTrait>(
+        &self,
+        monk_id: &i32,
+        db_connection: &C,
+    ) -> Result<Vec<monk_skills::Model>, DomainError<ActorErrorKind>> {
+        monk_skills::Entity::find()
+            .filter(monk_skills::Column::MonkId.eq(*monk_id))
+            .all(db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(ActorErrorKind::GetSkillAssignmentsByIds).with_cause(error)
+            })
     }
 
     /// Gets all [`Monk skills`][Vec<monk_skills::Model>] for the provided Monk IDs.
@@ -236,8 +229,21 @@ impl MonkRepository {
             })
     }
 
-    /// Finds [`Monks`][Vec<monks::Model>] for the provided Process IDs.
-    pub async fn find_by_process_ids<C: ConnectionTrait>(
+    /// Gets [`Monks`][Vec<monks::Model>] for the provided Process ID.
+    pub async fn get_by_process_id<C: ConnectionTrait>(
+        &self,
+        process_id: &i32,
+        db_connection: &C,
+    ) -> Result<Vec<monks::Model>, DomainError<ActorErrorKind>> {
+        monks::Entity::find()
+            .filter(monks::Column::AssignedCyclicProcessId.eq(*process_id))
+            .all(db_connection)
+            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::GetByProcessId).with_cause(error))
+    }
+
+    /// Gets [`Monks`][Vec<monks::Model>] for the provided Process IDs.
+    pub async fn get_by_process_ids<C: ConnectionTrait>(
         &self,
         process_ids: &[i32],
         db_connection: &C,
@@ -246,7 +252,7 @@ impl MonkRepository {
             .filter(monks::Column::AssignedCyclicProcessId.is_in(process_ids.to_vec()))
             .all(db_connection)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::FindByProcessIds).with_cause(error))
+            .map_err(|error| DomainError::from(ActorErrorKind::GetByProcessIds).with_cause(error))
     }
 
     /// Assigns Skills to Monks.
@@ -421,17 +427,15 @@ impl MonkRepository {
             .map_err(|error| DomainError::from(ActorErrorKind::Creation).with_cause(error))
     }
 
-    pub async fn update(
+    /// Updates a [`Monk`][monks::ActiveModel].
+    pub async fn update<C: ConnectionTrait>(
         &self,
-        monk: Monk,
-        db_transaction: &DatabaseTransaction,
-    ) -> Result<Monk, DomainError<ActorErrorKind>> {
-        monks::Entity::update(MonkMapper::to_update_active_model(monk.clone()))
-            .exec(db_transaction)
+        model: monks::ActiveModel,
+        db_connection: &C,
+    ) -> Result<monks::Model, DomainError<ActorErrorKind>> {
+        monks::Entity::update(model)
+            .exec(db_connection)
             .await
-            .map_err(|error| DomainError::from(ActorErrorKind::Update).with_cause(error))?;
-
-        self.get_by_id_with_relations(&monk.id()?, db_transaction)
-            .await
+            .map_err(|error| DomainError::from(ActorErrorKind::Update).with_cause(error))
     }
 }

@@ -93,7 +93,7 @@ pub mod start_cyclic_process {
         app.context
             .in_transaction(async |db_transaction| {
                 app.context
-                    .process_assignment_service
+                    .process_command_service
                     .assign_process_to_actors_in_game(
                         ProcessAssignmentForm::new(
                             true,
@@ -397,7 +397,7 @@ pub mod pause_cyclic_process {
         app.context
             .in_transaction(async |db_transaction| {
                 app.context
-                    .process_assignment_service
+                    .process_command_service
                     .assign_process_to_actors_in_game(
                         ProcessAssignmentForm::new(
                             true,
@@ -539,7 +539,7 @@ pub mod pause_cyclic_process {
         app.context
             .in_transaction(async |db_transaction| {
                 app.context
-                    .process_assignment_service
+                    .process_command_service
                     .assign_process_to_actors_in_game(
                         ProcessAssignmentForm::new(
                             true,
@@ -570,7 +570,7 @@ pub mod pause_cyclic_process {
         // Then
         assert_eq!(StatusCode::INTERNAL_SERVER_ERROR, response.status());
 
-        let expected_error = DomainError::from(ProcessErrorKind::Start);
+        let expected_error = DomainError::from(ProcessErrorKind::Pause);
 
         let body = read_body_as_json(response).await;
         let expected_error_message = json!({
