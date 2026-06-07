@@ -95,6 +95,7 @@ impl ActorQueryService {
                         .iter()
                         .filter(|skill_assignment| skill_assignment.monk_id == monk_model.id)
                         .collect();
+
                 let monk_skill_ids: Vec<i32> = monk_skill_assignment_models
                     .iter()
                     .map(|skill_assignment| skill_assignment.skill_id)

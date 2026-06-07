@@ -41,6 +41,16 @@ impl Display for Category {
     }
 }
 
+pub mod category_tests {
+    use crate::features::output::domain::resource::Category;
+
+    #[test]
+    fn test_a_category_should_have_the_expected_string_value() {
+        // Then
+        assert_eq!("material", Category::Material.as_str())
+    }
+}
+
 /// Represents a resource.
 #[derive(PartialEq, Debug, Clone)]
 pub struct Resource {
