@@ -1,7 +1,7 @@
 use time::OffsetDateTime;
 
 use crate::{
-    features::{actor::domain::monk::Monk, monastery::error::MonasteryErrorKind},
+    features::{monastery::error::MonasteryErrorKind, monk::domain::Monk},
     shared::{DomainElement, error::DomainError},
 };
 

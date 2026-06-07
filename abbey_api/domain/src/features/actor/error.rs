@@ -2,13 +2,7 @@ use std::fmt::Display;
 
 use axum::http::StatusCode;
 
-use crate::shared::error::DomainErrorKind;
-
-#[derive(Debug)]
-pub enum MonkErrorKind {
-    /// Failed to get all Monks with the provided Monastery ID.
-    GetAllByMonasteryId,
-}
+use crate::{features::monk::error::MonkErrorKind, shared::error::DomainErrorKind};
 
 #[derive(Debug)]
 pub enum ActorErrorKind {

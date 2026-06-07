@@ -1,10 +1,10 @@
 use axum::http::StatusCode;
 use domain::{
     features::{
-        actor::{domain::monk::Monk, dto::MonkDto},
         auth::forms::{LoginForm, RegistrationForm},
         game::dto::GameDto,
         monastery::dto::MonasteryDto,
+        monk::{domain::Monk, dto::MonkDto},
         player::dto::PlayerDto,
         process::dto::{CyclicProcessDto, ProcessStatusDto},
         source::dto::SourceDto,

@@ -27,7 +27,7 @@ pub struct Monk {
     /// The name of this [`Monk`].
     name: String,
 
-    /// The [skills][`crate::features::skill::domain::Skill`] of this [`Monk`].
+    /// The [skills][`Vec<Skill>`] of this [`Monk`].
     skills: Vec<Skill>,
 
     /// The assigned [process][`ProcessKind`] of this [`Monk`].

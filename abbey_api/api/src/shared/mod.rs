@@ -3,10 +3,7 @@ use std::sync::Arc;
 use axum::Router;
 use domain::{
     features::{
-        actor::{
-            repository::{ActorRepository, MonkRepository},
-            service::{ActorQueryService, MonkCommandService, MonkQueryService},
-        },
+        actor::{repository::ActorRepository, service::ActorQueryService},
         assignment::service::ProcessCommandService,
         auth::{
             repository::RefreshTokenRepository,
@@ -23,6 +20,10 @@ use domain::{
         monastery::{
             repository::MonasteryRepository,
             service::{MonasteryCommandService, MonasteryQueryService},
+        },
+        monk::{
+            repository::MonkRepository,
+            service::{MonkCommandService, MonkQueryService},
         },
         output::{
             repository::ResourceRepository,

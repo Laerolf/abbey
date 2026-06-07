@@ -4,8 +4,10 @@ use time::OffsetDateTime;
 
 use crate::{
     features::{
-        actor::domain::monk::Monk,
-        monastery::{domain::Monastery, error::MonasteryErrorKind},
+        monastery::{
+            domain::Monastery, error::MonasteryErrorKind, forms::MonasteryMonkCreationForm,
+        },
+        monk::domain::Monk,
     },
     shared::{DomainElement, error::DomainError},
 };
@@ -51,6 +53,24 @@ impl MonasteryMapper {
             last_updated_at: NotSet,
             monastery_id: Set(monastery.id().unwrap()),
             monk_id: Set(monk.id().unwrap()),
+        }
+    }
+}
+
+/// Represents a mapper for [`Monastery Monks`][monastery_monks::Entity].
+pub struct MonasteryMonkMapper;
+
+impl MonasteryMonkMapper {
+    /// Maps a [MonasteryMonkCreationForm] to a [`model`][monastery_monks::ActiveModel].
+    pub fn to_new_active_model(
+        creation_form: MonasteryMonkCreationForm,
+    ) -> monastery_monks::ActiveModel {
+        monastery_monks::ActiveModel {
+            id: NotSet,
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
+            monastery_id: Set(creation_form.monastery_id),
+            monk_id: Set(creation_form.monk_id),
         }
     }
 }

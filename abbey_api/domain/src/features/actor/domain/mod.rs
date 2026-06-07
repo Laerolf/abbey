@@ -1,9 +1,7 @@
 use crate::{
     features::{
-        actor::{
-            domain::{actor_status::ActorStatus, monk::Monk},
-            error::ActorErrorKind,
-        },
+        actor::{domain::actor_status::ActorStatus, error::ActorErrorKind},
+        monk::domain::Monk,
         player::domain::Player,
         process::domain::ProcessKind,
     },
@@ -11,7 +9,6 @@ use crate::{
 };
 
 pub mod actor_status;
-pub mod monk;
 pub mod person;
 
 #[derive(Clone, Debug)]

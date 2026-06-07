@@ -3,15 +3,17 @@ use sea_orm::ConnectionTrait;
 
 use crate::{
     features::{
-        actor::{
-            domain::monk::Monk,
-            forms::{MonasteryMonkCreationForm, MonkCreationForm},
-            mapper::MonasteryMonkMapper,
-            service::{MonkCommandService, MonkQueryService},
-        },
         monastery::{
-            domain::Monastery, error::MonasteryErrorKind, mapper::MonasteryMapper,
+            domain::Monastery,
+            error::MonasteryErrorKind,
+            forms::MonasteryMonkCreationForm,
+            mapper::{MonasteryMapper, MonasteryMonkMapper},
             repository::MonasteryRepository,
+        },
+        monk::{
+            domain::Monk,
+            forms::MonkCreationForm,
+            service::{MonkCommandService, MonkQueryService},
         },
     },
     shared::{DomainElement, error::DomainError},

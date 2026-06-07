@@ -2,13 +2,14 @@ use sea_orm::ConnectionTrait;
 
 use crate::{
     features::{
-        actor::{domain::ActorKind, repository::ActorRepository, service::MonkCommandService},
+        actor::{domain::ActorKind, repository::ActorRepository},
         assignment::{
             domain::{ProcessAssignment, process_assignment_factory::ProcessAssignmentFactory},
             error::AssignmentErrorKind,
             forms::ProcessAssignmentForm,
         },
         game::domain::Game,
+        monk::service::MonkCommandService,
         player::service::PlayerCommandService,
         process::{
             domain::ProcessKind,

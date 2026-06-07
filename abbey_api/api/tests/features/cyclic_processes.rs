@@ -589,12 +589,10 @@ pub mod assign_cyclic_process {
     use axum::http::StatusCode;
     use domain::{
         features::{
-            actor::{
-                domain::{monk::Monk, person::Person},
-                dto::{ActorDto, MonkDto},
-            },
+            actor::{domain::person::Person, dto::ActorDto},
             assignment::dto::ProcessAssignmentDto,
             auth::forms::{LoginForm, RegistrationForm},
+            monk::{domain::Monk, dto::MonkDto},
             player::dto::PlayerDto,
             process::dto::{CyclicProcessDto, ProcessDto, ProcessStatusDto},
         },

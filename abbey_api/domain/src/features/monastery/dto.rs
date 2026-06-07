@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::{
-    features::{actor::dto::MonkDto, monastery::domain::Monastery},
+    features::{monastery::domain::Monastery, monk::dto::MonkDto},
     shared::DomainElement,
 };
 
