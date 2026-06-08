@@ -143,7 +143,7 @@ impl UserQueryService {
             .await?
             .ok_or_else(|| DomainError::from(UserErrorKind::FindById))?;
 
-        self.assemble(model, db_connection).await
+        self.shape(model, db_connection).await
     }
 
     /// Gets a [`User`] with the provided ID.
@@ -158,7 +158,7 @@ impl UserQueryService {
             .await?
             .ok_or_else(|| DomainError::from(UserErrorKind::FindById))?;
 
-        self.assemble(model, db_connection).await
+        self.shape(model, db_connection).await
     }
 
     /// Tests whether a [`User`] with the provided email exists.
@@ -175,7 +175,7 @@ impl UserQueryService {
     }
 
     /// Puts a [`User`] together.
-    async fn assemble<C: ConnectionTrait>(
+    async fn shape<C: ConnectionTrait>(
         &self,
         model: users::Model,
         db_connection: &C,
