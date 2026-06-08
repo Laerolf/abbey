@@ -60,7 +60,8 @@ impl GameCommandService {
         &self,
         db_connection: &C,
     ) -> Result<Game, DomainError<GameErrorKind>> {
-        let monastery_blueprint = MonasteryBlueprint::temp();
+        let monastery_blueprint = MonasteryBlueprint::temp()
+            .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
         let monastery = self
             .monastery_command_service

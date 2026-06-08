@@ -1,3 +1,5 @@
+use crate::{features::actor::error::ActorErrorKind, shared::error::DomainError};
+
 /// Represents a Monk blueprint.
 #[derive(Clone)]
 pub struct MonkBlueprint {
@@ -9,10 +11,17 @@ pub struct MonkBlueprint {
 
 impl MonkBlueprint {
     /// Creates a new [`MonkBlueprint`].
-    pub fn new(name: impl Into<String>, skill_names: Vec<impl Into<String>>) -> Self {
-        Self {
+    pub fn new(
+        name: impl Into<String>,
+        skill_names: Vec<impl Into<String>>,
+    ) -> Result<Self, DomainError<ActorErrorKind>> {
+        if skill_names.is_empty() {
+            return Err(DomainError::from(ActorErrorKind::NoSkills));
+        }
+
+        Ok(Self {
             name: name.into(),
             skill_names: skill_names.into_iter().map(|name| name.into()).collect(),
-        }
+        })
     }
 }

@@ -1,5 +1,7 @@
 use time::Duration;
 
+use crate::{features::process::error::ProcessErrorKind, shared::error::DomainError};
+
 /// Represents a Task blueprint.
 #[derive(Clone)]
 pub struct TaskBlueprint {
@@ -19,12 +21,20 @@ impl TaskBlueprint {
         input_resources_ids: Vec<i32>,
         output_resources_ids: Vec<i32>,
         duration: Duration,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, DomainError<ProcessErrorKind>> {
+        if input_resources_ids.is_empty() {
+            return Err(DomainError::from(ProcessErrorKind::NoInputResources));
+        }
+
+        if output_resources_ids.is_empty() {
+            return Err(DomainError::from(ProcessErrorKind::NoOutputResources));
+        }
+
+        Ok(Self {
             input_resources_ids,
             output_resources_ids,
             duration,
-        }
+        })
     }
 }
 
