@@ -1,9 +1,9 @@
 use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
-    password_hash::{Error, PasswordHasher, SaltString},
+    password_hash::{Error, PasswordHasher, SaltString, rand_core::OsRng},
 };
 use futures::TryFutureExt;
-use rand::rngs::OsRng;
+
 use sea_orm::{ConnectionTrait, DatabaseTransaction};
 use tracing::{error, info};
 

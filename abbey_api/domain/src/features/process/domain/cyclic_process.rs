@@ -1,6 +1,5 @@
 use std::any::Any;
 
-use rand::seq::SliceRandom;
 use time::{Duration, OffsetDateTime};
 
 use crate::{
@@ -222,20 +221,23 @@ impl Process for CyclicProcess {
 
     /// Gets the [Output][`crate::features::output::domain::Output`] of a cycle of this [`CyclicProcess`].
     fn get_yield(&self) -> Option<Output> {
-        let mut random_number_generator = rand::thread_rng();
-        // TODO: Use weights
-        let resource_range: Vec<usize> = (0..(self.output_resources.len())).collect();
+        // TODO: Use the GameEngine
+        // let mut random_number_generator = rand::thread_rng();
+        // // TODO: Use weights
+        // let resource_range: Vec<usize> = (0..(self.output_resources.len())).collect();
 
-        let quantity: i32 = self.assigned_people.len().try_into().unwrap_or(0);
+        // let quantity: i32 = self.assigned_people.len().try_into().unwrap_or(0);
 
-        if let Some(selected_resource_index) = resource_range.choose(&mut random_number_generator) {
-            self.output_resources
-                .get(*selected_resource_index)
-                // TODO: Use dynamic amounts
-                .map(|selected_resource| Output::new(selected_resource.clone(), quantity))
-        } else {
-            None
-        }
+        // if let Some(selected_resource_index) = resource_range.choose(&mut random_number_generator) {
+        //     self.output_resources
+        //         .get(*selected_resource_index)
+        //         // TODO: Use dynamic amounts
+        //         .map(|selected_resource| Output::new(selected_resource.clone(), quantity))
+        // } else {
+        //     None
+        // }
+
+        None
     }
 }
 

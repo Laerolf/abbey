@@ -1,6 +1,5 @@
 use axum::extract::FromRequestParts;
 use base64::{Engine, engine::general_purpose};
-use rand::{Rng, thread_rng};
 use time::{Duration, OffsetDateTime};
 use tower_cookies::Cookies;
 use tracing::{debug, error};
@@ -131,11 +130,7 @@ impl RefreshTokenValue {
     }
 
     fn generate_value() -> String {
-        let mut range = thread_rng();
-        let mut bytes = [0u8; 32];
-
-        range.fill(&mut bytes);
-
+        let bytes: [u8; 32] = rand::random();
         general_purpose::URL_SAFE_NO_PAD.encode(bytes)
     }
 

@@ -8,6 +8,8 @@ use crate::{
     shared::{DomainElement, error::DomainError},
 };
 
+pub mod game_engine;
+
 /// The default amount of Monks in a Monastery.
 pub const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 

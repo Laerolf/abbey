@@ -6,12 +6,12 @@ edition = "2024"
 [dependencies]
 axum = { workspace = true }
 uuid = { version = "1", features = ["v4"] }
-rand = { version = "0.8" }
 chrono = { version = "0.4.40" }
 tokio = "1.45.0"
 sqlx-postgres = "0.8.6"
 sea-orm = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 time = { workspace = true }
 tracing = { workspace = true }
 futures = "0.3.31"
@@ -21,6 +21,8 @@ argon2 = "0.5.3"
 jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
 base64 = "0.22.1"
 tower-cookies = { workspace = true }
+rand_chacha = { version= "0.10.0", features = ["serde"] }
+rand = "0.10.1"
 
 [dev-dependencies]
 cargo-llvm-cov = "0.6.16"

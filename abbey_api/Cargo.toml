@@ -10,6 +10,7 @@ members = [".", "domain", "api", "migration", "entity"]
 axum = { version = "0.8.7", features = ["macros"] }
 sea-orm = { version = "1.1.11", features = ["sqlx-postgres", "runtime-tokio", "macros", "debug-print", "mock"] }
 serde = "1.0.228"
+serde_json = "1.0.145"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.20"
