@@ -266,7 +266,7 @@ impl Process for Task {
     }
 
     /// Gets the [Output] of this [`Task`].
-    fn get_yield(&self, _game_engine: GameEngine) -> Option<Output> {
+    fn get_yield(&self, _game_engine: &mut GameEngine) -> Option<Output> {
         None
     }
 }

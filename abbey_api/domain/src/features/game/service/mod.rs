@@ -3,7 +3,6 @@ use time::Duration;
 
 use crate::{
     features::{
-        actor::error::ActorErrorKind,
         game::{
             domain::{Game, game_engine::GameEngine},
             error::GameErrorKind,
@@ -12,11 +11,9 @@ use crate::{
             repository::GameRepository,
         },
         monastery::{
-            error::MonasteryErrorKind,
             forms::MonasteryBlueprint,
             service::{MonasteryCommandService, MonasteryQueryService},
         },
-        monk::forms::MonkBlueprint,
         output::{domain::resource::Category, forms::ResourceBlueprint},
         player::{
             forms::PlayerBlueprint,
@@ -32,9 +29,6 @@ use crate::{
     },
     shared::{DomainElement, error::DomainError},
 };
-
-/// The default amount of Monks in a Monastery.
-const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 
 /// Represents a command service for [`Games`][Game].
 #[derive(Clone)]
@@ -75,20 +69,9 @@ impl GameCommandService {
         let skill_names = vec!["cooking".to_string(), "brewing".to_string()];
         let monk_names = vec!["Maurits".to_string()];
 
-        let monk_blueprints = (0..DEFAULT_AMOUNT_OF_MONKS)
-            .map(|_| {
-                MonkBlueprint::new(
-                    engine
-                        .pick_random_element(&monk_names)
-                        .ok_or_else(|| DomainError::from(ActorErrorKind::Creation))?,
-                    skill_names.clone(),
-                )
-            })
-            .collect::<Result<Vec<MonkBlueprint>, DomainError<ActorErrorKind>>>()
-            .map_err(|error| DomainError::from(MonasteryErrorKind::MissingMonks).with_cause(error))
-            .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
-
-        let monastery_blueprint = MonasteryBlueprint::new(monk_blueprints);
+        let monastery_blueprint =
+            MonasteryBlueprint::generate(&monk_names, &skill_names, &mut engine)
+                .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
         let monastery = self
             .monastery_command_service

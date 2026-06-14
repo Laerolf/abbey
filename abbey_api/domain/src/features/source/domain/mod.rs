@@ -114,7 +114,11 @@ impl Source {
     }
 
     /// Claims the output of this [`Source`]'s completed [CyclicProcess][`crate::features::process::domain::CyclicProcess`] cycles.
-    pub fn claim(&mut self, now: OffsetDateTime, game_engine: GameEngine) -> Vec<Option<Output>> {
+    pub fn claim(
+        &mut self,
+        now: OffsetDateTime,
+        game_engine: &mut GameEngine,
+    ) -> Vec<Option<Output>> {
         let completed_cycles = self
             .process
             .completed_cycles(self.last_claim_at.unwrap_or(now));
@@ -125,7 +129,7 @@ impl Source {
         }
 
         (0..completed_cycles)
-            .map(|_| self.process.get_yield(game_engine.clone()))
+            .map(|_| self.process.get_yield(game_engine))
             .collect()
     }
 }

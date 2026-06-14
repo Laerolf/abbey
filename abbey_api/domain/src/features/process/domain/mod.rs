@@ -110,7 +110,7 @@ impl Process for ProcessKind {
         }
     }
 
-    fn get_yield(&self, game_engine: GameEngine) -> Option<Output> {
+    fn get_yield(&self, game_engine: &mut GameEngine) -> Option<Output> {
         match self {
             ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.get_yield(game_engine),
             ProcessKind::Task(task) => task.get_yield(game_engine),
@@ -161,7 +161,7 @@ pub trait Process: Send + Any {
     fn resume(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>>;
 
     /// Gets the [yield][Output] of this [`Process`].
-    fn get_yield(&self, game_engine: GameEngine) -> Option<Output>;
+    fn get_yield(&self, game_engine: &mut GameEngine) -> Option<Output>;
 
     /// Completes this [`Process`].
     fn complete(&mut self, _now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {

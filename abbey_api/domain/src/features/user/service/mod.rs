@@ -5,6 +5,7 @@ use tracing::info;
 use crate::{
     features::{
         game::{
+            domain::game_engine::GameSeedGenerator,
             dto::GameOptionsForm,
             forms::UserGameAssignmentForm,
             mapper::UserGameMapper,
@@ -90,8 +91,7 @@ impl UserCommandService {
                     .with_cause(error)
             })?;
 
-        // TODO: Get better seeds
-        let game_seed: u64 = game_options.game_seed.unwrap_or(66666);
+        let game_seed: u64 = game_options.game_seed.unwrap_or(GameSeedGenerator::next());
 
         let new_game = self
             .game_command_service

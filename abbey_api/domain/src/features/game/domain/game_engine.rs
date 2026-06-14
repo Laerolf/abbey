@@ -6,6 +6,31 @@ use crate::{
     shared::error::DomainError,
 };
 
+/// Represents a generator for Game seeds.
+pub struct GameSeedGenerator;
+
+impl GameSeedGenerator {
+    /// Gets the next random Game seed.
+    pub fn next() -> u64 {
+        rand::random::<u64>()
+    }
+}
+
+#[cfg(test)]
+pub mod game_seed_generator_tests {
+
+    use crate::features::game::domain::game_engine::GameSeedGenerator;
+
+    #[test]
+    pub fn test_get_next_random_game_seed() {
+        // When
+        let game_seed = GameSeedGenerator::next();
+
+        // Then
+        assert_ne!(0, game_seed);
+    }
+}
+
 /// Represents a Game engine.
 #[derive(Clone, serde::Deserialize)]
 pub struct GameEngine {

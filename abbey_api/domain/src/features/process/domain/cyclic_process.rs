@@ -221,7 +221,7 @@ impl Process for CyclicProcess {
     }
 
     /// Gets the [Output] of a cycle of this [`CyclicProcess`].
-    fn get_yield(&self, mut game_engine: GameEngine) -> Option<Output> {
+    fn get_yield(&self, game_engine: &mut GameEngine) -> Option<Output> {
         let quantity: i32 = self.assigned_people.len().try_into().unwrap_or(0);
 
         game_engine
