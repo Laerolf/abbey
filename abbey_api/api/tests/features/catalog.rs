@@ -4,7 +4,7 @@ pub mod get_all_skills {
 
     use serial_test::serial;
 
-    use crate::shared::{TestApp, utils::read_body_as_value};
+    use crate::shared::{TestApp, fixtures::EXAMPLE_GAME_SEED, utils::read_body_as_value};
 
     #[tokio::test]
     #[serial]
@@ -16,7 +16,7 @@ pub mod get_all_skills {
             .in_transaction(async |db_transaction| {
                 app.context
                     .game_command_service
-                    .create(db_transaction)
+                    .create(EXAMPLE_GAME_SEED, db_transaction)
                     .await
             })
             .await
@@ -40,7 +40,7 @@ pub mod get_all_resources {
 
     use serial_test::serial;
 
-    use crate::shared::{TestApp, utils::read_body_as_value};
+    use crate::shared::{TestApp, fixtures::EXAMPLE_GAME_SEED, utils::read_body_as_value};
 
     #[tokio::test]
     #[serial]
@@ -52,7 +52,7 @@ pub mod get_all_resources {
             .in_transaction(async |db_transaction| {
                 app.context
                     .game_command_service
-                    .create(db_transaction)
+                    .create(EXAMPLE_GAME_SEED, db_transaction)
                     .await
             })
             .await

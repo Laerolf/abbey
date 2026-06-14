@@ -12,6 +12,7 @@ pub enum Games {
     Id,
     CreatedAt,
     LastUpdatedAt,
+    EngineState,
     PlayerId,
     MonasteryId,
     SurroundingsId,
@@ -31,6 +32,7 @@ impl MigrationTrait for Migration {
                     .col(pk_auto(Games::Id))
                     .col(timestamp_with_time_zone(Games::CreatedAt))
                     .col(timestamp_with_time_zone_null(Games::LastUpdatedAt))
+                    .col(string(Games::EngineState))
                     .col(integer(Games::PlayerId))
                     .col(integer(Games::MonasteryId))
                     .col(integer(Games::SurroundingsId))

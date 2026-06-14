@@ -41,6 +41,7 @@ impl Display for Category {
     }
 }
 
+#[cfg(test)]
 pub mod category_tests {
     use crate::features::output::domain::resource::Category;
 

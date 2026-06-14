@@ -7,6 +7,7 @@ pub mod start_cyclic_process {
             actor::{domain::ActorKind, dto::ActorDto},
             assignment::forms::ProcessAssignmentForm,
             auth::forms::{UserLoginForm, UserRegistrationForm},
+            game::dto::GameOptionsForm,
             process::{
                 dto::{CyclicProcessDto, ProcessStatusDto},
                 error::ProcessErrorKind,
@@ -41,7 +42,11 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -178,7 +183,11 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -229,7 +238,11 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -311,6 +324,7 @@ pub mod pause_cyclic_process {
             actor::{domain::ActorKind, dto::ActorDto},
             assignment::forms::ProcessAssignmentForm,
             auth::forms::{UserLoginForm, UserRegistrationForm},
+            game::dto::GameOptionsForm,
             process::{
                 dto::{CyclicProcessDto, ProcessStatusDto},
                 error::ProcessErrorKind,
@@ -345,7 +359,11 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -495,7 +513,11 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -592,6 +614,7 @@ pub mod assign_cyclic_process {
             actor::{domain::person::Person, dto::ActorDto},
             assignment::dto::ProcessAssignmentDto,
             auth::forms::{UserLoginForm, UserRegistrationForm},
+            game::dto::GameOptionsForm,
             monk::{domain::Monk, dto::MonkDto},
             player::dto::PlayerDto,
             process::dto::{CyclicProcessDto, ProcessDto, ProcessStatusDto},
@@ -621,7 +644,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -759,7 +786,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -858,7 +889,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -968,7 +1003,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -1056,7 +1095,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -1101,7 +1144,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await

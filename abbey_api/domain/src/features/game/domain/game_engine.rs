@@ -1,7 +1,13 @@
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
+use crate::{
+    features::game::error::{GameEngineErrorKind, GameErrorKind},
+    shared::error::DomainError,
+};
+
 /// Represents a Game engine.
+#[derive(Clone, serde::Deserialize)]
 pub struct GameEngine {
     generator: ChaCha8Rng,
 }
@@ -14,13 +20,30 @@ impl GameEngine {
         }
     }
 
-    /// Creates a [`GameEngine`].
-    pub fn from(generator: ChaCha8Rng) -> Self {
+    /// Restores a [`GameEngine`].
+    pub fn restore(generator: ChaCha8Rng) -> Self {
         Self { generator }
+    }
+
+    /// Restores a [`GameEngine`].
+    pub fn from(state: &str) -> Result<Self, DomainError<GameErrorKind>> {
+        let generator: ChaCha8Rng = serde_json::from_str(state).map_err(|error| {
+            DomainError::from(GameErrorKind::GameEngine(GameEngineErrorKind::Deserialize))
+                .with_cause(error)
+        })?;
+
+        Ok(Self::restore(generator))
     }
 
     pub fn generator(&self) -> &ChaCha8Rng {
         &self.generator
+    }
+
+    pub fn as_string(&self) -> Result<String, DomainError<GameErrorKind>> {
+        serde_json::to_string(self.generator()).map_err(|error| {
+            DomainError::from(GameErrorKind::GameEngine(GameEngineErrorKind::Serialize))
+                .with_cause(error)
+        })
     }
 
     /// Picks a random element from the provided collections of elements.
@@ -30,6 +53,7 @@ impl GameEngine {
     }
 }
 
+#[cfg(test)]
 pub mod game_engine_tests {
     use crate::features::game::domain::game_engine::GameEngine;
 
@@ -57,14 +81,14 @@ pub mod game_engine_tests {
         let mut given_game_engine = GameEngine::new(seed);
         given_game_engine.pick_random_element(&names);
 
-        let given_game_engine_state = serde_json::to_string(given_game_engine.generator())
+        let given_game_engine_state = given_game_engine
+            .as_string()
             .expect("The given GameEngine to be serializable.");
 
         // When
-        let generator = serde_json::from_str(&given_game_engine_state)
+        let mut game_engine = GameEngine::from(&given_game_engine_state)
             .expect("The generator to be deserializable.");
 
-        let mut game_engine = GameEngine::from(generator);
         let optional_name = game_engine.pick_random_element(&names);
 
         // Then

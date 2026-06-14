@@ -5,6 +5,7 @@ use time::{Duration, OffsetDateTime};
 use crate::{
     features::{
         actor::domain::ActorKind,
+        game::domain::game_engine::GameEngine,
         output::domain::{Output, resource::Resource},
         process::error::ProcessErrorKind,
     },
@@ -265,7 +266,7 @@ impl Process for Task {
     }
 
     /// Gets the [Output] of this [`Task`].
-    fn get_yield(&self) -> Option<Output> {
+    fn get_yield(&self, _game_engine: GameEngine) -> Option<Output> {
         None
     }
 }

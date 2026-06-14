@@ -5,6 +5,7 @@ use tracing::info;
 use crate::{
     features::{
         game::{
+            dto::GameOptionsForm,
             forms::UserGameAssignmentForm,
             mapper::UserGameMapper,
             service::{GameCommandService, GameQueryService},
@@ -63,6 +64,7 @@ impl UserCommandService {
     pub async fn create<C: ConnectionTrait>(
         &self,
         blueprint: UserBlueprint,
+        game_options: GameOptionsForm,
         db_connection: &C,
     ) -> Result<User, DomainError<UserErrorKind>> {
         if self
@@ -88,9 +90,12 @@ impl UserCommandService {
                     .with_cause(error)
             })?;
 
+        // TODO: Get better seeds
+        let game_seed: u64 = game_options.game_seed.unwrap_or(66666);
+
         let new_game = self
             .game_command_service
-            .create(db_connection)
+            .create(game_seed, db_connection)
             .await
             .map_err(|error| {
                 DomainError::from(UserErrorKind::Creation(UserCreationErrorKind::CreateGame))

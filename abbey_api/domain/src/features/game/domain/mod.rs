@@ -2,7 +2,9 @@ use time::OffsetDateTime;
 
 use crate::{
     features::{
-        game::error::GameErrorKind, monastery::domain::Monastery, player::domain::Player,
+        game::{domain::game_engine::GameEngine, error::GameErrorKind},
+        monastery::domain::Monastery,
+        player::domain::Player,
         surroundings::domain::Surroundings,
     },
     shared::{DomainElement, error::DomainError},
@@ -24,23 +26,32 @@ pub struct Game {
     /// The date of the last update of this [`Game`].
     last_updated_at: Option<OffsetDateTime>,
 
-    /// The [Player][`crate::features::player::domain::Player`] of this [`Game`].
+    /// The GameEngine of this [`Game`].
+    game_engine: GameEngine,
+
+    /// The Player of this [`Game`].
     player: Player,
 
-    /// The [Monastery][`crate::features::monastery::domain::Monastery`] of the this [`Game`].
+    /// The Monastery of the this [`Game`].
     monastery: Monastery,
 
-    /// The [Surroundings][`crate::features::surroundings::domain::Surroundings`] of the [Monastery][`crate::features::monastery::domain::Monastery`] in this [`Game`].
+    /// The Surroundings of the Monastery in this [`Game`].
     surroundings: Surroundings,
 }
 
 impl Game {
     /// Creates a [`Game`].
-    pub fn new(player: Player, monastery: Monastery, surroundings: Surroundings) -> Self {
+    pub fn new(
+        game_engine: GameEngine,
+        player: Player,
+        monastery: Monastery,
+        surroundings: Surroundings,
+    ) -> Self {
         Self {
             id: None,
             created_at: None,
             last_updated_at: None,
+            game_engine,
             player,
             monastery,
             surroundings,
@@ -52,6 +63,7 @@ impl Game {
         id: i32,
         created_at: OffsetDateTime,
         last_updated_at: Option<OffsetDateTime>,
+        game_engine: GameEngine,
         player: Player,
         monastery: Monastery,
         surroundings: Surroundings,
@@ -60,10 +72,16 @@ impl Game {
             id: Some(id),
             created_at: Some(created_at),
             last_updated_at,
+            game_engine,
             player,
             monastery,
             surroundings,
         }
+    }
+
+    /// Gets the [GameEngine] of a [`Game`].
+    pub fn game_engine(&self) -> &GameEngine {
+        &self.game_engine
     }
 
     /// Gets the [Player] of a [`Game`].

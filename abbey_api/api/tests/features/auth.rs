@@ -182,7 +182,10 @@ pub mod register {
 
 pub mod login {
     use axum::http::StatusCode;
-    use domain::features::auth::{domain::AuthenticationTokens, forms::UserRegistrationForm};
+    use domain::features::{
+        auth::{domain::AuthenticationTokens, forms::UserRegistrationForm},
+        game::dto::GameOptionsForm,
+    };
     use serde_json::json;
     use serial_test::serial;
     use tracing::debug;
@@ -205,7 +208,11 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -249,7 +256,11 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -313,7 +324,11 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -345,7 +360,11 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -368,10 +387,13 @@ pub mod login {
 pub mod refresh {
     use axum::http::StatusCode;
     use domain::{
-        features::auth::{
-            domain::AuthenticationTokens,
-            error::{AuthenticationErrorKind, RefreshErrorKind},
-            forms::{UserLoginForm, UserRegistrationForm},
+        features::{
+            auth::{
+                domain::AuthenticationTokens,
+                error::{AuthenticationErrorKind, RefreshErrorKind},
+                forms::{UserLoginForm, UserRegistrationForm},
+            },
+            game::dto::GameOptionsForm,
         },
         shared::error::{DomainError, DomainErrorKind},
     };
@@ -396,7 +418,11 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -463,7 +489,11 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -494,7 +524,11 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await

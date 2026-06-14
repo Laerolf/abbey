@@ -1,12 +1,15 @@
 use axum::{Json, Router, extract::State, routing::post};
 use domain::{
-    features::auth::{
-        domain::refresh_token::RefreshTokenValue,
-        dto::{
-            LoginUserRequest, LoginUserResponse, RefreshUserResponse, RegisterUserRequest,
-            RegisterUserResponse,
+    features::{
+        auth::{
+            domain::refresh_token::RefreshTokenValue,
+            dto::{
+                LoginUserRequest, LoginUserResponse, RefreshUserResponse, RegisterUserRequest,
+                RegisterUserResponse,
+            },
+            mapper::AuthenticationDtoMapper,
         },
-        mapper::AuthenticationDtoMapper,
+        game::dto::GameOptionsForm,
     },
     shared::DomainElement,
 };
@@ -52,13 +55,18 @@ async fn register(
     State(context): State<ApiContext<DatabaseConnection>>,
     Json(payload): Json<RegisterUserRequest>,
 ) -> Result<Json<RegisterUserResponse>, AppError> {
-    let registration_form = AuthenticationDtoMapper::to_registration_form(payload)?;
+    let registration_form = AuthenticationDtoMapper::to_registration_form(payload.clone())?;
+    let game_options = payload
+        .game_options
+        .map_or(GameOptionsForm::empty(), |create_game_request| {
+            GameOptionsForm::from(create_game_request)
+        });
 
     let new_user = context
         .in_transaction(async |db_transaction| {
             context
                 .authentication_service
-                .register(registration_form, db_transaction)
+                .register(registration_form, game_options, db_transaction)
                 .await
                 .inspect_err(|error| {
                     error!(?error);

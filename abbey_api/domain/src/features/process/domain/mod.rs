@@ -4,6 +4,7 @@ use time::{Duration, OffsetDateTime};
 use crate::{
     features::{
         actor::domain::ActorKind,
+        game::domain::game_engine::GameEngine,
         output::domain::Output,
         process::{
             domain::{cyclic_process::CyclicProcess, task::Task},
@@ -109,10 +110,10 @@ impl Process for ProcessKind {
         }
     }
 
-    fn get_yield(&self) -> Option<Output> {
+    fn get_yield(&self, game_engine: GameEngine) -> Option<Output> {
         match self {
-            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.get_yield(),
-            ProcessKind::Task(task) => task.get_yield(),
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.get_yield(game_engine),
+            ProcessKind::Task(task) => task.get_yield(game_engine),
         }
     }
 
@@ -129,13 +130,13 @@ pub trait Process: Send + Any {
     /// Used to downcast a [`Process`].
     fn as_any(&self) -> &dyn Any;
 
-    /// Asigns a [Person][`ActorKind`] to this [`Process`].
+    /// Asigns a [Person][ActorKind] to this [`Process`].
     fn assign_person(&mut self, person: ActorKind);
 
-    /// Unassign a [Person][`ActorKind`] from this [`Process`]:
+    /// Unassign a [Person][ActorKind] from this [`Process`]:
     fn unassign_person(&mut self, person: &ActorKind);
 
-    /// Gets the [`Status`] of this [`Process`].
+    /// Gets the [Status] of this [`Process`].
     fn status(&self) -> &Status;
 
     /// Returns the time when this [Process] was last started.
@@ -159,8 +160,8 @@ pub trait Process: Send + Any {
     /// Resumes this [`Process`].
     fn resume(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>>;
 
-    /// Gets the [yield][`Output`] of this [`Process`].
-    fn get_yield(&self) -> Option<Output>;
+    /// Gets the [yield][Output] of this [`Process`].
+    fn get_yield(&self, game_engine: GameEngine) -> Option<Output>;
 
     /// Completes this [`Process`].
     fn complete(&mut self, _now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {

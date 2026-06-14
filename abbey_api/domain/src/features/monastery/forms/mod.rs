@@ -1,13 +1,4 @@
-use crate::{
-    features::{
-        actor::error::ActorErrorKind, monastery::error::MonasteryErrorKind,
-        monk::forms::MonkBlueprint,
-    },
-    shared::error::DomainError,
-};
-
-/// The default amount of Monks in a Monastery.
-const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
+use crate::features::monk::forms::MonkBlueprint;
 
 /// Represents a Monastery blueprint.
 #[derive(Clone)]
@@ -19,21 +10,6 @@ impl MonasteryBlueprint {
     /// Creates a new [`MonasteryBlueprint`].
     pub fn new(monk_blueprints: Vec<MonkBlueprint>) -> Self {
         Self { monk_blueprints }
-    }
-
-    // TODO: Use the new method an generate monk blueprints with the game seed
-    /// Creates a new [`MonasteryBlueprint`] with temporary default values.
-    pub fn temp() -> Result<Self, DomainError<MonasteryErrorKind>> {
-        let skill_names = vec!["cooking".to_string(), "brewing".to_string()];
-
-        let monk_blueprints = (0..DEFAULT_AMOUNT_OF_MONKS)
-            .map(|_| MonkBlueprint::new("Maurits", skill_names.clone()))
-            .collect::<Result<Vec<MonkBlueprint>, DomainError<ActorErrorKind>>>()
-            .map_err(|error| {
-                DomainError::from(MonasteryErrorKind::MissingMonks).with_cause(error)
-            })?;
-
-        Ok(Self { monk_blueprints })
     }
 }
 

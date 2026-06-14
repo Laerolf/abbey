@@ -1,5 +1,8 @@
 /// Represents a Game blueprint.
 pub struct GameBlueprint {
+    /// The state of the Engine of the Game to create.
+    pub engine_state: String,
+
     /// The ID of the Player of the Game to create.
     pub player_id: i32,
 
@@ -12,8 +15,14 @@ pub struct GameBlueprint {
 
 impl GameBlueprint {
     /// Creates a new [`GameBlueprint`].
-    pub fn new(player_id: i32, monastery_id: i32, surroundings_id: i32) -> Self {
+    pub fn new(
+        engine_state: impl Into<String>,
+        player_id: i32,
+        monastery_id: i32,
+        surroundings_id: i32,
+    ) -> Self {
         Self {
+            engine_state: engine_state.into(),
             player_id,
             monastery_id,
             surroundings_id,

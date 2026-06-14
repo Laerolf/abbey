@@ -5,7 +5,16 @@ use axum::http::StatusCode;
 use crate::shared::error::DomainErrorKind;
 
 #[derive(Debug)]
+pub enum GameEngineErrorKind {
+    /// Failed to serialize a GameEngine.
+    Serialize,
+    /// Failed to deserialize a GameEngine.
+    Deserialize,
+}
+
+#[derive(Debug)]
 pub enum GameErrorKind {
+    GameEngine(GameEngineErrorKind),
     /// Failed to create a new Game.
     Creation,
     /// Failed to find the Player of a Game.
@@ -29,6 +38,12 @@ impl DomainErrorKind for GameErrorKind {
     /// Gets the locale code of a [`GameErrorKind`].
     fn code(&self) -> String {
         match self {
+            Self::GameEngine(error) => match error {
+                GameEngineErrorKind::Serialize => "error.game.game_engine.serialize".to_string(),
+                GameEngineErrorKind::Deserialize => {
+                    "error.game.game_engine.deserialize".to_string()
+                }
+            },
             Self::Creation => "error.game.creation".to_string(),
             Self::PlayerNotFound => "error.game.player_not_found".to_string(),
             Self::MonasteryNotFound => "error.game.monastery_not_found".to_string(),
@@ -44,6 +59,12 @@ impl DomainErrorKind for GameErrorKind {
     /// Gets the message of a [`GameErrorKind`].
     fn message(&self) -> String {
         match self {
+            Self::GameEngine(error) => match error {
+                GameEngineErrorKind::Serialize => "Failed to serialize a GameEngine.".to_string(),
+                GameEngineErrorKind::Deserialize => {
+                    "Failed to deserialize a GameEngine.".to_string()
+                }
+            },
             Self::Creation => "Failed to create a new Game.".to_string(),
             Self::PlayerNotFound => "Failed to find the Player of a Game.".to_string(),
             Self::MonasteryNotFound => "Failed to find the Monastery of a Game.".to_string(),

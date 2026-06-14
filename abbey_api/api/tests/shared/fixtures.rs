@@ -1,6 +1,8 @@
 const EXAMPLE_USER_EMAIL: &str = "ozzy@in.heaven";
 const EXAMPLE_USER_PASSWORD: &str = "live";
 
+pub const EXAMPLE_GAME_SEED: u64 = 666666;
+
 /// Represents a User fixture used in tests.
 pub struct TestUserFixture {
     /// The email of the test user.

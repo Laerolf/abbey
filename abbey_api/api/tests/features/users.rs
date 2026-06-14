@@ -2,6 +2,7 @@ use axum::http::StatusCode;
 use domain::{
     features::{
         auth::forms::{UserLoginForm, UserRegistrationForm},
+        game::dto::GameOptionsForm,
         user::dto::UserDto,
     },
     shared::DomainElement,
@@ -28,7 +29,11 @@ pub async fn test_get_session_user_returns_200() {
         .in_transaction(async |db_transaction| {
             app.context
                 .authentication_service
-                .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                .register(
+                    UserRegistrationForm::new(&email, &password),
+                    GameOptionsForm::empty(),
+                    db_transaction,
+                )
                 .await
         })
         .await

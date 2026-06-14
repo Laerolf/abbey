@@ -24,7 +24,7 @@ use crate::{
             mapper::RefreshTokenMapper,
             repository::RefreshTokenRepository,
         },
-        game::domain::Game,
+        game::{domain::Game, dto::GameOptionsForm},
         user::{
             domain::User,
             error::{UserCreationErrorKind, UserErrorKind},
@@ -82,6 +82,7 @@ impl AuthenticationService {
     pub async fn register(
         &self,
         form: UserRegistrationForm,
+        game_options: GameOptionsForm,
         db_transaction: &DatabaseTransaction,
     ) -> Result<User, DomainError<AuthenticationErrorKind>> {
         let hashed_password = self
@@ -96,7 +97,7 @@ impl AuthenticationService {
         let user_blueprint = UserBlueprint::new(form.email, hashed_password);
 
         self.user_command_service
-            .create(user_blueprint.clone(), db_transaction)
+            .create(user_blueprint.clone(), game_options, db_transaction)
             .await
             .map_err(|error| match error.kind() {
                 UserErrorKind::Creation(UserCreationErrorKind::EmailAlreadyExists(_)) => {

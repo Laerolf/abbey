@@ -3,14 +3,20 @@ use time::Duration;
 
 use crate::{
     features::{
+        actor::error::ActorErrorKind,
         game::{
-            domain::Game, error::GameErrorKind, forms::GameBlueprint, mapper::GameMapper,
+            domain::{Game, game_engine::GameEngine},
+            error::GameErrorKind,
+            forms::GameBlueprint,
+            mapper::GameMapper,
             repository::GameRepository,
         },
         monastery::{
+            error::MonasteryErrorKind,
             forms::MonasteryBlueprint,
             service::{MonasteryCommandService, MonasteryQueryService},
         },
+        monk::forms::MonkBlueprint,
         output::{domain::resource::Category, forms::ResourceBlueprint},
         player::{
             forms::PlayerBlueprint,
@@ -26,6 +32,9 @@ use crate::{
     },
     shared::{DomainElement, error::DomainError},
 };
+
+/// The default amount of Monks in a Monastery.
+const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
 
 /// Represents a command service for [`Games`][Game].
 #[derive(Clone)]
@@ -58,10 +67,28 @@ impl GameCommandService {
     /// Creates a new [Game].
     pub async fn create<C: ConnectionTrait>(
         &self,
+        seed: u64,
         db_connection: &C,
     ) -> Result<Game, DomainError<GameErrorKind>> {
-        let monastery_blueprint = MonasteryBlueprint::temp()
+        let mut engine = GameEngine::new(seed);
+
+        let skill_names = vec!["cooking".to_string(), "brewing".to_string()];
+        let monk_names = vec!["Maurits".to_string()];
+
+        let monk_blueprints = (0..DEFAULT_AMOUNT_OF_MONKS)
+            .map(|_| {
+                MonkBlueprint::new(
+                    engine
+                        .pick_random_element(&monk_names)
+                        .ok_or_else(|| DomainError::from(ActorErrorKind::Creation))?,
+                    skill_names.clone(),
+                )
+            })
+            .collect::<Result<Vec<MonkBlueprint>, DomainError<ActorErrorKind>>>()
+            .map_err(|error| DomainError::from(MonasteryErrorKind::MissingMonks).with_cause(error))
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
+
+        let monastery_blueprint = MonasteryBlueprint::new(monk_blueprints);
 
         let monastery = self
             .monastery_command_service
@@ -96,6 +123,9 @@ impl GameCommandService {
             .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?;
 
         let blueprint = GameBlueprint::new(
+            engine
+                .as_string()
+                .map_err(|error| DomainError::from(GameErrorKind::Creation).with_cause(error))?,
             player.id().unwrap(),
             monastery.id().unwrap(),
             surroundings.id().unwrap(),
@@ -150,6 +180,8 @@ impl GameQueryService {
             .await?
             .ok_or_else(|| DomainError::from(GameErrorKind::GetById))?;
 
+        let engine = GameEngine::from(&model.engine_state)?;
+
         let player = self
             .player_query_service
             .get_by_id(&model.player_id, db_connection)
@@ -174,6 +206,7 @@ impl GameQueryService {
 
         Ok(GameMapper::to_domain_entity(
             model,
+            engine,
             player,
             monastery,
             surroundings,
@@ -219,6 +252,8 @@ impl GameQueryService {
         models
             .into_iter()
             .map(|game_model| {
+                let engine = GameEngine::from(&game_model.engine_state)?;
+
                 let player = players
                     .iter()
                     .find(|model| {
@@ -251,6 +286,7 @@ impl GameQueryService {
 
                 Ok(GameMapper::to_domain_entity(
                     game_model,
+                    engine,
                     player,
                     monastery,
                     surroundings,

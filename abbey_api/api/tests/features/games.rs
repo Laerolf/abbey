@@ -2,7 +2,7 @@ use axum::http::StatusCode;
 use domain::{
     features::{
         auth::forms::{UserLoginForm, UserRegistrationForm},
-        game::dto::GameDto,
+        game::dto::{GameDto, GameOptionsForm},
         monastery::dto::MonasteryDto,
         monk::{domain::Monk, dto::MonkDto},
         player::dto::PlayerDto,
@@ -35,7 +35,11 @@ pub async fn test_get_session_game_returns_200() {
         .in_transaction(async |db_transaction| {
             app.context
                 .authentication_service
-                .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                .register(
+                    UserRegistrationForm::new(&email, &password),
+                    GameOptionsForm::empty(),
+                    db_transaction,
+                )
                 .await
         })
         .await
@@ -118,7 +122,11 @@ pub async fn test_get_session_game_returns_200_after_a_process_was_assigned_to_a
         .in_transaction(async |db_transaction| {
             app.context
                 .authentication_service
-                .register(UserRegistrationForm::new(&email, &password), db_transaction)
+                .register(
+                    UserRegistrationForm::new(&email, &password),
+                    GameOptionsForm::empty(),
+                    db_transaction,
+                )
                 .await
         })
         .await
