@@ -126,6 +126,160 @@ impl GameCommandService {
     }
 }
 
+#[cfg(test)]
+pub mod game_command_service_tests {
+
+    pub mod create {
+        use sea_orm::{DatabaseBackend, MockDatabase};
+
+        use crate::features::{
+            actor::service::ActorQueryService,
+            game::{
+                repository::GameRepository,
+                service::{GameCommandService, GameQueryService},
+            },
+            monastery::{
+                repository::MonasteryRepository,
+                service::{MonasteryCommandService, MonasteryQueryService},
+            },
+            monk::{
+                repository::MonkRepository,
+                service::{MonkCommandService, MonkQueryService},
+            },
+            output::{
+                repository::ResourceRepository,
+                service::{ResourceCommandService, ResourceQueryService},
+            },
+            player::{
+                repository::PlayerRepository,
+                service::{PlayerCommandService, PlayerQueryService},
+            },
+            process::{
+                repository::cyclic_process::CyclicProcessRepository,
+                service::cyclic_process::{CyclicProcessCommandService, CyclicProcessQueryService},
+            },
+            skill::{
+                repository::SkillRepository,
+                service::{SkillCommandService, SkillQueryService},
+            },
+            source::{
+                repository::SourceRepository,
+                service::{SourceCommandService, SourceQueryService},
+            },
+            surroundings::{
+                repository::SurroundingsRepository,
+                service::{SurroundingsCommandService, SurroundingsQueryService},
+            },
+        };
+
+        #[tokio::test]
+        #[ignore]
+        pub async fn test_a_game_is_made_with_the_provided_game_seed() {
+            // Given
+            // TODO: Create repository traits + Create mocked repositories
+            let db_connection = MockDatabase::new(DatabaseBackend::Postgres).into_connection();
+
+            let given_game_seed: u64 = 666666;
+
+            let repository = GameRepository;
+            let player_repository = PlayerRepository;
+            let monk_repository = MonkRepository;
+            let skill_repository = SkillRepository;
+            let cyclic_process_repository = CyclicProcessRepository;
+            let resource_repository = ResourceRepository;
+            let monastery_repository = MonasteryRepository;
+            let surroundings_repository = SurroundingsRepository;
+            let source_repository = SourceRepository;
+
+            let skill_query_service = SkillQueryService::new(skill_repository.clone());
+            let skill_command_service = SkillCommandService::new(skill_repository);
+            let actor_query_service = ActorQueryService::new(
+                player_repository.clone(),
+                monk_repository.clone(),
+                skill_query_service.clone(),
+            );
+            let resource_query_service = ResourceQueryService::new(resource_repository.clone());
+            let resource_command_service =
+                ResourceCommandService::new(resource_repository, resource_query_service.clone());
+            let cyclic_process_query_service = CyclicProcessQueryService::new(
+                cyclic_process_repository.clone(),
+                resource_query_service,
+                actor_query_service,
+            );
+            let cyclic_process_command_service = CyclicProcessCommandService::new(
+                cyclic_process_repository,
+                cyclic_process_query_service.clone(),
+            );
+            let player_query_service = PlayerQueryService::new(
+                player_repository.clone(),
+                cyclic_process_query_service.clone(),
+            );
+            let player_command_service =
+                PlayerCommandService::new(player_repository, player_query_service.clone());
+            let monk_query_service = MonkQueryService::new(
+                monk_repository.clone(),
+                skill_query_service,
+                cyclic_process_query_service.clone(),
+            );
+            let monk_command_service = MonkCommandService::new(
+                monk_repository,
+                monk_query_service.clone(),
+                skill_command_service,
+            );
+            let source_query_service =
+                SourceQueryService::new(source_repository.clone(), cyclic_process_query_service);
+            let source_command_service =
+                SourceCommandService::new(source_repository, source_query_service.clone());
+            let monastery_query_service =
+                MonasteryQueryService::new(monastery_repository.clone(), monk_query_service);
+            let monastery_command_service = MonasteryCommandService::new(
+                monastery_repository,
+                monastery_query_service.clone(),
+                monk_command_service,
+            );
+            let surroundings_query_service = SurroundingsQueryService::new(
+                surroundings_repository.clone(),
+                source_query_service,
+            );
+            let surroundings_command_service = SurroundingsCommandService::new(
+                surroundings_repository,
+                surroundings_query_service.clone(),
+                source_command_service,
+                resource_command_service,
+                cyclic_process_command_service,
+            );
+            let game_query_service = GameQueryService::new(
+                repository.clone(),
+                player_query_service,
+                monastery_query_service,
+                surroundings_query_service,
+            );
+
+            let game_command_service = GameCommandService::new(
+                repository,
+                game_query_service,
+                monastery_command_service,
+                player_command_service,
+                surroundings_command_service,
+            );
+
+            // When
+            let game = game_command_service
+                .create(given_game_seed, &db_connection)
+                .await
+                .expect("The Game can be created.");
+
+            // Then
+            let used_engine = game.game_engine();
+
+            assert_eq!(
+                given_game_seed.to_le_bytes().as_slice(),
+                used_engine.generator().get_seed()
+            );
+        }
+    }
+}
+
 /// Represents a query service for [`Games`][Game].
 #[derive(Clone)]
 pub struct GameQueryService {

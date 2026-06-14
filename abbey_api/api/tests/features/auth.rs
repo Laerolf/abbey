@@ -9,7 +9,7 @@ pub mod register {
 
     use crate::shared::{
         TestApp,
-        fixtures::{TestUserFixture, test_user_fixture},
+        fixtures::{EXAMPLE_GAME_SEED, TestUserFixture, test_user_fixture},
         utils::read_body_as_json,
     };
 
@@ -64,6 +64,77 @@ pub mod register {
 
         // Then
         assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[serial]
+    pub async fn test_register_new_user_returns_200_when_providing_game_options() {
+        // Given
+        let TestUserFixture { email, password } = test_user_fixture();
+        let app = TestApp::new().await;
+
+        // When
+        let response = app
+            .post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password,
+                "game_options": {
+                    "game_seed": EXAMPLE_GAME_SEED
+                }
+            }))
+            .send()
+            .await;
+
+        // Then
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[serial]
+    pub async fn test_register_new_user_returns_200_when_providing_partial_game_options() {
+        // Given
+        let TestUserFixture { email, password } = test_user_fixture();
+        let app = TestApp::new().await;
+
+        // When
+        let response = app
+            .post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password,
+                "game_options": {}
+            }))
+            .send()
+            .await;
+
+        // Then
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[serial]
+    pub async fn test_register_new_user_returns_422_when_providing_wrong_parameters() {
+        // Given
+        let TestUserFixture { email, password } = test_user_fixture();
+        let app = TestApp::new().await;
+
+        // When
+        let response = app
+            .post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password,
+                "test_options": {}
+            }))
+            .send()
+            .await;
+
+        // Then
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
     }
 
     #[tokio::test]
