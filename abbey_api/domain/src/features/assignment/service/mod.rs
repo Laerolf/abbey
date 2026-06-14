@@ -2,7 +2,7 @@ use sea_orm::ConnectionTrait;
 
 use crate::{
     features::{
-        actor::{domain::ActorKind, repository::ActorRepository},
+        actor::{domain::ActorKind, service::ActorQueryService},
         assignment::{
             domain::{ProcessAssignment, process_assignment_factory::ProcessAssignmentFactory},
             error::AssignmentErrorKind,
@@ -19,13 +19,13 @@ use crate::{
             },
         },
     },
-    shared::{DomainElement, error::DomainError},
+    shared::error::DomainError,
 };
 
 /// Represents a command service for Processes.
 #[derive(Clone)]
 pub struct ProcessCommandService {
-    actor_repository: ActorRepository,
+    actor_query_service: ActorQueryService,
     player_command_service: PlayerCommandService,
     monk_command_service: MonkCommandService,
     cyclic_process_command_service: CyclicProcessCommandService,
@@ -36,7 +36,7 @@ pub struct ProcessCommandService {
 impl ProcessCommandService {
     /// Creates a new [`ProcessCommandService`].
     pub fn new(
-        actor_repository: ActorRepository,
+        actor_query_service: ActorQueryService,
         player_command_service: PlayerCommandService,
         monk_command_service: MonkCommandService,
         cyclic_process_command_service: CyclicProcessCommandService,
@@ -44,7 +44,7 @@ impl ProcessCommandService {
         task_command_service: TaskCommandService,
     ) -> Self {
         Self {
-            actor_repository,
+            actor_query_service,
             player_command_service,
             monk_command_service,
             cyclic_process_command_service,
@@ -122,16 +122,16 @@ impl ProcessCommandService {
                 DomainError::from(AssignmentErrorKind::ProcessNotFound).with_cause(error)
             })?;
 
-        let mut found_actors = if form.actor_ids.is_empty() {
-            vec![]
-        } else {
-            self.actor_repository
-                .find_many_by_ids_for_game(&form.actor_ids, &game.id().unwrap(), db_connection)
-                .await
-                .map_err(|error| {
-                    DomainError::from(AssignmentErrorKind::ActorNotFound).with_cause(error)
-                })?
-        };
+        let mut found_actors: Vec<ActorKind> = self
+            .actor_query_service
+            .get_by_ids(&form.actor_ids, db_connection)
+            .await
+            .map_err(|error| {
+                DomainError::from(AssignmentErrorKind::ActorNotFound).with_cause(error)
+            })?
+            .into_iter()
+            .map(|link| link.actor().to_owned())
+            .collect();
 
         if form.assign_player {
             found_actors.push(ActorKind::Player(game.player().clone()));

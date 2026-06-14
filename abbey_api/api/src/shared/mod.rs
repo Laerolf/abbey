@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::Router;
 use domain::{
     features::{
-        actor::{repository::ActorRepository, service::ActorQueryService},
+        actor::service::ActorQueryService,
         assignment::service::ProcessCommandService,
         auth::{
             repository::RefreshTokenRepository,
@@ -89,7 +89,6 @@ impl<C: ConnectionTrait> ApiContext<C> {
         let user_repository = UserRepository;
         let game_repository = GameRepository;
         let refresh_token_repository = RefreshTokenRepository;
-        let actor_repository = ActorRepository;
 
         let refresh_token_query_service =
             RefreshTokenQueryService::new(refresh_token_repository.clone());
@@ -118,7 +117,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
         let cyclic_process_query_service = CyclicProcessQueryService::new(
             cyclic_process_repository.clone(),
             resource_query_service.clone(),
-            actor_query_service,
+            actor_query_service.clone(),
         );
         let cyclic_process_command_service = CyclicProcessCommandService::new(
             cyclic_process_repository,
@@ -173,7 +172,7 @@ impl<C: ConnectionTrait> ApiContext<C> {
         let task_command_service = TaskCommandService::new(task_repository, task_query_service);
 
         let process_command_service = ProcessCommandService::new(
-            actor_repository,
+            actor_query_service,
             player_command_service.clone(),
             monk_command_service,
             cyclic_process_command_service.clone(),

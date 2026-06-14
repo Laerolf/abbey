@@ -176,7 +176,6 @@ pub mod game_command_service_tests {
         #[ignore]
         pub async fn test_a_game_is_made_with_the_provided_game_seed() {
             // Given
-            // TODO: Create repository traits + Create mocked repositories
             let db_connection = MockDatabase::new(DatabaseBackend::Postgres).into_connection();
 
             let given_game_seed: u64 = 666666;
