@@ -36,12 +36,12 @@ impl ActorQueryService {
         }
     }
 
-    /// Gets the [`Actors`][Vec<ProcessActorLink>] with the provided IDs.
+    /// Gets the [`Actors`][Vec<ActorKind>] with the provided IDs.
     pub async fn get_by_ids<C: ConnectionTrait>(
         &self,
         ids: &[i32],
         db_connection: &C,
-    ) -> Result<Vec<ProcessActorLink>, DomainError<ActorErrorKind>> {
+    ) -> Result<Vec<ActorKind>, DomainError<ActorErrorKind>> {
         if ids.is_empty() {
             return Ok(vec![]);
         }
@@ -53,16 +53,11 @@ impl ActorQueryService {
             .map_err(|error| DomainError::from(ActorErrorKind::GetByIds).with_cause(error))?
             .into_iter()
             .map(|model| {
-                let process_id = model
-                    .assigned_process_id
-                    .ok_or_else(|| DomainError::from(ActorErrorKind::GetProcesses))?;
-
-                Ok(ProcessActorLink::from(
-                    process_id,
-                    ActorKind::Player(PlayerMapper::to_domain_entity(model, None)),
-                ))
+                Ok(ActorKind::Player(PlayerMapper::to_domain_entity(
+                    model, None,
+                )))
             })
-            .collect::<Result<Vec<ProcessActorLink>, DomainError<ActorErrorKind>>>()?;
+            .collect::<Result<Vec<ActorKind>, DomainError<ActorErrorKind>>>()?;
 
         let monk_models = self.monk_repository.get_by_ids(ids, db_connection).await?;
 
@@ -112,15 +107,13 @@ impl ActorQueryService {
                     .cloned()
                     .collect();
 
-                let process_id = monk_model
-                    .assigned_cyclic_process_id
-                    .ok_or_else(|| DomainError::from(ActorErrorKind::GetProcesses))?;
-
-                MonkMapper::to_domain_entity(monk_model, monk_skills, None)
-                    .map(|monk| ProcessActorLink::from(process_id, ActorKind::Monk(monk)))
-                    .map_err(|error| DomainError::from(ActorErrorKind::Restore).with_cause(error))
+                Ok(ActorKind::Monk(
+                    MonkMapper::to_domain_entity(monk_model, monk_skills, None).map_err(
+                        |error| DomainError::from(ActorErrorKind::Restore).with_cause(error),
+                    )?,
+                ))
             })
-            .collect::<Result<Vec<ProcessActorLink>, DomainError<ActorErrorKind>>>()?;
+            .collect::<Result<Vec<ActorKind>, DomainError<ActorErrorKind>>>()?;
 
         Ok(monks.into_iter().chain(players).collect())
     }

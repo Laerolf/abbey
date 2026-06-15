@@ -128,10 +128,7 @@ impl ProcessCommandService {
             .await
             .map_err(|error| {
                 DomainError::from(AssignmentErrorKind::ActorNotFound).with_cause(error)
-            })?
-            .into_iter()
-            .map(|link| link.actor().to_owned())
-            .collect();
+            })?;
 
         if form.assign_player {
             found_actors.push(ActorKind::Player(game.player().clone()));
