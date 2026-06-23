@@ -1,7 +1,7 @@
 use entity::{task_input_resources, task_output_resources, tasks};
 use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
 use std::str::FromStr;
-use time::Duration;
+use time::{Duration, OffsetDateTime};
 
 use crate::{
     features::{
@@ -14,11 +14,11 @@ use crate::{
             },
             error::ProcessErrorKind,
             forms::task::{
-                TaskCreationForm, TaskInputResourceCreationForm, TaskOutputResourceCreationForm,
+                TaskBlueprint, TaskInputResourceAssignmentForm, TaskOutputResourceAssignmentForm,
             },
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that maps [`Task`] elements.
@@ -34,6 +34,8 @@ impl TaskMapper {
     ) -> Result<Task, DomainError<ProcessErrorKind>> {
         Task::restore(
             model.id,
+            model.created_at,
+            model.last_updated_at,
             TaskState {
                 status: Status::from_str(&model.status)
                     .expect("Failed to find a process status with the provided value."),
@@ -49,8 +51,8 @@ impl TaskMapper {
     }
 
     /// Maps a [`TaskCreationForm`] to a [model][`tasks::ActiveModel`] to create.
-    pub fn to_new_active_model(creation_form: TaskCreationForm) -> tasks::ActiveModel {
-        let duration_in_seconds: i32 = creation_form
+    pub fn to_new_active_model(blueprint: TaskBlueprint) -> tasks::ActiveModel {
+        let duration_in_seconds: i32 = blueprint
             .duration
             .whole_seconds()
             .try_into()
@@ -59,6 +61,8 @@ impl TaskMapper {
 
         tasks::ActiveModel {
             id: NotSet,
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
             duration: Set(duration_in_seconds),
             status: Set(Status::New.to_string()),
             started_at: NotSet,
@@ -85,6 +89,8 @@ impl TaskMapper {
 
         tasks::ActiveModel {
             id: Unchanged(task.id().unwrap()),
+            created_at: Unchanged(task.created_at().unwrap()),
+            last_updated_at: Set(Some(OffsetDateTime::now_utc())),
             duration: Set(duration_in_seconds),
             status: Set(task.status().to_string()),
             started_at: Set(*task.started_at()),
@@ -113,14 +119,16 @@ impl TaskMapper {
 pub struct TaskInputResourceMapper;
 
 impl TaskInputResourceMapper {
-    /// Maps a [TaskInputResourceCreationForm] to a new [`model`][task_input_resources::ActiveModel].
+    /// Maps a [TaskInputResourceAssignmentForm] to a new [`model`][task_input_resources::ActiveModel].
     pub fn to_new_active_model(
-        creation_form: TaskInputResourceCreationForm,
+        blueprint: TaskInputResourceAssignmentForm,
     ) -> task_input_resources::ActiveModel {
         task_input_resources::ActiveModel {
             id: NotSet,
-            task_id: Set(creation_form.task_id),
-            resource_id: Set(creation_form.resource_id),
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
+            task_id: Set(blueprint.task_id),
+            resource_id: Set(blueprint.resource_id),
         }
     }
 }
@@ -129,14 +137,16 @@ impl TaskInputResourceMapper {
 pub struct TaskOutputResourceMapper;
 
 impl TaskOutputResourceMapper {
-    /// Maps a [TaskOutputResourceMapper] to a new [`model`][task_output_resources::ActiveModel].
+    /// Maps a [TaskInputResourceAssignmentForm] to a new [`model`][task_output_resources::ActiveModel].
     pub fn to_new_active_model(
-        creation_form: TaskOutputResourceCreationForm,
+        blueprint: TaskOutputResourceAssignmentForm,
     ) -> task_output_resources::ActiveModel {
         task_output_resources::ActiveModel {
             id: NotSet,
-            task_id: Set(creation_form.task_id),
-            resource_id: Set(creation_form.resource_id),
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
+            task_id: Set(blueprint.task_id),
+            resource_id: Set(blueprint.resource_id),
         }
     }
 }

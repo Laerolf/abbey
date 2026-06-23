@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::features::user::domain::User;
+use crate::{features::user::domain::User, shared::DomainElement};
 
 /// Represents a [User] DTO.
 #[derive(Serialize, Deserialize, ToSchema, Debug, PartialEq)]

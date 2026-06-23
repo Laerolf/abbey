@@ -20,8 +20,7 @@ pub enum RegistrationErrorKind {
 pub enum LoginErrorKind {
     EmailRequired,
     PasswordRequired,
-    UserDoesNotExist,
-    WrongPassword,
+    WrongCredentials,
     StartDatabaseTransaction,
     CreateSessionToken,
     CreateRefreshToken,
@@ -35,7 +34,13 @@ pub enum RefreshErrorKind {
     DeleteRefreshToken,
     CreateSessionToken,
     CreateRefreshToken,
+    /// The RefreshToken has not been persisted yet.
+    NotPersistedYet,
     FindById,
+    FindByUserId,
+    GetById,
+    GetByUserId,
+    GetByValue,
 }
 
 #[derive(Debug)]
@@ -96,11 +101,8 @@ impl DomainErrorKind for AuthenticationErrorKind {
                 LoginErrorKind::PasswordRequired => {
                     "error.authentication.login.password_required".to_string()
                 }
-                LoginErrorKind::UserDoesNotExist => {
-                    "error.authentication.login.user_does_not_exist".to_string()
-                }
-                LoginErrorKind::WrongPassword => {
-                    "error.authentication.login.wrong_password".to_string()
+                LoginErrorKind::WrongCredentials => {
+                    "error.authentication.login.wrong_credentials".to_string()
                 }
                 LoginErrorKind::StartDatabaseTransaction => {
                     "error.authentication.login.start_database_transaction".to_string()
@@ -132,6 +134,19 @@ impl DomainErrorKind for AuthenticationErrorKind {
                     "error.authentication.refresh.create_refresh_token".to_string()
                 }
                 RefreshErrorKind::FindById => "error.authentication.refresh.find_by_id".to_string(),
+                RefreshErrorKind::FindByUserId => {
+                    "error.authentication.refresh.find_by_user_id".to_string()
+                }
+                RefreshErrorKind::GetById => "error.authentication.refresh.get_by_id".to_string(),
+                RefreshErrorKind::GetByUserId => {
+                    "error.authentication.refresh.get_by_user_id".to_string()
+                }
+                RefreshErrorKind::GetByValue => {
+                    "error.authentication.refresh.get_by_value".to_string()
+                }
+                RefreshErrorKind::NotPersistedYet => {
+                    "error.authentication.refresh.not_persisted_yet".to_string()
+                }
             },
             AuthenticationErrorKind::Authenticate => {
                 "error.authentication.authenticate".to_string()
@@ -172,8 +187,9 @@ impl DomainErrorKind for AuthenticationErrorKind {
             Self::Login(error) => match error {
                 LoginErrorKind::EmailRequired => "An email is required.".to_string(),
                 LoginErrorKind::PasswordRequired => "A password is required.".to_string(),
-                LoginErrorKind::UserDoesNotExist => "The user does not exist.".to_string(),
-                LoginErrorKind::WrongPassword => "The provided password is wrong.".to_string(),
+                LoginErrorKind::WrongCredentials => {
+                    "The provided mail or password is incorrect.".to_string()
+                }
                 LoginErrorKind::StartDatabaseTransaction => {
                     "Failed to start a database transaction.".to_string()
                 }
@@ -206,6 +222,21 @@ impl DomainErrorKind for AuthenticationErrorKind {
                 RefreshErrorKind::FindById => {
                     "Failed to find a refresh token with the provided ID.".to_string()
                 }
+                RefreshErrorKind::FindByUserId => {
+                    "Failed to find a RefreshToken with the provided User ID.".to_string()
+                }
+                RefreshErrorKind::GetById => {
+                    "Failed to get a RefreshToken with the provided ID.".to_string()
+                }
+                RefreshErrorKind::GetByUserId => {
+                    "Failed to get a RefreshToken with the provided User ID.".to_string()
+                }
+                RefreshErrorKind::GetByValue => {
+                    "Failed to get a RefreshToken with the provided RefreshToken value.".to_string()
+                }
+                RefreshErrorKind::NotPersistedYet => {
+                    "The refresh token has not been persisted yet.".to_string()
+                }
             },
             AuthenticationErrorKind::Authenticate => "Failed to authenticate a user.".to_string(),
             Self::GetUserSession(error) => match error {
@@ -232,14 +263,15 @@ impl DomainErrorKind for AuthenticationErrorKind {
             AuthenticationErrorKind::Login(error) => match error {
                 LoginErrorKind::EmailRequired => StatusCode::BAD_REQUEST,
                 LoginErrorKind::PasswordRequired => StatusCode::BAD_REQUEST,
-                LoginErrorKind::UserDoesNotExist => StatusCode::UNAUTHORIZED,
-                LoginErrorKind::WrongPassword => StatusCode::UNAUTHORIZED,
+                LoginErrorKind::WrongCredentials => StatusCode::UNAUTHORIZED,
                 _ => StatusCode::INTERNAL_SERVER_ERROR,
             },
             AuthenticationErrorKind::Refresh(error) => match error {
                 RefreshErrorKind::RefreshTokenNotFound => StatusCode::UNAUTHORIZED,
                 RefreshErrorKind::UserNotFound => StatusCode::UNAUTHORIZED,
                 RefreshErrorKind::FindById => StatusCode::UNAUTHORIZED,
+                RefreshErrorKind::GetById => StatusCode::UNAUTHORIZED,
+                RefreshErrorKind::GetByValue => StatusCode::UNAUTHORIZED,
                 _ => StatusCode::INTERNAL_SERVER_ERROR,
             },
             AuthenticationErrorKind::Authenticate => StatusCode::UNAUTHORIZED,

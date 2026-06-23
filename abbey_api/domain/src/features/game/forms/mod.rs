@@ -1,19 +1,28 @@
-/// Represents a [Game][`crate::features::game::domain::Game`] creation form.
-pub struct GameCreationForm {
-    /// The ID of the [Player][`crate::features::player::domain::Player`] of the [Game][`crate::features::game::domain::Game`] to create.
+/// Represents a Game blueprint.
+pub struct GameBlueprint {
+    /// The state of the Engine of the Game to create.
+    pub engine_state: String,
+
+    /// The ID of the Player of the Game to create.
     pub player_id: i32,
 
-    /// The ID of the [Monastery][`crate::features::monastery::domain::Monastery`] of the [Game][`crate::features::game::domain::Game`] to create.
+    /// The ID of the Monastery of the Game to create.
     pub monastery_id: i32,
 
-    /// The ID of the [Surroundings][`crate::features::surroundings::domain::Surroundings`] of the [Monastery][`crate::features::monastery::domain::Monastery`] in the [Game][`crate::features::game::domain::Game`] to create.
+    /// The ID of the Surroundings of the Monastery in the Game to create.
     pub surroundings_id: i32,
 }
 
-impl GameCreationForm {
-    /// Creates a new [`GameCreationForm`].
-    pub fn new(player_id: i32, monastery_id: i32, surroundings_id: i32) -> Self {
+impl GameBlueprint {
+    /// Creates a new [`GameBlueprint`].
+    pub fn new(
+        engine_state: impl Into<String>,
+        player_id: i32,
+        monastery_id: i32,
+        surroundings_id: i32,
+    ) -> Self {
         Self {
+            engine_state: engine_state.into(),
             player_id,
             monastery_id,
             surroundings_id,
@@ -21,16 +30,16 @@ impl GameCreationForm {
     }
 }
 
-/// Represents a [`UserGame`][entity::user_games::ActiveModel] creation form.
-pub struct UserGameCreationForm {
+/// Represents a form to assign a User to a Game.
+pub struct UserGameAssignmentForm {
     /// The ID of the User.
     pub user_id: i32,
     /// The ID of the Game.
     pub game_id: i32,
 }
 
-impl UserGameCreationForm {
-    /// Creates a new [`UserGameCreationForm`].
+impl UserGameAssignmentForm {
+    /// Creates a new [`UserGameAssignmentForm`].
     pub fn new(user_id: i32, game_id: i32) -> Self {
         Self { user_id, game_id }
     }

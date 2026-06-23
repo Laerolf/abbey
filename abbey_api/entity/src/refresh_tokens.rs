@@ -7,11 +7,12 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
+    pub created_at: TimeDateTimeWithTimeZone,
+    pub last_updated_at: Option<TimeDateTimeWithTimeZone>,
     #[sea_orm(unique)]
     pub user_id: i32,
     #[sea_orm(unique)]
     pub value: String,
-    pub created_at: TimeDateTimeWithTimeZone,
     pub expires_at: TimeDateTimeWithTimeZone,
 }
 

@@ -30,7 +30,7 @@ impl ApiFeature for Feature {
 )]
 pub struct GamesApiDoc;
 
-/// Gets a User for the provided session.
+/// Gets a User with the provided session.
 #[axum::debug_handler]
 #[utoipa::path(
     get,
@@ -48,7 +48,7 @@ pub struct GamesApiDoc;
         ),
         (
             status = 404,
-            description = "Failed to find a game for the provided ID.",
+            description = "Failed to find a game with the provided ID.",
             body = AppError,
             example = json!({
                 "message": "Failed to find a game by its ID.",
@@ -64,8 +64,8 @@ async fn get_session_game(
     session_token: SessionToken,
 ) -> Result<Json<GameDto>, AppError> {
     let game = context
-        .game_service
-        .get_by_id_with_relations(
+        .game_query_service
+        .get_by_id(
             &session_token
                 .game_id()
                 .ok_or(DomainError::from(GameErrorKind::GetById))?,

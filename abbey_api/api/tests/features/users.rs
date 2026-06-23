@@ -1,7 +1,11 @@
 use axum::http::StatusCode;
-use domain::features::{
-    auth::forms::{LoginForm, RegistrationForm},
-    user::dto::UserDto,
+use domain::{
+    features::{
+        auth::forms::{UserLoginForm, UserRegistrationForm},
+        game::dto::GameOptionsForm,
+        user::dto::UserDto,
+    },
+    shared::DomainElement,
 };
 
 use serial_test::serial;
@@ -25,7 +29,11 @@ pub async fn test_get_session_user_returns_200() {
         .in_transaction(async |db_transaction| {
             app.context
                 .authentication_service
-                .register(RegistrationForm::new(&email, &password), db_transaction)
+                .register(
+                    UserRegistrationForm::new(&email, &password),
+                    GameOptionsForm::empty(),
+                    db_transaction,
+                )
                 .await
         })
         .await
@@ -36,7 +44,7 @@ pub async fn test_get_session_user_returns_200() {
         .in_transaction(async |db_transaction| {
             app.context
                 .authentication_service
-                .login(LoginForm::new(email, password), db_transaction)
+                .login(UserLoginForm::new(email, password), db_transaction)
                 .await
         })
         .await

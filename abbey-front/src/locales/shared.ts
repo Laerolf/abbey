@@ -1,0 +1,6 @@
+export default {
+  locales: {
+    en: 'English',
+    ja: '日本語',
+  },
+}

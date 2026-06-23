@@ -6,12 +6,16 @@ use axum::{
 use cookie::Cookie;
 use serde::{Deserialize, Serialize};
 use tower_cookies::cookie;
+use tracing::error;
 use utoipa::ToSchema;
 
-use crate::features::auth::domain::{AuthenticationTokens, refresh_token::RefreshToken};
+use crate::features::{
+    auth::domain::{AuthenticationTokens, refresh_token::RefreshToken},
+    game::dto::CreateGameRequest,
+};
 
 /// Represents the payload used to register a new user.
-#[derive(Deserialize, ToSchema)]
+#[derive(Clone, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct RegisterUserRequest {
     /// The email address of the user to register.
@@ -23,6 +27,8 @@ pub struct RegisterUserRequest {
     /// The confirmed password of the user to register.
     #[schema(example = "live")]
     pub confirmed_password: Option<String>,
+    /// The options for the user's game to create when registering.
+    pub game_options: Option<CreateGameRequest>,
 }
 
 /// Represents the payload used to login a user.
@@ -81,15 +87,26 @@ impl LoginUserResponse {
 
 impl IntoResponse for LoginUserResponse {
     fn into_response(self) -> axum::response::Response {
+        let cookie_domain = std::env::var("COOKIE_DOMAIN")
+            .inspect_err(|error| error!("Failed to find the cookie domain => {}", error))
+            .unwrap_or("".to_string());
+
+        let is_secure = std::env::var("COOKIE_SECURE")
+            .inspect_err(|error| error!("Failed to find the cookie secure => {}", error))
+            .map(|v| v == "true")
+            .unwrap_or(false);
+
+        // TODO: Improve
         let refresh_token_cookie = Cookie::build((
             AuthenticationTokens::RefreshToken.cookie_name(),
             self.refresh_token.value().to_string(),
         ))
         .path("/")
+        .domain(cookie_domain)
         .max_age(self.refresh_token.lifespan())
-        .same_site(cookie::SameSite::Strict)
+        // .same_site(cookie::SameSite::Lax)
         .http_only(true)
-        .secure(true)
+        .secure(is_secure)
         .build();
 
         (

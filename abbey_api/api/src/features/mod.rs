@@ -1,4 +1,5 @@
 mod auth;
+mod catalog;
 mod cyclic_processes;
 mod games;
 mod users;
@@ -16,6 +17,7 @@ use utoipa::{
 use crate::{
     features::{
         auth::{AuthApiDoc, Feature as AuthFeature},
+        catalog::{CatalogApiDoc, Feature as CatalogFeature},
         cyclic_processes::{CyclicProcessesApiDoc, Feature as CyclicProcessFeature},
         games::{Feature as GameFeature, GamesApiDoc},
         users::{Feature as UserFeature, UsersApiDoc},
@@ -44,6 +46,7 @@ pub fn openapi() -> OpenApiDoc {
         .merge_from(UsersApiDoc::openapi())
         .merge_from(GamesApiDoc::openapi())
         .merge_from(CyclicProcessesApiDoc::openapi())
+        .merge_from(CatalogApiDoc::openapi())
 }
 
 pub fn routes() -> Router<ApiContext<DatabaseConnection>> {
@@ -52,4 +55,5 @@ pub fn routes() -> Router<ApiContext<DatabaseConnection>> {
         .nest("/users", UserFeature::routes())
         .nest("/games", GameFeature::routes())
         .nest("/cyclic-processes", CyclicProcessFeature::routes())
+        .nest("/catalog", CatalogFeature::routes())
 }

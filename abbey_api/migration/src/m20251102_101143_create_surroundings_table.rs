@@ -4,6 +4,8 @@ use sea_orm_migration::{prelude::*, schema::*};
 pub enum Surroundings {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
 }
 
 #[derive(DeriveMigrationName)]
@@ -18,6 +20,8 @@ impl MigrationTrait for Migration {
                     .table(Surroundings::Table)
                     .if_not_exists()
                     .col(pk_auto(Surroundings::Id))
+                    .col(timestamp_with_time_zone(Surroundings::CreatedAt))
+                    .col(timestamp_with_time_zone_null(Surroundings::LastUpdatedAt))
                     .to_owned(),
             )
             .await

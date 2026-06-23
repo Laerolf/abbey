@@ -1,7 +1,7 @@
 use axum::extract::FromRequestParts;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode};
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 use tracing::{debug, error};
 
 use crate::{
@@ -11,6 +11,8 @@ use crate::{
     },
     shared::error::DomainError,
 };
+
+const SESSION_TOKEN_LIFESPAN: Duration = Duration::minutes(15);
 
 /// The prefix of the [`SessionToken`][AuthenticationTokens::SessionToken] header value.
 pub const SESSION_TOKEN_HEADER_PREFIX: &str = "Bearer ";
@@ -89,15 +91,13 @@ pub struct SessionToken {
 
 impl SessionToken {
     /// Creates a new [`SessionToken`].
-    pub fn new(
-        user_id: i32,
-        game_id: Option<i32>,
-        created_at: OffsetDateTime,
-        expires_at: OffsetDateTime,
-    ) -> Self {
+    pub fn new(user_id: &i32, game_id: &Option<i32>) -> Self {
+        let created_at = OffsetDateTime::now_utc();
+        let expires_at = created_at.saturating_add(SESSION_TOKEN_LIFESPAN);
+
         Self {
-            user_id,
-            game_id,
+            user_id: *user_id,
+            game_id: *game_id,
             created_at,
             expires_at,
         }

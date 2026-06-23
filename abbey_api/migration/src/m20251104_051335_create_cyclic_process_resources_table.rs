@@ -9,7 +9,9 @@ use crate::{
 enum CyclicProcessResources {
     Table,
     Id,
-    CylicProcessId,
+    CreatedAt,
+    LastUpdatedAt,
+    CyclicProcessId,
     ResourceId,
 }
 
@@ -25,14 +27,18 @@ impl MigrationTrait for Migration {
                     .table(CyclicProcessResources::Table)
                     .if_not_exists()
                     .col(pk_auto(CyclicProcessResources::Id))
-                    .col(integer(CyclicProcessResources::CylicProcessId))
+                    .col(timestamp_with_time_zone(CyclicProcessResources::CreatedAt))
+                    .col(timestamp_with_time_zone_null(
+                        CyclicProcessResources::LastUpdatedAt,
+                    ))
+                    .col(integer(CyclicProcessResources::CyclicProcessId))
                     .col(integer(CyclicProcessResources::ResourceId))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-cyclic-process-resources-cyclic-process")
                             .from(
                                 CyclicProcessResources::Table,
-                                CyclicProcessResources::CylicProcessId,
+                                CyclicProcessResources::CyclicProcessId,
                             )
                             .to(CyclicProcesses::Table, CyclicProcesses::Id)
                             .on_delete(ForeignKeyAction::Cascade)

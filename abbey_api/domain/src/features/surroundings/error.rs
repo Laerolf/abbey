@@ -10,32 +10,44 @@ pub enum SurroundingsErrorKind {
     Creation,
     /// This Surroundings have no Sources.
     MissingSources,
-    /// Failed to find all Sources of a Surroundings.
-    FindAllSources,
+    /// Failed to get all Sources of a Surroundings.
+    GetAllSources,
     /// Failed to find a Surroundings with the provided ID.
     FindById,
+    /// Failed to get a Surroundings with the provided ID.
+    GetById,
+    /// Failed to the Surroundings with the provided IDs.
+    GetByIds,
+    /// The Surroundings has not been persisted yet.
+    NotPersistedYet,
     Unknown,
 }
 
 impl DomainErrorKind for SurroundingsErrorKind {
-    /// Gets the locale code of a [`SurroundingsError`].
+    /// Gets the locale code of a [`SurroundingsErrorKind`].
     fn code(&self) -> String {
         match self {
             Self::Creation => "error.surroundings.creation".to_string(),
             Self::MissingSources => "error.surroundings.missing_sources".to_string(),
-            Self::FindAllSources => "error.surroundings.find_all_sources".to_string(),
+            Self::GetAllSources => "error.surroundings.get_all_sources".to_string(),
             Self::FindById => "error.surroundings.find_by_id".to_string(),
+            Self::GetById => "error.surroundings.get_by_id".to_string(),
+            Self::GetByIds => "error.surroundings.get_by_ids".to_string(),
+            Self::NotPersistedYet => "error.surroundings.not_persisted_yet".to_string(),
             Self::Unknown => "error.surroundings.unknown".to_string(),
         }
     }
 
-    /// Gets the message of a [`SurroundingsError`].
+    /// Gets the message of a [`SurroundingsErrorKind`].
     fn message(&self) -> String {
         match self {
             Self::Creation => "Failed to create new surroundings.".to_string(),
             Self::MissingSources => "This Surroundings have no Sources.".to_string(),
-            Self::FindAllSources => "Failed to find all Sources of a Surroundings.".to_string(),
+            Self::GetAllSources => "Failed to get all Sources of a Surroundings.".to_string(),
             Self::FindById => "Failed to find a Surroundings with the provided ID.".to_string(),
+            Self::GetById => "Failed to get a Surroundings with the provided ID.".to_string(),
+            Self::GetByIds => "Failed to the Surroundings with the provided IDs.".to_string(),
+            Self::NotPersistedYet => "The Surroundings has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

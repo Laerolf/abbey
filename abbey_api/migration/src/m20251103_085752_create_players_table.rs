@@ -6,6 +6,8 @@ use crate::m20251102_095220_create_cyclic_processes_table::CyclicProcesses;
 pub enum Players {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     AssignedProcessId,
 }
 
@@ -21,6 +23,8 @@ impl MigrationTrait for Migration {
                     .table(Players::Table)
                     .if_not_exists()
                     .col(pk_auto(Players::Id))
+                    .col(timestamp_with_time_zone(Players::CreatedAt))
+                    .col(timestamp_with_time_zone_null(Players::LastUpdatedAt))
                     .col(integer_null(Players::AssignedProcessId))
                     .foreign_key(
                         ForeignKey::create()

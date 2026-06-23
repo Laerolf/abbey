@@ -1,18 +1,22 @@
 pub mod start_cyclic_process {
-    use time::{Duration, OffsetDateTime};
+    use time::{Duration, OffsetDateTime, format_description::well_known::Rfc3339};
 
     use axum::http::StatusCode;
     use domain::{
         features::{
+            actor::{domain::ActorKind, dto::ActorDto},
             assignment::forms::ProcessAssignmentForm,
-            auth::forms::{LoginForm, RegistrationForm},
+            auth::forms::{UserLoginForm, UserRegistrationForm},
+            game::dto::GameOptionsForm,
             process::{
-                domain::{Process, Status},
-                dto::CyclicProcessDto,
+                dto::{CyclicProcessDto, ProcessStatusDto},
                 error::ProcessErrorKind,
             },
         },
-        shared::error::{DomainError, DomainErrorKind},
+        shared::{
+            DomainElement, DurationDto,
+            error::{DomainError, DomainErrorKind},
+        },
     };
 
     use serde_json::json;
@@ -38,7 +42,11 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -49,25 +57,33 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
             .expect("Failed to login the test user.");
 
-        let game_id: i32 = app
+        let user_session = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
-            .expect("Failed to get the test user session.")
+            .expect("Failed to get the test user session.");
+
+        let player = user_session
+            .game()
+            .as_ref()
+            .expect("Failed to get the test game")
+            .player();
+
+        let game_id: i32 = user_session
             .get_game_id()
             .expect("Failed to get the test game's ID");
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -82,7 +98,7 @@ pub mod start_cyclic_process {
         app.context
             .in_transaction(async |db_transaction| {
                 app.context
-                    .process_assignment_service
+                    .process_command_service
                     .assign_process_to_actors_in_game(
                         ProcessAssignmentForm::new(
                             true,
@@ -115,11 +131,12 @@ pub mod start_cyclic_process {
 
         let expected_dto = CyclicProcessDto {
             id: 1,
-            cycle_interval: Duration::seconds(60),
-            started_at: Some(OffsetDateTime::now_utc()),
+            cycle_interval: DurationDto::from(Duration::seconds(60)),
+            elapsed: DurationDto::from(Duration::milliseconds(0)),
+            started_at: Some(OffsetDateTime::now_utc().format(&Rfc3339).unwrap()),
             paused_at: None,
-            status: Status::InProgress.to_string(),
-            elapsed: Duration::seconds(0),
+            status: ProcessStatusDto::InProgress,
+            assigned_actors: vec![ActorDto::from(ActorKind::Player(player.clone()))],
         };
 
         let actual_dto: CyclicProcessDto = read_body_as_value(response).await;
@@ -166,7 +183,11 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -177,7 +198,7 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -217,7 +238,11 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -228,7 +253,7 @@ pub mod start_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -236,8 +261,8 @@ pub mod start_cyclic_process {
 
         let game_id: i32 = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.")
             .get_game_id()
@@ -245,8 +270,8 @@ pub mod start_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -291,20 +316,24 @@ pub mod start_cyclic_process {
 }
 
 pub mod pause_cyclic_process {
-    use time::{Duration, OffsetDateTime};
+    use time::{Duration, OffsetDateTime, format_description::well_known::Rfc3339};
 
     use axum::http::StatusCode;
     use domain::{
         features::{
+            actor::{domain::ActorKind, dto::ActorDto},
             assignment::forms::ProcessAssignmentForm,
-            auth::forms::{LoginForm, RegistrationForm},
+            auth::forms::{UserLoginForm, UserRegistrationForm},
+            game::dto::GameOptionsForm,
             process::{
-                domain::{Process, Status},
-                dto::CyclicProcessDto,
+                dto::{CyclicProcessDto, ProcessStatusDto},
                 error::ProcessErrorKind,
             },
         },
-        shared::error::{DomainError, DomainErrorKind},
+        shared::{
+            DomainElement, DurationDto,
+            error::{DomainError, DomainErrorKind},
+        },
     };
 
     use serde_json::json;
@@ -330,7 +359,11 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -341,25 +374,33 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
             .expect("Failed to login the test user.");
 
-        let game_id: i32 = app
+        let user_session = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
-            .expect("Failed to get the test user session.")
+            .expect("Failed to get the test user session.");
+
+        let player = user_session
+            .game()
+            .as_ref()
+            .expect("Failed to get the test game")
+            .player();
+
+        let game_id: i32 = user_session
             .get_game_id()
             .expect("Failed to get the test game's ID");
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -374,7 +415,7 @@ pub mod pause_cyclic_process {
         app.context
             .in_transaction(async |db_transaction| {
                 app.context
-                    .process_assignment_service
+                    .process_command_service
                     .assign_process_to_actors_in_game(
                         ProcessAssignmentForm::new(
                             true,
@@ -418,11 +459,12 @@ pub mod pause_cyclic_process {
 
         let expected_dto = CyclicProcessDto {
             id: 1,
-            cycle_interval: Duration::seconds(60),
-            started_at: Some(OffsetDateTime::now_utc()),
-            paused_at: Some(OffsetDateTime::now_utc()),
-            status: Status::Paused.to_string(),
-            elapsed: Duration::seconds(0),
+            cycle_interval: DurationDto::from(Duration::seconds(60)),
+            elapsed: DurationDto::from(Duration::milliseconds(0)),
+            started_at: Some(OffsetDateTime::now_utc().format(&Rfc3339).unwrap()),
+            paused_at: Some(OffsetDateTime::now_utc().format(&Rfc3339).unwrap()),
+            status: ProcessStatusDto::Paused,
+            assigned_actors: vec![ActorDto::from(ActorKind::Player(player.clone()))],
         };
 
         let actual_dto: CyclicProcessDto = read_body_as_value(response).await;
@@ -471,7 +513,11 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -482,7 +528,7 @@ pub mod pause_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -490,8 +536,8 @@ pub mod pause_cyclic_process {
 
         let game_id: i32 = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.")
             .get_game_id()
@@ -499,8 +545,8 @@ pub mod pause_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -515,7 +561,7 @@ pub mod pause_cyclic_process {
         app.context
             .in_transaction(async |db_transaction| {
                 app.context
-                    .process_assignment_service
+                    .process_command_service
                     .assign_process_to_actors_in_game(
                         ProcessAssignmentForm::new(
                             true,
@@ -546,7 +592,7 @@ pub mod pause_cyclic_process {
         // Then
         assert_eq!(StatusCode::INTERNAL_SERVER_ERROR, response.status());
 
-        let expected_error = DomainError::from(ProcessErrorKind::Start);
+        let expected_error = DomainError::from(ProcessErrorKind::Pause);
 
         let body = read_body_as_json(response).await;
         let expected_error_message = json!({
@@ -563,18 +609,17 @@ pub mod pause_cyclic_process {
 
 pub mod assign_cyclic_process {
     use axum::http::StatusCode;
-    use domain::features::{
-        actor::{
-            domain::{Actor, monk::Monk, person::Person},
-            dto::{ActorDto, MonkDto},
+    use domain::{
+        features::{
+            actor::{domain::person::Person, dto::ActorDto},
+            assignment::dto::ProcessAssignmentDto,
+            auth::forms::{UserLoginForm, UserRegistrationForm},
+            game::dto::GameOptionsForm,
+            monk::{domain::Monk, dto::MonkDto},
+            player::dto::PlayerDto,
+            process::dto::{CyclicProcessDto, ProcessDto, ProcessStatusDto},
         },
-        assignment::dto::ProcessAssignmentDto,
-        auth::forms::{LoginForm, RegistrationForm},
-        player::dto::PlayerDto,
-        process::{
-            domain::{Process, Status},
-            dto::{CyclicProcessDto, ProcessDto},
-        },
+        shared::{DomainElement, DurationDto},
     };
     use serde_json::json;
     use serial_test::serial;
@@ -599,7 +644,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -610,25 +659,27 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
             .expect("Failed to login the test user.");
 
-        let game_id: i32 = app
+        let user_session = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
-            .expect("Failed to get the test user session.")
+            .expect("Failed to get the test user session.");
+
+        let game_id: i32 = user_session
             .get_game_id()
             .expect("Failed to get the test game's ID");
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -646,13 +697,32 @@ pub mod assign_cyclic_process {
             .process()
             .clone();
 
+        let process_id = first_source_cyclic_process.id().unwrap();
+
+        let assigned_actors_for_process: Vec<ActorDto> = first_5_monks
+            .clone()
+            .into_iter()
+            .map(|monk| {
+                ActorDto::Monk(MonkDto {
+                    id: monk.id().unwrap(),
+                    name: monk.name().to_string(),
+                    assigned_process_id: Some(process_id),
+                    skill_ids: monk.skills().iter().map(|s| s.id().unwrap()).collect(),
+                })
+            })
+            .chain(std::iter::once(ActorDto::Player(PlayerDto {
+                id: game.player().id().unwrap(),
+                assigned_process_id: Some(process_id),
+            })))
+            .collect();
+
         // When
         let response = app
             .post("/api/cyclic-processes/assign")
             .body(&json!({
                 "assign_player": true,
                 "actor_ids": first_5_monk_ids,
-                "process_id": first_source_cyclic_process.id()
+                "process_id": first_source_cyclic_process.id().unwrap()
             }))
             .bearer(test_auth_tokens.session_token().to_jwt().unwrap())
             .send()
@@ -661,14 +731,15 @@ pub mod assign_cyclic_process {
         // Then
         assert_eq!(StatusCode::OK, response.status());
 
-        let expected_process_dto = ProcessDto::CyclicProcess(CyclicProcessDto {
-            id: first_source_cyclic_process.id().unwrap(),
-            cycle_interval: Duration::seconds(60),
-            elapsed: Duration::milliseconds(0),
+        let expected_process_dto = CyclicProcessDto {
+            id: process_id,
+            cycle_interval: DurationDto::from(Duration::seconds(60)),
+            elapsed: DurationDto::from(Duration::milliseconds(0)),
             paused_at: None,
             started_at: None,
-            status: Status::New.to_string(),
-        });
+            status: ProcessStatusDto::New,
+            assigned_actors: assigned_actors_for_process,
+        };
 
         let mut expected_actors: Vec<ActorDto> = first_5_monks
             .clone()
@@ -677,7 +748,7 @@ pub mod assign_cyclic_process {
                 ActorDto::Monk(MonkDto {
                     id: monk.id().unwrap(),
                     name: monk.name().to_string(),
-                    assigned_process: Some(expected_process_dto.clone()),
+                    assigned_process_id: Some(expected_process_dto.id),
                     skill_ids: monk
                         .skills()
                         .iter()
@@ -689,12 +760,12 @@ pub mod assign_cyclic_process {
 
         expected_actors.push(ActorDto::Player(PlayerDto {
             id: game.player().id().unwrap(),
-            process: Some(expected_process_dto.clone()),
+            assigned_process_id: Some(expected_process_dto.id),
         }));
 
         let expected_dto = ProcessAssignmentDto {
             actors: expected_actors,
-            process: expected_process_dto,
+            process: ProcessDto::CyclicProcess(expected_process_dto),
         };
 
         let actual_dto: ProcessAssignmentDto = read_body_as_value(response).await;
@@ -715,7 +786,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -726,25 +801,27 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
             .expect("Failed to login the test user.");
 
-        let game_id: i32 = app
+        let user_session = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
-            .expect("Failed to get the test user session.")
+            .expect("Failed to get the test user session.");
+
+        let game_id: i32 = user_session
             .get_game_id()
             .expect("Failed to get the test game's ID");
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -762,7 +839,7 @@ pub mod assign_cyclic_process {
             .body(&json!({
                 "assign_player": true,
                 "actor_ids": [],
-                "process_id": first_source_cyclic_process.id()
+                "process_id": first_source_cyclic_process.id().unwrap()
             }))
             .bearer(test_auth_tokens.session_token().to_jwt().unwrap())
             .send()
@@ -771,21 +848,27 @@ pub mod assign_cyclic_process {
         // Then
         assert_eq!(StatusCode::OK, response.status());
 
-        let expected_process_dto = ProcessDto::CyclicProcess(CyclicProcessDto {
+        let process_id = first_source_cyclic_process.id().unwrap();
+
+        let expected_process_dto = CyclicProcessDto {
             id: first_source_cyclic_process.id().unwrap(),
-            cycle_interval: Duration::seconds(60),
-            elapsed: Duration::milliseconds(0),
+            cycle_interval: DurationDto::from(Duration::seconds(60)),
+            elapsed: DurationDto::from(Duration::milliseconds(0)),
             paused_at: None,
             started_at: None,
-            status: Status::New.to_string(),
-        });
+            status: ProcessStatusDto::New,
+            assigned_actors: vec![ActorDto::Player(PlayerDto {
+                id: game.player().id().unwrap(),
+                assigned_process_id: Some(process_id),
+            })],
+        };
 
         let expected_dto = ProcessAssignmentDto {
             actors: vec![ActorDto::Player(PlayerDto {
                 id: game.player().id().unwrap(),
-                process: Some(expected_process_dto.clone()),
+                assigned_process_id: Some(process_id),
             })],
-            process: expected_process_dto,
+            process: ProcessDto::CyclicProcess(expected_process_dto),
         };
 
         let actual_dto: ProcessAssignmentDto = read_body_as_value(response).await;
@@ -806,7 +889,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -817,7 +904,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -825,8 +912,8 @@ pub mod assign_cyclic_process {
 
         let game_id: i32 = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.")
             .get_game_id()
@@ -834,8 +921,8 @@ pub mod assign_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -859,7 +946,7 @@ pub mod assign_cyclic_process {
             .body(&json!({
                 "assign_player": false,
                 "actor_ids": first_5_monk_ids,
-                "process_id": first_source_cyclic_process.id()
+                "process_id": first_source_cyclic_process.id().unwrap()
             }))
             .bearer(test_auth_tokens.session_token().to_jwt().unwrap())
             .send()
@@ -868,34 +955,33 @@ pub mod assign_cyclic_process {
         // Then
         assert_eq!(StatusCode::OK, response.status());
 
-        let expected_process_dto = ProcessDto::CyclicProcess(CyclicProcessDto {
-            id: first_source_cyclic_process.id().unwrap(),
-            cycle_interval: Duration::seconds(60),
-            elapsed: Duration::milliseconds(0),
-            paused_at: None,
-            started_at: None,
-            status: Status::New.to_string(),
-        });
+        let process_id = first_source_cyclic_process.id().unwrap();
 
-        let expected_monks = first_5_monks
+        let assigned_actors_for_process: Vec<ActorDto> = first_5_monks
             .clone()
             .into_iter()
             .map(|monk| {
                 ActorDto::Monk(MonkDto {
                     id: monk.id().unwrap(),
                     name: monk.name().to_string(),
-                    assigned_process: Some(expected_process_dto.clone()),
-                    skill_ids: monk
-                        .skills()
-                        .iter()
-                        .map(|skill| skill.id().unwrap())
-                        .collect(),
+                    assigned_process_id: Some(process_id),
+                    skill_ids: monk.skills().iter().map(|s| s.id().unwrap()).collect(),
                 })
             })
             .collect();
 
+        let expected_process_dto = ProcessDto::CyclicProcess(CyclicProcessDto {
+            id: first_source_cyclic_process.id().unwrap(),
+            cycle_interval: DurationDto::from(Duration::seconds(60)),
+            elapsed: DurationDto::from(Duration::milliseconds(0)),
+            paused_at: None,
+            started_at: None,
+            status: ProcessStatusDto::New,
+            assigned_actors: assigned_actors_for_process.clone(),
+        });
+
         let expected_dto = ProcessAssignmentDto {
-            actors: expected_monks,
+            actors: assigned_actors_for_process,
             process: expected_process_dto,
         };
 
@@ -917,7 +1003,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -928,7 +1018,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -936,8 +1026,8 @@ pub mod assign_cyclic_process {
 
         let game_id: i32 = app
             .context
-            .authentication_service
-            .get_user_session(test_auth_tokens.session_token(), db_connection)
+            .user_session_query_service
+            .get_by_session_token(test_auth_tokens.session_token(), db_connection)
             .await
             .expect("Failed to get the test user session.")
             .get_game_id()
@@ -945,8 +1035,8 @@ pub mod assign_cyclic_process {
 
         let game = app
             .context
-            .game_service
-            .get_by_id_with_relations(&game_id, db_connection)
+            .game_query_service
+            .get_by_id(&game_id, db_connection)
             .await
             .expect("Failed to get the test game.");
 
@@ -964,7 +1054,7 @@ pub mod assign_cyclic_process {
             .body(&json!({
                 "assign_player": false,
                 "actor_ids": [],
-                "process_id": first_source_cyclic_process.id()
+                "process_id": first_source_cyclic_process.id().unwrap()
             }))
             .bearer(test_auth_tokens.session_token().to_jwt().unwrap())
             .send()
@@ -975,11 +1065,12 @@ pub mod assign_cyclic_process {
 
         let expected_process_dto = ProcessDto::CyclicProcess(CyclicProcessDto {
             id: first_source_cyclic_process.id().unwrap(),
-            cycle_interval: Duration::seconds(60),
-            elapsed: Duration::milliseconds(0),
+            cycle_interval: DurationDto::from(Duration::seconds(60)),
+            elapsed: DurationDto::from(Duration::milliseconds(0)),
             paused_at: None,
             started_at: None,
-            status: Status::New.to_string(),
+            status: ProcessStatusDto::New,
+            assigned_actors: Vec::new(),
         });
 
         let expected_dto = ProcessAssignmentDto {
@@ -1004,7 +1095,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -1015,7 +1110,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -1049,7 +1144,11 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -1060,7 +1159,7 @@ pub mod assign_cyclic_process {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await

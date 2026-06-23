@@ -7,7 +7,9 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub cylic_process_id: i32,
+    pub created_at: TimeDateTimeWithTimeZone,
+    pub last_updated_at: Option<TimeDateTimeWithTimeZone>,
+    pub cyclic_process_id: i32,
     pub resource_id: i32,
 }
 
@@ -15,7 +17,7 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(
         belongs_to = "super::cyclic_processes::Entity",
-        from = "Column::CylicProcessId",
+        from = "Column::CyclicProcessId",
         to = "super::cyclic_processes::Column::Id",
         on_update = "Cascade",
         on_delete = "Cascade"

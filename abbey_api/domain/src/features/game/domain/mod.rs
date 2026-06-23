@@ -1,6 +1,16 @@
-use crate::features::{
-    monastery::domain::Monastery, player::domain::Player, surroundings::domain::Surroundings,
+use time::OffsetDateTime;
+
+use crate::{
+    features::{
+        game::{domain::game_engine::GameEngine, error::GameErrorKind},
+        monastery::domain::Monastery,
+        player::domain::Player,
+        surroundings::domain::Surroundings,
+    },
+    shared::{DomainElement, error::DomainError},
 };
+
+pub mod game_engine;
 
 /// The default amount of Monks in a Monastery.
 pub const DEFAULT_AMOUNT_OF_MONKS: i32 = 10;
@@ -10,21 +20,38 @@ pub struct Game {
     /// The ID of this [`Game`].
     id: Option<i32>,
 
-    /// The [Player][`crate::features::player::domain::Player`] of this [`Game`].
+    /// The creation date of this [`Game`].
+    created_at: Option<OffsetDateTime>,
+
+    /// The date of the last update of this [`Game`].
+    last_updated_at: Option<OffsetDateTime>,
+
+    /// The GameEngine of this [`Game`].
+    game_engine: GameEngine,
+
+    /// The Player of this [`Game`].
     player: Player,
 
-    /// The [Monastery][`crate::features::monastery::domain::Monastery`] of the this [`Game`].
+    /// The Monastery of the this [`Game`].
     monastery: Monastery,
 
-    /// The [Surroundings][`crate::features::surroundings::domain::Surroundings`] of the [Monastery][`crate::features::monastery::domain::Monastery`] in this [`Game`].
+    /// The Surroundings of the Monastery in this [`Game`].
     surroundings: Surroundings,
 }
 
 impl Game {
     /// Creates a [`Game`].
-    pub fn new(player: Player, monastery: Monastery, surroundings: Surroundings) -> Self {
+    pub fn new(
+        game_engine: GameEngine,
+        player: Player,
+        monastery: Monastery,
+        surroundings: Surroundings,
+    ) -> Self {
         Self {
             id: None,
+            created_at: None,
+            last_updated_at: None,
+            game_engine,
             player,
             monastery,
             surroundings,
@@ -34,21 +61,27 @@ impl Game {
     /// Restores a [`Game`].
     pub fn restore(
         id: i32,
+        created_at: OffsetDateTime,
+        last_updated_at: Option<OffsetDateTime>,
+        game_engine: GameEngine,
         player: Player,
         monastery: Monastery,
         surroundings: Surroundings,
     ) -> Self {
         Self {
             id: Some(id),
+            created_at: Some(created_at),
+            last_updated_at,
+            game_engine,
             player,
             monastery,
             surroundings,
         }
     }
 
-    /// Gets the ID of a [`Game`].
-    pub fn id(&self) -> &Option<i32> {
-        &self.id
+    /// Gets the [GameEngine] of a [`Game`].
+    pub fn game_engine(&self) -> &GameEngine {
+        &self.game_engine
     }
 
     /// Gets the [Player] of a [`Game`].
@@ -64,5 +97,23 @@ impl Game {
     /// Gets the [Surroundings] of a [`Game`].
     pub fn surroundings(&self) -> &Surroundings {
         &self.surroundings
+    }
+}
+
+impl DomainElement<GameErrorKind> for Game {
+    /// Gets the ID of this [`Game`].
+    fn id(&self) -> Result<i32, DomainError<GameErrorKind>> {
+        self.id
+            .ok_or(DomainError::from(GameErrorKind::NotPersistedYet))
+    }
+
+    /// Gets the [creation date][`OffsetDateTime`] of this [`Game`].
+    fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// Gets the [latest update date][`OffsetDateTime`] of this [`Game`].
+    fn last_updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_updated_at
     }
 }

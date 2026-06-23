@@ -1,10 +1,7 @@
 pub mod register {
     use axum::http::StatusCode;
     use domain::{
-        features::auth::{
-            error::{AuthenticationErrorKind, RegistrationErrorKind},
-            forms::RegistrationForm,
-        },
+        features::auth::error::{AuthenticationErrorKind, RegistrationErrorKind},
         shared::error::DomainErrorKind,
     };
     use serde_json::json;
@@ -12,7 +9,7 @@ pub mod register {
 
     use crate::shared::{
         TestApp,
-        fixtures::{TestUserFixture, test_user_fixture},
+        fixtures::{EXAMPLE_GAME_SEED, TestUserFixture, test_user_fixture},
         utils::read_body_as_json,
     };
 
@@ -36,6 +33,108 @@ pub mod register {
 
         // Then
         assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[serial]
+    pub async fn test_register_new_user_returns_200_after_multiple_user_registrations() {
+        // Given
+        let TestUserFixture { email, password } = test_user_fixture();
+        let app = TestApp::new().await;
+
+        app.post("/api/auth/register")
+            .body(&json!({
+                "email": "test@test.test",
+                "password": "test",
+                "confirmed_password": "test"
+            }))
+            .send()
+            .await;
+
+        // When
+        let response = app
+            .post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password
+            }))
+            .send()
+            .await;
+
+        // Then
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[serial]
+    pub async fn test_register_new_user_returns_200_when_providing_game_options() {
+        // Given
+        let TestUserFixture { email, password } = test_user_fixture();
+        let app = TestApp::new().await;
+
+        // When
+        let response = app
+            .post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password,
+                "game_options": {
+                    "game_seed": EXAMPLE_GAME_SEED
+                }
+            }))
+            .send()
+            .await;
+
+        // Then
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[serial]
+    pub async fn test_register_new_user_returns_200_when_providing_partial_game_options() {
+        // Given
+        let TestUserFixture { email, password } = test_user_fixture();
+        let app = TestApp::new().await;
+
+        // When
+        let response = app
+            .post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password,
+                "game_options": {}
+            }))
+            .send()
+            .await;
+
+        // Then
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[serial]
+    pub async fn test_register_new_user_returns_422_when_providing_wrong_parameters() {
+        // Given
+        let TestUserFixture { email, password } = test_user_fixture();
+        let app = TestApp::new().await;
+
+        // When
+        let response = app
+            .post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password,
+                "test_options": {}
+            }))
+            .send()
+            .await;
+
+        // Then
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
     }
 
     #[tokio::test]
@@ -68,15 +167,14 @@ pub mod register {
 
         let app = TestApp::new().await;
 
-        app.context
-            .in_transaction(async |db_transaction| {
-                app.context
-                    .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
-                    .await
-            })
-            .await
-            .expect("Failed to register the test user.");
+        app.post("/api/auth/register")
+            .body(&json!({
+                "email": email,
+                "password": password,
+                "confirmed_password": password
+            }))
+            .send()
+            .await;
 
         // When
         let response = app
@@ -155,7 +253,10 @@ pub mod register {
 
 pub mod login {
     use axum::http::StatusCode;
-    use domain::features::auth::{domain::AuthenticationTokens, forms::RegistrationForm};
+    use domain::features::{
+        auth::{domain::AuthenticationTokens, forms::UserRegistrationForm},
+        game::dto::GameOptionsForm,
+    };
     use serde_json::json;
     use serial_test::serial;
     use tracing::debug;
@@ -178,7 +279,11 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -222,7 +327,11 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -286,7 +395,11 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -318,7 +431,11 @@ pub mod login {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -341,10 +458,13 @@ pub mod login {
 pub mod refresh {
     use axum::http::StatusCode;
     use domain::{
-        features::auth::{
-            domain::AuthenticationTokens,
-            error::{AuthenticationErrorKind, RefreshErrorKind},
-            forms::{LoginForm, RegistrationForm},
+        features::{
+            auth::{
+                domain::AuthenticationTokens,
+                error::{AuthenticationErrorKind, RefreshErrorKind},
+                forms::{UserLoginForm, UserRegistrationForm},
+            },
+            game::dto::GameOptionsForm,
         },
         shared::error::{DomainError, DomainErrorKind},
     };
@@ -369,7 +489,11 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -380,7 +504,7 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .login(LoginForm::new(email, password), db_transaction)
+                    .login(UserLoginForm::new(email, password), db_transaction)
                     .await
             })
             .await
@@ -436,7 +560,11 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await
@@ -467,7 +595,11 @@ pub mod refresh {
             .in_transaction(async |db_transaction| {
                 app.context
                     .authentication_service
-                    .register(RegistrationForm::new(&email, &password), db_transaction)
+                    .register(
+                        UserRegistrationForm::new(&email, &password),
+                        GameOptionsForm::empty(),
+                        db_transaction,
+                    )
                     .await
             })
             .await

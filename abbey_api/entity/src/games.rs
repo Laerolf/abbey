@@ -7,6 +7,9 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
+    pub created_at: TimeDateTimeWithTimeZone,
+    pub last_updated_at: Option<TimeDateTimeWithTimeZone>,
+    pub engine_state: String,
     pub player_id: i32,
     pub monastery_id: i32,
     pub surroundings_id: i32,
@@ -38,7 +41,7 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Surroundings,
-    #[sea_orm(has_one = "super::user_games::Entity")]
+    #[sea_orm(has_many = "super::user_games::Entity")]
     UserGames,
 }
 

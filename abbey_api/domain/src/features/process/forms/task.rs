@@ -1,43 +1,53 @@
 use time::Duration;
 
-/// Represents a [`Task`][`crate::features::process::domain::Task`] creation form.
+use crate::{features::process::error::ProcessErrorKind, shared::error::DomainError};
+
+/// Represents a Task blueprint.
 #[derive(Clone)]
-pub struct TaskCreationForm {
-    /// The IDs of the input [Resources][`crate::features::output::domain::resource`] required by this [`Task`][`crate::features::process::domain::Task`].
+pub struct TaskBlueprint {
+    /// The IDs of the input Resource of the Task.
     pub input_resources_ids: Vec<i32>,
 
-    /// The IDs of the output [Resources][`crate::features::output::domain::resource`] of this [`Task`][`crate::features::process::domain::Task`].
+    /// The IDs of the output Resource of the Task.
     pub output_resources_ids: Vec<i32>,
 
-    /// The duration of this [`Task`][`crate::features::process::domain::Task`].
+    /// The duration of the Task.
     pub duration: Duration,
 }
 
-impl TaskCreationForm {
-    /// Creates a new [`TaskCreationForm`].
+impl TaskBlueprint {
+    /// Creates a new [`TaskBlueprint`].
     pub fn new(
         input_resources_ids: Vec<i32>,
         output_resources_ids: Vec<i32>,
         duration: Duration,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, DomainError<ProcessErrorKind>> {
+        if input_resources_ids.is_empty() {
+            return Err(DomainError::from(ProcessErrorKind::NoInputResources));
+        }
+
+        if output_resources_ids.is_empty() {
+            return Err(DomainError::from(ProcessErrorKind::NoOutputResources));
+        }
+
+        Ok(Self {
             input_resources_ids,
             output_resources_ids,
             duration,
-        }
+        })
     }
 }
 
-/// Represents a [`TaskInputResource`][entity::task_input_resources::ActiveModel] creation form.
-pub struct TaskInputResourceCreationForm {
+/// Represents a form assigning input Resources to a Task.
+pub struct TaskInputResourceAssignmentForm {
     /// The ID of the Task.
     pub task_id: i32,
     /// The ID of the Resource.
     pub resource_id: i32,
 }
 
-impl TaskInputResourceCreationForm {
-    /// Creates a new [`TaskInputResourceCreationForm`].
+impl TaskInputResourceAssignmentForm {
+    /// Creates a new [`TaskInputResourceAssignmentForm`].
     pub fn new(task_id: i32, resource_id: i32) -> Self {
         Self {
             task_id,
@@ -46,16 +56,16 @@ impl TaskInputResourceCreationForm {
     }
 }
 
-/// Represents a [`TaskOutputResource`][entity::task_output_resources::ActiveModel] creation form.
-pub struct TaskOutputResourceCreationForm {
+/// Represents a form assigning input Resources to a Task.
+pub struct TaskOutputResourceAssignmentForm {
     /// The ID of the Task.
     pub task_id: i32,
     /// The ID of the Resource.
     pub resource_id: i32,
 }
 
-impl TaskOutputResourceCreationForm {
-    /// Creates a new [`TaskOutputResourceCreationForm`].
+impl TaskOutputResourceAssignmentForm {
+    /// Creates a new [`TaskOutputResourceAssignmentForm`].
     pub fn new(task_id: i32, resource_id: i32) -> Self {
         Self {
             task_id,

@@ -4,6 +4,8 @@ use sea_orm_migration::{prelude::*, schema::*};
 pub enum Monasteries {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
 }
 
 #[derive(DeriveMigrationName)]
@@ -18,6 +20,8 @@ impl MigrationTrait for Migration {
                     .table(Monasteries::Table)
                     .if_not_exists()
                     .col(pk_auto(Monasteries::Id))
+                    .col(timestamp_with_time_zone(Monasteries::CreatedAt))
+                    .col(timestamp_with_time_zone_null(Monasteries::LastUpdatedAt))
                     .to_owned(),
             )
             .await

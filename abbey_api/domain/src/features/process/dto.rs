@@ -1,9 +1,15 @@
 use serde::{Deserialize, Serialize};
-use time::{Duration, OffsetDateTime};
+use time::format_description::well_known::Rfc3339;
 use utoipa::ToSchema;
 
-use crate::features::process::domain::{
-    Process, ProcessKind, cyclic_process::CyclicProcess, task::Task,
+use crate::{
+    features::{
+        actor::dto::ActorDto,
+        process::domain::{
+            Process, ProcessKind, Status, cyclic_process::CyclicProcess, task::Task,
+        },
+    },
+    shared::{DomainElement, DurationDto},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
@@ -34,27 +40,43 @@ pub struct CyclicProcessDto {
     #[schema(example = 666)]
     pub id: i32,
     /// The status of the CyclicProcess.
-    pub status: String,
+    pub status: ProcessStatusDto,
     /// The time the CyclicProcess was started last.
-    pub started_at: Option<OffsetDateTime>,
+    pub started_at: Option<String>,
     /// The time the CyclicProcess was paused last.
-    pub paused_at: Option<OffsetDateTime>,
+    pub paused_at: Option<String>,
     /// The cycle duration of the CyclicProcess.
-    pub cycle_interval: Duration,
+    pub cycle_interval: DurationDto,
     /// The time that has elapsed since the CyclicProcess was started.
-    pub elapsed: Duration,
+    pub elapsed: DurationDto,
+    /// The assigned Actors to this CyclicProcess.
+    pub assigned_actors: Vec<ActorDto>,
 }
 
 impl CyclicProcessDto {
     /// Creates a [`CyclicProcessDto`] based on a [CyclicProcess].
     pub fn from(cyclic_process: CyclicProcess) -> Self {
+        let assigned_actors: Vec<ActorDto> = cyclic_process
+            .assigned_actors()
+            .clone()
+            .into_iter()
+            .map(ActorDto::from)
+            .collect();
+
         Self {
             id: cyclic_process.id().unwrap(),
-            status: cyclic_process.status().to_string(),
-            started_at: *cyclic_process.started_at(),
-            paused_at: *cyclic_process.paused_at(),
-            cycle_interval: *cyclic_process.cycle_interval(),
-            elapsed: *cyclic_process.elapsed(),
+            status: ProcessStatusDto::from(*cyclic_process.status()),
+            started_at: cyclic_process
+                .clone()
+                .started_at()
+                .map(|timestamp| timestamp.format(&Rfc3339).unwrap()),
+            paused_at: cyclic_process
+                .clone()
+                .paused_at()
+                .map(|timestamp| timestamp.format(&Rfc3339).unwrap()),
+            cycle_interval: DurationDto::from(*cyclic_process.cycle_interval()),
+            elapsed: DurationDto::from(*cyclic_process.elapsed()),
+            assigned_actors,
         }
     }
 }
@@ -65,15 +87,15 @@ pub struct TaskDto {
     #[schema(example = 666)]
     pub id: i32,
     /// The status of the Task.
-    pub status: String,
+    pub status: ProcessStatusDto,
     /// The time the Task was started last.
-    pub started_at: Option<OffsetDateTime>,
+    pub started_at: Option<String>,
     /// The time the Task was paused last.
-    pub paused_at: Option<OffsetDateTime>,
+    pub paused_at: Option<String>,
     /// The duration of this Task.
-    pub duration: Duration,
+    pub duration: DurationDto,
     /// The time that has elapsed since the Task was started.
-    pub elapsed: Duration,
+    pub elapsed: DurationDto,
 }
 
 impl TaskDto {
@@ -81,11 +103,41 @@ impl TaskDto {
     pub fn from(task: Task) -> Self {
         Self {
             id: task.id().unwrap(),
-            status: task.status().to_string(),
-            started_at: *task.started_at(),
-            paused_at: *task.paused_at(),
-            duration: *task.duration(),
-            elapsed: *task.elapsed(),
+            status: ProcessStatusDto::from(*task.status()),
+            started_at: task
+                .clone()
+                .started_at()
+                .map(|timestamp| timestamp.format(&Rfc3339).unwrap()),
+            paused_at: task
+                .clone()
+                .paused_at()
+                .map(|timestamp| timestamp.format(&Rfc3339).unwrap()),
+            duration: DurationDto::from(*task.duration()),
+            elapsed: DurationDto::from(*task.elapsed()),
+        }
+    }
+}
+
+/// Represents the Status of a Process.
+#[derive(PartialEq, Serialize, Deserialize, Debug, Clone, Copy, ToSchema)]
+pub enum ProcessStatusDto {
+    /// The Process has been created.
+    New,
+    /// The Process has started and is in progress.
+    InProgress,
+    /// The Process has been paused.
+    Paused,
+    /// The Process has been completed.
+    Completed,
+}
+
+impl From<Status> for ProcessStatusDto {
+    fn from(status: Status) -> Self {
+        match status {
+            Status::New => ProcessStatusDto::New,
+            Status::InProgress => ProcessStatusDto::InProgress,
+            Status::Paused => ProcessStatusDto::Paused,
+            Status::Completed => ProcessStatusDto::Completed,
         }
     }
 }

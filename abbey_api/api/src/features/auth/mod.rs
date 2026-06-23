@@ -1,11 +1,17 @@
 use axum::{Json, Router, extract::State, routing::post};
-use domain::features::auth::{
-    domain::refresh_token::RefreshTokenValue,
-    dto::{
-        LoginUserRequest, LoginUserResponse, RefreshUserResponse, RegisterUserRequest,
-        RegisterUserResponse,
+use domain::{
+    features::{
+        auth::{
+            domain::refresh_token::RefreshTokenValue,
+            dto::{
+                LoginUserRequest, LoginUserResponse, RefreshUserResponse, RegisterUserRequest,
+                RegisterUserResponse,
+            },
+            mapper::AuthenticationDtoMapper,
+        },
+        game::dto::GameOptionsForm,
     },
-    mapper::AuthenticationDtoMapper,
+    shared::DomainElement,
 };
 use sea_orm::DatabaseConnection;
 use tracing::error;
@@ -49,13 +55,18 @@ async fn register(
     State(context): State<ApiContext<DatabaseConnection>>,
     Json(payload): Json<RegisterUserRequest>,
 ) -> Result<Json<RegisterUserResponse>, AppError> {
-    let registration_form = AuthenticationDtoMapper::to_registration_form(payload)?;
+    let registration_form = AuthenticationDtoMapper::to_registration_form(payload.clone())?;
+    let game_options = payload
+        .game_options
+        .map_or(GameOptionsForm::empty(), |create_game_request| {
+            GameOptionsForm::from(create_game_request)
+        });
 
     let new_user = context
         .in_transaction(async |db_transaction| {
             context
                 .authentication_service
-                .register(registration_form, db_transaction)
+                .register(registration_form, game_options, db_transaction)
                 .await
                 .inspect_err(|error| {
                     error!(?error);
@@ -64,7 +75,7 @@ async fn register(
         .await?;
 
     Ok(Json(RegisterUserResponse::new(
-        new_user.id().unwrap(),
+        new_user.id()?,
         new_user.email().to_string(),
     )))
 }
@@ -113,7 +124,7 @@ async fn login(
     post,
     path = "/api/auth/refresh",
     responses(
-        (status = 200, description = "The refresh attempt was successful.", body = LoginUserResponse),
+        (status = 200, description = "The refresh attempt was successful.", body = RefreshUserResponse),
         (status = 500, description = "The refresh attempt failed due to an error.", body = AppError)
     ),
     params(

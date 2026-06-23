@@ -4,13 +4,14 @@ use time::{Duration, OffsetDateTime};
 use crate::{
     features::{
         actor::domain::ActorKind,
+        game::domain::game_engine::GameEngine,
         output::domain::Output,
         process::{
             domain::{cyclic_process::CyclicProcess, task::Task},
             error::ProcessErrorKind,
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 pub mod cyclic_process;
@@ -20,6 +21,15 @@ pub mod task;
 pub enum ProcessKind {
     CyclicProcess(CyclicProcess),
     Task(Task),
+}
+
+impl ProcessKind {
+    pub fn id(&self) -> Result<i32, DomainError<ProcessErrorKind>> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.id(),
+            ProcessKind::Task(task) => task.id(),
+        }
+    }
 }
 
 impl Process for ProcessKind {
@@ -51,13 +61,6 @@ impl Process for ProcessKind {
         }
     }
 
-    fn id(&self) -> &Option<i32> {
-        match self {
-            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.id(),
-            ProcessKind::Task(task) => task.id(),
-        }
-    }
-
     fn started_at(&self) -> &Option<OffsetDateTime> {
         match self {
             ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.started_at(),
@@ -76,6 +79,13 @@ impl Process for ProcessKind {
         match self {
             ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.elapsed(),
             ProcessKind::Task(task) => task.elapsed(),
+        }
+    }
+
+    fn assigned_actors(&self) -> &Vec<ActorKind> {
+        match self {
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.assigned_actors(),
+            ProcessKind::Task(task) => task.assigned_actors(),
         }
     }
 
@@ -100,10 +110,10 @@ impl Process for ProcessKind {
         }
     }
 
-    fn get_yield(&self) -> Option<Output> {
+    fn get_yield(&self, game_engine: &mut GameEngine) -> Option<Output> {
         match self {
-            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.get_yield(),
-            ProcessKind::Task(task) => task.get_yield(),
+            ProcessKind::CyclicProcess(cyclic_process) => cyclic_process.get_yield(game_engine),
+            ProcessKind::Task(task) => task.get_yield(game_engine),
         }
     }
 
@@ -120,26 +130,26 @@ pub trait Process: Send + Any {
     /// Used to downcast a [`Process`].
     fn as_any(&self) -> &dyn Any;
 
-    /// Asigns a [Person][`ActorKind`] to this [`Process`].
+    /// Asigns a [Person][ActorKind] to this [`Process`].
     fn assign_person(&mut self, person: ActorKind);
 
-    /// Unassign a [Person][`ActorKind`] from this [`Process`]:
+    /// Unassign a [Person][ActorKind] from this [`Process`]:
     fn unassign_person(&mut self, person: &ActorKind);
 
-    /// Gets the [`Status`] of this [`Process`].
+    /// Gets the [Status] of this [`Process`].
     fn status(&self) -> &Status;
 
-    /// Returns the ID of this [Process].
-    fn id(&self) -> &Option<i32>;
-
-    /// Returns time when this [Process] was last started.
+    /// Returns the time when this [Process] was last started.
     fn started_at(&self) -> &Option<OffsetDateTime>;
 
-    /// Returns time when this [Process] was last paused.
+    /// Returns the time when this [Process] was last paused.
     fn paused_at(&self) -> &Option<OffsetDateTime>;
 
     /// Returns the time this [Process] ran.
     fn elapsed(&self) -> &Duration;
+
+    /// Returns the [Actors][Vec<ActorKind>] assigned to this [Process].
+    fn assigned_actors(&self) -> &Vec<ActorKind>;
 
     /// Starts this [`Process`].
     fn start(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>>;
@@ -150,8 +160,8 @@ pub trait Process: Send + Any {
     /// Resumes this [`Process`].
     fn resume(&mut self, now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>>;
 
-    /// Gets the [yield][`Output`] of this [`Process`].
-    fn get_yield(&self) -> Option<Output>;
+    /// Gets the [yield][Output] of this [`Process`].
+    fn get_yield(&self, game_engine: &mut GameEngine) -> Option<Output>;
 
     /// Completes this [`Process`].
     fn complete(&mut self, _now: OffsetDateTime) -> Result<(), DomainError<ProcessErrorKind>> {

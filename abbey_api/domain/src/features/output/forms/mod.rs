@@ -1,18 +1,21 @@
-/// Represents a [Resource][`super::domain::resource::Resource`] creation form.
-pub struct ResourceCreationForm {
-    /// The name of this [Resource][`super::domain::resource::Resource`] .
+use crate::features::output::domain::resource::Category;
+
+/// Represents a Resource blueprint.
+#[derive(Clone)]
+pub struct ResourceBlueprint {
+    /// The Name of the Resource.
     pub name: String,
 
-    /// The name of the [Category][`super::domain::resource::Category`] of this [Resource][`super::domain::resource::Resource`] .
-    pub category_name: String,
+    /// The category of the Resource.
+    pub category: Category,
 }
 
-impl ResourceCreationForm {
-    /// Creates a new [`ResourceCreationForm`].
-    pub fn new(name: impl Into<String>, category_name: impl Into<String>) -> Self {
+impl ResourceBlueprint {
+    /// Creates a new [`ResourceBlueprint`].
+    pub fn new(name: impl Into<String>, category: Category) -> Self {
         Self {
             name: name.into(),
-            category_name: category_name.into(),
+            category,
         }
     }
 }

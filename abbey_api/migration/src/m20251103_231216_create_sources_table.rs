@@ -6,6 +6,8 @@ use crate::m20251102_095220_create_cyclic_processes_table::CyclicProcesses;
 pub enum Sources {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     Name,
     CyclicProcessId,
     LastClaimAt,
@@ -23,6 +25,8 @@ impl MigrationTrait for Migration {
                     .table(Sources::Table)
                     .if_not_exists()
                     .col(pk_auto(Sources::Id))
+                    .col(timestamp_with_time_zone(Sources::CreatedAt))
+                    .col(timestamp_with_time_zone_null(Sources::LastUpdatedAt))
                     .col(string(Sources::Name))
                     .col(integer(Sources::CyclicProcessId))
                     .col(timestamp_with_time_zone_null(Sources::LastClaimAt))

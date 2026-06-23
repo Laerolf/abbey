@@ -4,11 +4,11 @@ use time::OffsetDateTime;
 /// Each real second represents 1 game minute (60 game seconds)
 const GAME_SECONDS_PER_REAL_SECOND: i64 = 60;
 
-/// Represents the clock of the [Game][`crate::features::game::domain::Game`].
+/// Represents the Game clock.
 pub struct GameClock {}
 
 impl GameClock {
-    /// Gets current [Game][`crate::features::game::domain::Game`] time as an OffsetDateTime.
+    /// Gets current Game time as an OffsetDateTime.
     pub fn now() -> OffsetDateTime {
         let real_seconds_since_epoch = OffsetDateTime::now_utc().unix_timestamp();
         let game_seconds_since_epoch = real_seconds_since_epoch * GAME_SECONDS_PER_REAL_SECOND;

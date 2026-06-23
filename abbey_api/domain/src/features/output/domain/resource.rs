@@ -1,5 +1,12 @@
 use std::{fmt::Display, str::FromStr};
 
+use time::OffsetDateTime;
+
+use crate::{
+    features::output::error::ResourceErrorKind,
+    shared::{DomainElement, error::DomainError},
+};
+
 /// Represents a resource category.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Category {
@@ -9,7 +16,7 @@ pub enum Category {
 
 impl Category {
     /// Returns a string representing the [Category].
-    fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Self::Material => "material",
         }
@@ -34,11 +41,28 @@ impl Display for Category {
     }
 }
 
+#[cfg(test)]
+pub mod category_tests {
+    use crate::features::output::domain::resource::Category;
+
+    #[test]
+    fn test_a_category_should_have_the_expected_string_value() {
+        // Then
+        assert_eq!("material", Category::Material.as_str())
+    }
+}
+
 /// Represents a resource.
 #[derive(PartialEq, Debug, Clone)]
 pub struct Resource {
     /// The ID of this [Resource].
     id: Option<i32>,
+
+    /// The creation date of this [`Resource`].
+    created_at: Option<OffsetDateTime>,
+
+    /// The date of the last update of this [`Resource`].
+    last_updated_at: Option<OffsetDateTime>,
 
     /// The name of this [Resource].
     name: String,
@@ -52,23 +76,28 @@ impl Resource {
     pub fn new(name: impl Into<String>, category: Category) -> Self {
         Self {
             id: None,
+            created_at: None,
+            last_updated_at: None,
             name: name.into(),
             category,
         }
     }
 
     /// Creates a [Resource] based on the provided parameters.
-    pub fn restore(id: i32, name: impl Into<String>, category: Category) -> Self {
+    pub fn restore(
+        id: i32,
+        created_at: OffsetDateTime,
+        last_updated_at: Option<OffsetDateTime>,
+        name: impl Into<String>,
+        category: Category,
+    ) -> Self {
         Self {
             id: Some(id),
+            created_at: Some(created_at),
+            last_updated_at,
             name: name.into(),
             category,
         }
-    }
-
-    /// Gets the ID of this [`Resource`].
-    pub fn id(&self) -> &Option<i32> {
-        &self.id
     }
 
     /// Gets the name of this [`Resource`].
@@ -79,5 +108,23 @@ impl Resource {
     /// Gets the category of this [`Resource`].
     pub fn category(&self) -> &Category {
         &self.category
+    }
+}
+
+impl DomainElement<ResourceErrorKind> for Resource {
+    /// Gets the ID of this [`Resource`].
+    fn id(&self) -> Result<i32, DomainError<ResourceErrorKind>> {
+        self.id
+            .ok_or(DomainError::from(ResourceErrorKind::NotPersistedYet))
+    }
+
+    /// Gets the [creation date][`OffsetDateTime`] of this [`Resource`].
+    fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// Gets the [latest update date][`OffsetDateTime`] of this [`Resource`].
+    fn last_updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_updated_at
     }
 }

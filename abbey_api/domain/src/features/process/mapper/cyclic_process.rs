@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use entity::{cyclic_process_resources, cyclic_processes};
 use sea_orm::ActiveValue::{NotSet, Set, Unchanged};
-use time::Duration;
+use time::{Duration, OffsetDateTime};
 
 use crate::{
     features::{
@@ -14,35 +14,38 @@ use crate::{
                 cyclic_process::{CyclicProcess, CyclicProcessState},
             },
             error::ProcessErrorKind,
-            forms::cyclic_process::{CyclicProcessCreationForm, CyclicProcessResourceCreationForm},
+            forms::cyclic_process::{
+                CyclicProcessBlueprint, CyclicProcessOutputResourceAssignmentForm,
+            },
         },
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 /// Represents an element that maps [`CyclicProcess`] elements.
 pub struct CyclicProcessMapper;
 
 impl CyclicProcessMapper {
-    /// Maps a [`CyclicProcessCreationForm`] to a [model][`cyclic_processes::ActiveModel`] to create.
+    /// Maps a [`CyclicProcessBlueprint`] to a [model][cyclic_processes::ActiveModel] to create.
     pub fn to_new_active_model(
-        creation_form: CyclicProcessCreationForm,
-    ) -> cyclic_processes::ActiveModel {
-        let duration_in_seconds: i32 = creation_form
+        blueprint: CyclicProcessBlueprint,
+    ) -> Result<cyclic_processes::ActiveModel, DomainError<ProcessErrorKind>> {
+        let duration_in_seconds: i32 = blueprint
             .cycle_interval
             .whole_seconds()
             .try_into()
-            .map_err(|_| "The duration is too large to fit in i32.")
-            .expect("Failed to convert a cyclic process duration to seconds.");
+            .map_err(|error| DomainError::from(ProcessErrorKind::Creation).with_cause(error))?;
 
-        cyclic_processes::ActiveModel {
+        Ok(cyclic_processes::ActiveModel {
             id: NotSet,
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
             cycle_interval: Set(duration_in_seconds),
             status: Set(Status::New.to_string()),
             started_at: NotSet,
             paused_at: NotSet,
             elapsed: Set(0),
-        }
+        })
     }
 
     /// Maps a [`CyclicProcess`] and a [`Resource`] to a [model][`cyclic_process_resources::ActiveModel`] to update.
@@ -52,7 +55,9 @@ impl CyclicProcessMapper {
     ) -> cyclic_process_resources::ActiveModel {
         cyclic_process_resources::ActiveModel {
             id: NotSet,
-            cylic_process_id: Set(cyclic_process.id().unwrap()),
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
+            cyclic_process_id: Set(cyclic_process.id().unwrap()),
             resource_id: Set(resource.id().unwrap()),
         }
     }
@@ -75,6 +80,8 @@ impl CyclicProcessMapper {
 
         cyclic_processes::ActiveModel {
             id: Unchanged(cyclic_process.id().unwrap()),
+            created_at: Unchanged(cyclic_process.created_at().unwrap()),
+            last_updated_at: Set(Some(OffsetDateTime::now_utc())),
             cycle_interval: Set(duration_in_seconds),
             status: Set(cyclic_process.status().to_string()),
             started_at: Set(*cyclic_process.started_at()),
@@ -91,6 +98,8 @@ impl CyclicProcessMapper {
     ) -> Result<CyclicProcess, DomainError<ProcessErrorKind>> {
         CyclicProcess::restore(
             model.id,
+            model.created_at,
+            model.last_updated_at,
             CyclicProcessState {
                 status: Status::from_str(&model.status)
                     .expect("Failed to find a process status with the provided value."),
@@ -120,14 +129,16 @@ impl CyclicProcessMapper {
 pub struct CyclicProcessResourceMapper;
 
 impl CyclicProcessResourceMapper {
-    /// Maps a [CyclicProcessResourceCreationForm] to a new [`model`][cyclic_process_resources::ActiveModel].
+    /// Maps a [CyclicProcessOutputResourceAssignmentForm] to a new [`model`][cyclic_process_resources::ActiveModel].
     pub fn to_new_active_model(
-        creation_form: CyclicProcessResourceCreationForm,
+        form: CyclicProcessOutputResourceAssignmentForm,
     ) -> cyclic_process_resources::ActiveModel {
         cyclic_process_resources::ActiveModel {
             id: NotSet,
-            cylic_process_id: Set(creation_form.cyclic_process_id),
-            resource_id: Set(creation_form.resource_id),
+            created_at: Set(OffsetDateTime::now_utc()),
+            last_updated_at: NotSet,
+            cyclic_process_id: Set(form.cyclic_process_id),
+            resource_id: Set(form.resource_id),
         }
     }
 }

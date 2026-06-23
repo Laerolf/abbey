@@ -1,14 +1,14 @@
-/// Represents a [User][`super::domain::User`] creation form.
+/// Represents a User blueprint.
 #[derive(Clone)]
-pub struct UserCreationForm {
-    /// The email address of the new [User][`super::domain::User`].
+pub struct UserBlueprint {
+    /// The email address of the new User.
     pub email: String,
-    /// The password of the new [User][`super::domain::User`].
+    /// The password of the new User.
     pub password: String,
 }
 
-impl UserCreationForm {
-    /// Creates a new [`UserCreationForm`].
+impl UserBlueprint {
+    /// Creates a new [`UserBlueprint`].
     pub fn new(email: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
             email: email.into(),

@@ -33,6 +33,8 @@ pub enum UserErrorKind {
     GetById,
     /// Failed to find a [User][`super::domain::User`] by its email.
     FindByEmail,
+    /// The User has not been persisted yet.
+    NotPersistedYet,
     Unknown,
 }
 
@@ -61,6 +63,7 @@ impl DomainErrorKind for UserErrorKind {
             Self::FindById => "error.user.find_by_id".to_string(),
             Self::GetById => "error.user.get_by_id".to_string(),
             Self::FindByEmail => "error.user.find_by_email".to_string(),
+            Self::NotPersistedYet => "error.user.not_persisted_yet".to_string(),
             Self::Unknown => "error.user.unknown".to_string(),
         }
     }
@@ -91,6 +94,7 @@ impl DomainErrorKind for UserErrorKind {
             Self::FindById => "Failed to find a user by its ID.".to_string(),
             Self::GetById => "Failed to get a user by its ID.".to_string(),
             Self::FindByEmail => "Failed to find a user by its email.".to_string(),
+            Self::NotPersistedYet => "The User has not been persisted yet.".to_string(),
             Self::Unknown => "An unknown error occurred.".to_string(),
         }
     }

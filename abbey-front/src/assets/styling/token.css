@@ -1,0 +1,40 @@
+:root {
+  /* Colors */
+  --color-text: black;
+  --color-text-muted: darkgrey;
+  --color-ui-hover: blue;
+  --color-border: black;
+  --color-border-success: #a8c9b0;
+  --color-border-warning: #d4aa6a;
+  --color-border-error: #c98a8a;
+  --color-bg-success: #f0f7f2;
+  --color-bg-warning: #fdf6e8;
+  --color-bg-error: #fdf0f0;
+  --color-success: #4a7c59;
+  --color-warning: #9a6f2e;
+  --color-error: #8b3a3a;
+  /* Spacing */
+  --space-0: 0rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --space-8: 2rem;
+  --space-full: 100%;
+  /* Line height */
+  --line-height-1: 1;
+  /* Radius */
+  --radius-1: 0.25rem;
+  --radius-2: 0.5rem;
+  /* Border Widths */
+  --border-width-1: 0.15rem;
+  --border-width-2: 0.3rem;
+  /* Typography */
+  /** Chapter titles, era headers **/
+  --font-display: 'IM Fell English', serif;
+  /** Descriptions, lore text **/
+  --font-body: 'Crimson Pro', serif;
+  /** Small caps variant for buttons **/
+  --font-ui: 'IM Fell English SC', serif;
+  /** Resource counters **/
+  --font-numbers: 'Cinzel', serif;
+}

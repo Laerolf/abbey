@@ -1,15 +1,15 @@
 use std::any::Any;
 
-use rand::seq::SliceRandom;
 use time::{Duration, OffsetDateTime};
 
 use crate::{
     features::{
-        actor::domain::{Actor, ActorKind},
+        actor::domain::ActorKind,
+        game::domain::game_engine::GameEngine,
         output::domain::{Output, resource::Resource},
         process::error::ProcessErrorKind,
     },
-    shared::error::DomainError,
+    shared::{DomainElement, error::DomainError},
 };
 
 use super::{Process, Status};
@@ -30,6 +30,12 @@ pub struct CyclicProcessState {
 pub struct CyclicProcess {
     /// The ID of this [`CyclicProcess`].
     id: Option<i32>,
+
+    /// The creation date of this [`CyclicProcess`].
+    created_at: Option<OffsetDateTime>,
+
+    /// The date of the last update of this [`CyclicProcess`].
+    last_updated_at: Option<OffsetDateTime>,
 
     /// The [Status] of this [`CyclicProcess`].
     status: Status,
@@ -65,6 +71,8 @@ impl CyclicProcess {
 
         Ok(Self {
             id: None,
+            created_at: None,
+            last_updated_at: None,
             status: Status::New,
             output_resources,
             started_at: None,
@@ -78,6 +86,8 @@ impl CyclicProcess {
     /// Creates a [`CyclicProcess`] based on the provided parameters.
     pub fn restore(
         id: i32,
+        created_at: OffsetDateTime,
+        last_updated_at: Option<OffsetDateTime>,
         state: CyclicProcessState,
     ) -> Result<Self, DomainError<ProcessErrorKind>> {
         if state.output_resources.is_empty() {
@@ -86,6 +96,8 @@ impl CyclicProcess {
 
         Ok(Self {
             id: Some(id),
+            created_at: Some(created_at),
+            last_updated_at,
             status: state.status,
             output_resources: state.output_resources,
             started_at: state.started_at,
@@ -134,12 +146,7 @@ impl Process for CyclicProcess {
     /// Unassigns a [Person][`ActorKind`] to this [`CyclicProcess`].
     fn unassign_person(&mut self, actor_to_unassign: &ActorKind) {
         self.assigned_people
-            .retain(|actor| actor.id() != actor_to_unassign.id());
-    }
-
-    /// Gets the ID of this [`CyclicProcess`].
-    fn id(&self) -> &Option<i32> {
-        &self.id
+            .retain(|actor| actor.id().unwrap() != actor_to_unassign.id().unwrap());
     }
 
     /// Gets the [Status] of this [`CyclicProcess`].
@@ -160,6 +167,11 @@ impl Process for CyclicProcess {
     /// Returns the time this [`CyclicProcess`] ran.
     fn elapsed(&self) -> &Duration {
         &self.elapsed
+    }
+
+    /// Returns the [Actors][Vec<ActorKind>] that was assigned to this [`CyclicProcess`].
+    fn assigned_actors(&self) -> &Vec<ActorKind> {
+        &self.assigned_people
     }
 
     /// Starts this [`CyclicProcess`].
@@ -208,21 +220,30 @@ impl Process for CyclicProcess {
         Ok(())
     }
 
-    /// Gets the [Output][`crate::features::output::domain::Output`] of a cycle of this [`CyclicProcess`].
-    fn get_yield(&self) -> Option<Output> {
-        let mut random_number_generator = rand::thread_rng();
-        // TODO: Use weights
-        let resource_range: Vec<usize> = (0..(self.output_resources.len())).collect();
-
+    /// Gets the [Output] of a cycle of this [`CyclicProcess`].
+    fn get_yield(&self, game_engine: &mut GameEngine) -> Option<Output> {
         let quantity: i32 = self.assigned_people.len().try_into().unwrap_or(0);
 
-        if let Some(selected_resource_index) = resource_range.choose(&mut random_number_generator) {
-            self.output_resources
-                .get(*selected_resource_index)
-                // TODO: Use dynamic amounts
-                .map(|selected_resource| Output::new(selected_resource.clone(), quantity))
-        } else {
-            None
-        }
+        game_engine
+            .pick_random_element(&self.output_resources)
+            .map(|selected_resource| Output::new(selected_resource, quantity))
+    }
+}
+
+impl DomainElement<ProcessErrorKind> for CyclicProcess {
+    /// Gets the ID of this [`CyclicProcess`].
+    fn id(&self) -> Result<i32, DomainError<ProcessErrorKind>> {
+        self.id
+            .ok_or(DomainError::from(ProcessErrorKind::NotPersistedYet))
+    }
+
+    /// Gets the [creation date][`OffsetDateTime`] of this [`CyclicProcess`].
+    fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// Gets the [latest update date][`OffsetDateTime`] of this [`CyclicProcess`].
+    fn last_updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.last_updated_at
     }
 }

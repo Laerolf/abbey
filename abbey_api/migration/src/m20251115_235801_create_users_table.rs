@@ -4,6 +4,8 @@ use sea_orm_migration::{prelude::*, schema::*};
 pub enum Users {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     Email,
     Password,
     Status,
@@ -21,6 +23,8 @@ impl MigrationTrait for Migration {
                     .table(Users::Table)
                     .if_not_exists()
                     .col(pk_auto(Users::Id))
+                    .col(timestamp_with_time_zone(Users::CreatedAt))
+                    .col(timestamp_with_time_zone_null(Users::LastUpdatedAt))
                     .col(string_uniq(Users::Email))
                     .col(string(Users::Password))
                     .col(string(Users::Status))

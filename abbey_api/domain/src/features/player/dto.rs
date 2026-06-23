@@ -1,19 +1,16 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::features::{
-    player::domain::Player,
-    process::{domain::ProcessKind, dto::ProcessDto},
-};
+use crate::{features::player::domain::Player, shared::DomainElement};
 
 /// Represents a [Player] DTO.
-#[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, ToSchema, Clone)]
 pub struct PlayerDto {
     /// The ID of the Player.
     #[schema(example = 666)]
     pub id: i32,
-    /// The Process of the Player.
-    pub process: Option<ProcessDto>,
+    /// The assigned Process ID of the Player.
+    pub assigned_process_id: Option<i32>,
 }
 
 impl PlayerDto {
@@ -21,10 +18,10 @@ impl PlayerDto {
     pub fn from(player: Player) -> Self {
         Self {
             id: player.id().unwrap(),
-            process: player
+            assigned_process_id: player
                 .assigned_process()
                 .as_ref()
-                .map(|process: &ProcessKind| ProcessDto::from(process.clone())),
+                .map(|process| process.id().unwrap()),
         }
     }
 }

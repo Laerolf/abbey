@@ -4,6 +4,8 @@ use sea_orm_migration::{prelude::*, schema::*};
 pub enum Skills {
     Table,
     Id,
+    CreatedAt,
+    LastUpdatedAt,
     Name,
 }
 
@@ -19,6 +21,8 @@ impl MigrationTrait for Migration {
                     .table(Skills::Table)
                     .if_not_exists()
                     .col(pk_auto(Skills::Id))
+                    .col(timestamp_with_time_zone(Skills::CreatedAt))
+                    .col(timestamp_with_time_zone_null(Skills::LastUpdatedAt))
                     .col(string(Skills::Name))
                     .index(
                         Index::create()
